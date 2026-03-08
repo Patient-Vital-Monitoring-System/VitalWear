@@ -1,5 +1,14 @@
 <?php
+session_start();
 require_once '../../database/connection.php';
+
+// Check if admin user is logged in
+if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
+    header('Location: /VitalWear-1/login.html');
+    exit();
+}
+
+$conn = getDBConnection();
 
 // Get audit log entries with pagination
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
@@ -49,29 +58,49 @@ $today_query = $conn->prepare("
 $today_query->execute();
 $today_results = $today_query->get_result()->fetch_all(MYSQLI_ASSOC);
 
-foreach ($today_results as $result) {
-    $stats['today_activities'] += $result['count'];
-    $role_key = $result['user_role'] . '_activities';
-    if (isset($stats[$role_key])) {
-        $stats[$role_key] = $result['count'];
-    }
-}
-
-// Get role distribution overall
-$role_query = $conn->prepare("
-    SELECT user_role, COUNT(*) as count 
-    FROM activity_log 
+// Get role-based statistics
+$role_stats = $conn->query("
+    SELECT user_role, COUNT(*) as count
+    FROM activity_log
+    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
     GROUP BY user_role
 ");
-$role_query->execute();
-$role_results = $role_query->get_result()->fetch_all(MYSQLI_ASSOC);
 
-foreach ($role_results as $result) {
-    $role_key = $result['user_role'] . '_activities';
-    if (isset($stats[$role_key])) {
-        $stats[$role_key] = $result['count'];
+// Get activity trends (last 7 days)
+$activity_trends = $conn->query("
+    SELECT 
+        DATE(created_at) as date,
+        COUNT(*) as activities,
+        COUNT(DISTINCT user_name) as active_users
+    FROM activity_log
+    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+    GROUP BY DATE(created_at)
+    ORDER BY date
+");
+
+// Get recent activities
+$recent_activities = $conn->query("
+    SELECT user_name, user_role, action_type, module, description, created_at
+    FROM activity_log
+    ORDER BY created_at DESC
+    LIMIT 10
+");
+
+// Calculate statistics
+foreach ($today_results as $result) {
+    $stats['today_activities'] += $result['count'];
+    $stats[strtolower($result['user_role']) . '_activities'] = $result['count'];
+}
+
+if ($role_stats) {
+    $role_data = $role_stats->fetch_all(MYSQLI_ASSOC);
+    foreach ($role_data as $role) {
+        $stats[strtolower($role['user_role']) . '_activities'] = $role['count'];
     }
 }
+
+if ($activity_trends) $trends_data = $activity_trends->fetch_all(MYSQLI_ASSOC);
+if ($recent_activities) $recent_data = $recent_activities->fetch_all(MYSQLI_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -79,572 +108,100 @@ foreach ($role_results as $result) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Activity Log - Admin</title>
-    <link rel="stylesheet" href="../../assets/css/styles.css">
-    <style>
-        :root {
-            --bg: #0a0e1a;
-            --surface: #111827;
-            --surface2: #1a2235;
-            --border: #1f2d45;
-            --accent: #00e5ff;
-            --accent2: #ff4d6d;
-            --accent3: #39ff14;
-            --text: #e2e8f0;
-            --muted: #64748b;
-            --warn: #f59e0b;
-            --danger: #ef4444;
-            --success: #10b981;
-        }
-
-        * { margin:0; padding:0; box-sizing:border-box; }
-
-        body {
-            font-family:'Syne',sans-serif;
-            background:var(--bg);
-            color:var(--text);
-            min-height:100vh;
-            overflow-x:hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .navbar-top {
-            position: sticky;
-            top: 0;
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            color: white;
-            padding: 16px 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-            z-index: 1030;
-        }
-
-        .page-wrapper {
-            display: flex;
-            flex: 1;
-            min-height: calc(100vh - 70px);
-        }
-
-        .sidebar {
-            width: 320px;
-            background-color: var(--surface);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            min-height: 100%;
-            overflow-y: auto;
-        }
-
-        .sidebar-header {
-            background-color: var(--surface2);
-            color: white;
-            border-bottom: 1px solid var(--border);
-            padding: 24px;
-        }
-
-        .sidebar-title {
-            font-weight: 700;
-            font-size: 1.3rem;
-            color: var(--accent);
-            letter-spacing: 1px;
-            font-family: 'Space Mono', monospace;
-        }
-
-        .sidebar-nav {
-            display: flex;
-            flex-direction: column;
-            padding: 0;
-            margin: 0;
-            flex: 1;
-        }
-
-        .sidebar-nav .nav-link {
-            color: var(--muted);
-            padding: 18px 24px;
-            border-left: 3px solid transparent;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: block;
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        .sidebar-nav .nav-link:hover {
-            background-color: rgba(0, 229, 255, 0.1);
-            color: var(--accent);
-            border-left-color: var(--accent);
-        }
-
-        .sidebar-nav .nav-link.active {
-            color: var(--accent);
-            background-color: rgba(0, 229, 255, 0.15);
-            border-left-color: var(--accent);
-        }
-
-        .nav-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .nav-group-toggle {
-            color: var(--muted);
-            padding: 18px 24px;
-            border-left: 3px solid transparent;
-            border: none;
-            background: transparent;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            width: 100%;
-            text-align: left;
-            font-family: inherit;
-        }
-
-        .nav-group-toggle:hover {
-            background-color: rgba(0, 229, 255, 0.1);
-            color: var(--accent);
-            border-left-color: var(--accent);
-        }
-
-        .dropdown-arrow {
-            transition: transform 0.3s ease;
-            display: inline-block;
-            font-size: 12px;
-        }
-
-        .nav-group.active .dropdown-arrow {
-            transform: rotate(180deg);
-        }
-
-        .nav-group-items {
-            display: none;
-            flex-direction: column;
-            background-color: rgba(0, 0, 0, 0.2);
-            border-left: 3px solid var(--border);
-        }
-
-        .nav-group.active .nav-group-items {
-            display: flex;
-        }
-
-        .nav-group .nav-link {
-            padding: 14px 24px 14px 48px;
-            border-left: none;
-            font-size: 13px;
-            color: var(--muted);
-        }
-
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-        }
-
-        .navbar-brand {
-            margin: 0;
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: white;
-            letter-spacing: -0.5px;
-            flex: 1;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 32px 20px;
-        }
-
-        h1 {
-            color: var(--accent);
-            font-weight: 800;
-            margin-bottom: 16px;
-            margin-top: 0;
-            font-size: 2rem;
-            letter-spacing: -0.5px;
-        }
-
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-
-        .metric-card {
-            background: var(--surface);
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            padding: 24px;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-
-        .metric-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .metric-card:hover {
-            border-color: var(--accent);
-            box-shadow: 0 8px 24px rgba(0, 229, 255, 0.15);
-            transform: translateY(-4px);
-        }
-
-        .metric-card:hover::before {
-            opacity: 1;
-        }
-
-        .metric-icon {
-            font-size: 36px;
-            margin-bottom: 12px;
-            opacity: 0.8;
-        }
-
-        .metric-value {
-            font-size: 2.8rem;
-            font-weight: 800;
-            color: var(--accent);
-            letter-spacing: -1px;
-            margin: 12px 0;
-            font-family: 'Syne', sans-serif;
-        }
-
-        .metric-label {
-            font-size: 12px;
-            letter-spacing: 1px;
-            color: var(--muted);
-            font-family: 'Space Mono', monospace;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-            overflow: hidden;
-            transition: transform 0.2s, box-shadow 0.2s;
-            margin-bottom: 24px;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 229, 255, 0.1);
-        }
-
-        .card-header {
-            background-color: var(--surface2);
-            color: var(--accent);
-            border-bottom: 1px solid var(--border);
-            font-weight: 700;
-            padding: 16px 20px;
-            font-size: 13px;
-            letter-spacing: 1px;
-            font-family: 'Space Mono', monospace;
-        }
-
-        .card-body {
-            padding: 24px;
-        }
-
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 0;
-        }
-
-        .table thead {
-            background-color: var(--surface2);
-        }
-
-        .table thead th {
-            padding: 14px 16px;
-            font-size: 10px;
-            letter-spacing: 1.5px;
-            color: var(--muted);
-            text-align: left;
-            font-family: 'Space Mono', monospace;
-            border-bottom: 2px solid var(--border);
-            font-weight: 700;
-        }
-
-        .table tbody td {
-            padding: 14px 16px;
-            font-size: 13px;
-            border-bottom: 1px solid rgba(31, 45, 69, 0.5);
-            color: var(--text);
-        }
-
-        .table tbody tr:hover td {
-            background-color: rgba(0, 229, 255, 0.05);
-        }
-
-        .table tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        .controls-section {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .controls-row {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .filter-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .filter-group label {
-            color: var(--muted);
-            font-weight: 600;
-            white-space: nowrap;
-        }
-
-        .filter-select {
-            padding: 10px 14px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            background: var(--surface2);
-            color: var(--text);
-            cursor: pointer;
-            font-size: 13px;
-            font-family: 'Syne', sans-serif;
-        }
-
-        .search-form {
-            display: flex;
-            gap: 10px;
-        }
-
-        .search-input {
-            padding: 10px 14px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            background: var(--surface2);
-            color: var(--text);
-            font-size: 13px;
-            font-family: 'Syne', sans-serif;
-            min-width: 250px;
-        }
-
-        .search-input::placeholder {
-            color: var(--muted);
-        }
-
-        .search-input:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.1);
-        }
-
-        .btn {
-            padding: 10px 14px;
-            border-radius: 6px;
-            font-family: 'Syne', sans-serif;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-block;
-            letter-spacing: 0.5px;
-        }
-
-        .btn-primary {
-            background: var(--accent);
-            color: #000;
-        }
-
-        .btn-primary:hover {
-            background: #33eeff;
-            transform: translateY(-1px);
-            box-shadow: 0 8px 20px rgba(0, 229, 255, 0.3);
-        }
-
-        .btn-secondary {
-            background: var(--surface2);
-            color: var(--text);
-            border: 1px solid var(--border);
-        }
-
-        .btn-secondary:hover {
-            background: var(--border);
-            border-color: var(--accent);
-        }
-
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .pagination a {
-            padding: 8px 12px;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            color: var(--text);
-            text-decoration: none;
-            border-radius: 4px;
-            transition: all 0.2s;
-        }
-
-        .pagination a:hover {
-            background: var(--accent);
-            color: #000;
-            border-color: var(--accent);
-        }
-
-        .pagination .active {
-            background: var(--accent);
-            color: #000;
-            border-color: var(--accent);
-        }
-
-        .role-badge {
-            display: inline-block;
-            padding: 6px 14px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            font-family: 'Space Mono', monospace;
-            text-transform: uppercase;
-            border: 1px solid;
-        }
-
-        .role-badge.admin {
-            background: rgba(255, 77, 109, 0.15);
-            color: #ff4d6d;
-            border-color: rgba(255, 77, 109, 0.3);
-        }
-
-        .role-badge.staff {
-            background: rgba(0, 229, 255, 0.15);
-            color: var(--accent);
-            border-color: rgba(0, 229, 255, 0.3);
-        }
-
-        .role-badge.responder {
-            background: rgba(245, 158, 11, 0.15);
-            color: var(--warn);
-            border-color: rgba(245, 158, 11, 0.3);
-        }
-
-        .role-badge.rescuer {
-            background: rgba(57, 255, 20, 0.15);
-            color: #39ff14;
-            border-color: rgba(57, 255, 20, 0.3);
-        }
-
-        .activity-time {
-            color: var(--muted);
-            font-size: 12px;
-            font-family: 'Space Mono', monospace;
-        }
-
-        .activity-description {
-            max-width: 400px;
-            word-wrap: break-word;
-        }
-
-        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap');
-    </style>
+    <title>Activity Log - Admin</title>
+    <link rel="stylesheet" href="../../assets/css/admin.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar-top">
-        <h2 class="navbar-brand">System Activity Log</h2>
-        <a href="/VitalWear-1/api/auth/logout.php" class="btn btn-secondary">Logout</a>
-    </nav>
-
-    <div class="page-wrapper">
-        <aside class="sidebar">
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
             <div class="sidebar-header">
-                <h5 class="sidebar-title">Menu</h5>
+                <div class="sidebar-title">VitalWear Admin</div>
+                <div class="sidebar-subtitle">System Management</div>
             </div>
-            <nav class="sidebar-nav">
-                <a class="nav-link" href="dashboard.php">Dashboard</a>
+            
+            <nav class="nav-menu">
+                <div class="nav-group">
+                    <a href="dashboard.php" class="nav-item">
+                        🏠 Dashboard
+                    </a>
+                </div>
                 
-                <!-- User Management -->
                 <div class="nav-group">
-                    <button class="nav-group-toggle">User Management <span class="dropdown-arrow">▼</span></button>
+                    <div class="nav-group-title">User Management</div>
                     <div class="nav-group-items">
-                        <a class="nav-link" href="users.php">Staff Directory</a>
-                        <a class="nav-link" href="user_status.php">User Status</a>
+                        <a href="users.php" class="nav-item">
+                            👥 Staff Directory
+                        </a>
+                        <a href="users/view_management.php" class="nav-item">
+                            👨‍💼 Management
+                        </a>
+                        <a href="users/view_responders.php" class="nav-item">
+                            🚑 Responders
+                        </a>
+                        <a href="users/view_rescuers.php" class="nav-item">
+                            🆘 Rescuers
+                        </a>
+                        <a href="users/view_admins.php" class="nav-item">
+                            👨‍💻 Admins
+                        </a>
                     </div>
                 </div>
-
-                <!-- Reports -->
-                <div class="nav-group active">
-                    <button class="nav-group-toggle">Reports <span class="dropdown-arrow">▼</span></button>
+                
+                <div class="nav-group">
+                    <div class="nav-group-title">Reports</div>
                     <div class="nav-group-items">
-                        <a class="nav-link" href="vitals_analytics.php">Vital Statistics</a>
-                        <a class="nav-link active" href="audit_log.php">System Activity Log</a>
+                        <a href="system_reports.php" class="nav-item">
+                            📊 System Reports
+                        </a>
+                        <a href="vitals_analytics.php" class="nav-item">
+                            ❤️ Vital Analytics
+                        </a>
+                        <a href="audit_log.php" class="nav-item active">
+                            📋 Activity Log
+                        </a>
                     </div>
                 </div>
-
-                <!-- Monitoring -->
+                
                 <div class="nav-group">
-                    <button class="nav-group-toggle">Monitoring <span class="dropdown-arrow">▼</span></button>
+                    <div class="nav-group-title">Monitoring</div>
                     <div class="nav-group-items">
-                        <a class="nav-link" href="incidents.php">Incident Monitoring</a>
-                        <a class="nav-link" href="device_incidents.php">Device Overview</a>
-                        <a class="nav-link" href="vitals.php">User Activity</a>
-                    </div>
-                </div>
-
-                <!-- Accounts -->
-                <div class="nav-group">
-                    <button class="nav-group-toggle">Accounts <span class="dropdown-arrow">▼</span></button>
-                    <div class="nav-group-items">
-                        <a class="nav-link" href="profile.php">Profile</a>
-                        <a class="nav-link" href="/VitalWear-1/api/auth/logout.php" style="color: #ff4d6d;">Logout</a>
+                        <a href="device_incidents.php" class="nav-item">
+                            📦 Device Overview
+                        </a>
+                        <a href="vitals.php" class="nav-item">
+                            👤 User Activity
+                        </a>
                     </div>
                 </div>
             </nav>
         </aside>
 
-        <main class="main-content">
-            <div class="container">
-                <h1>📋 System Activity Log</h1>
-                <p>Comprehensive audit trail of all system activities and user actions.</p>
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Top Navigation -->
+            <header class="navbar">
+                <div>
+                    <h1 class="navbar-brand">Activity Log</h1>
+                </div>
+                <div class="navbar-actions">
+                    <span class="text-muted">Welcome, <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Admin'); ?></span>
+                    <a href="/VitalWear-1/api/auth/logout.php" class="btn btn-secondary">Logout</a>
+                </div>
+            </header>
 
-                <!-- Metrics Grid -->
+            <!-- Page Content -->
+            <div class="content">
+                <div class="content-header">
+                    <h1 class="content-title">📋 System Activity Log</h1>
+                    <p class="content-subtitle">Comprehensive audit trail of all system activities</p>
+                </div>
+
+                <!-- Activity Statistics -->
                 <div class="metrics-grid">
                     <div class="metric-card">
                         <div class="metric-icon">📊</div>
@@ -659,152 +216,330 @@ foreach ($role_results as $result) {
                     </div>
                     
                     <div class="metric-card">
-                        <div class="metric-icon">👨‍💼</div>
+                        <div class="metric-icon">👥</div>
                         <div class="metric-value"><?php echo number_format($stats['admin_activities']); ?></div>
                         <div class="metric-label">Admin Activities</div>
                     </div>
                     
                     <div class="metric-card">
-                        <div class="metric-icon">📋</div>
-                        <div class="metric-value"><?php echo number_format($stats['management_activities']); ?></div>
-                        <div class="metric-label">Management Activities</div>
-                    </div>
-                    
-                    <div class="metric-card">
-                        <div class="metric-icon">🚑</div>
-                        <div class="metric-value"><?php echo number_format($stats['responder_activities']); ?></div>
-                        <div class="metric-label">Responder Activities</div>
-                    </div>
-                    
-                    <div class="metric-card">
-                        <div class="metric-icon">🆘</div>
-                        <div class="metric-value"><?php echo number_format($stats['rescuer_activities']); ?></div>
-                        <div class="metric-label">Rescuer Activities</div>
+                        <div class="metric-icon">🔄</div>
+                        <div class="metric-value"><?php echo number_format($total_pages); ?></div>
+                        <div class="metric-label">Total Pages</div>
                     </div>
                 </div>
 
-                <!-- Controls Section -->
-                <div class="controls-section">
-                    <div class="controls-row">
-                        <div class="filter-group">
-                            <label for="roleFilter">Filter by Role:</label>
-                            <select id="roleFilter" class="filter-select" onchange="filterByRole()">
-                                <option value="">All Roles</option>
-                                <option value="admin">Admin</option>
-                                <option value="management">Management</option>
-                                <option value="responder">Responder</option>
-                                <option value="rescuer">Rescuer</option>
-                            </select>
+                <!-- Activity Trends Chart -->
+                <div class="card">
+                    <div class="card-header">
+                        Activity Trends (Last 7 Days)
+                    </div>
+                    <div class="card-body">
+                        <div style="height: 300px; position: relative;">
+                            <canvas id="activityTrendsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter Options -->
+                <div class="card">
+                    <div class="card-header">
+                        Filter Options
+                    </div>
+                    <div class="card-body">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">User Role</label>
+                                <select style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius);">
+                                    <option>All Roles</option>
+                                    <option>Admin</option>
+                                    <option>Management</option>
+                                    <option>Responder</option>
+                                    <option>Rescuer</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Action Type</label>
+                                <select style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius);">
+                                    <option>All Actions</option>
+                                    <option>Login</option>
+                                    <option>Logout</option>
+                                    <option>Create</option>
+                                    <option>Update</option>
+                                    <option>Delete</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Date Range</label>
+                                <select style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius);">
+                                    <option>Last 7 Days</option>
+                                    <option>Last 30 Days</option>
+                                    <option>Last 3 Months</option>
+                                    <option>All Time</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; align-items: end;">
+                                <button class="btn btn-primary" style="width: 100%;">
+                                    🔍 Apply Filters
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activities -->
+                <div class="card">
+                    <div class="card-header">
+                        Recent System Activities
+                    </div>
+                    <div class="card-body">
+                        <div class="table" style="overflow-x: auto;">
+                            <table style="min-width: 800px;">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Role</th>
+                                        <th>Action</th>
+                                        <th>Module</th>
+                                        <th>Description</th>
+                                        <th>Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if (!empty($recent_data)): ?>
+                                        <?php foreach ($recent_data as $activity): ?>
+                                        <tr>
+                                            <td>
+                                                <strong><?php echo htmlspecialchars($activity['user_name'] ?? 'System'); ?></strong>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-<?php echo $activity['user_role']; ?>">
+                                                    <?php echo htmlspecialchars(ucfirst($activity['user_role'])); ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-<?php 
+                                                    echo $activity['action_type'] === 'login_success' ? 'success' : 
+                                                         ($activity['action_type'] === 'login_failed' ? 'danger' : 'primary'); 
+                                                ?>">
+                                                    <?php echo htmlspecialchars(ucfirst(str_replace('_', ' ', $activity['action_type']))); ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span style="color: var(--text-secondary); font-size: 0.875rem;">
+                                                    <?php echo htmlspecialchars(ucfirst($activity['module'] ?? 'N/A')); ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div style="max-width: 200px; word-break: break-word;">
+                                                    <?php echo htmlspecialchars($activity['description']); ?>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="text-muted">
+                                                    <?php echo date('M j, H:i:s', strtotime($activity['created_at'])); ?>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td colspan="6" style="text-align: center; padding: 3rem; color: var(--muted);">
+                                                No recent activities found
+                                            </td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Full Activity Log -->
+                <div class="card">
+                    <div class="card-header">
+                        Full Activity Log
+                        <span style="background: var(--accent); color: white; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; margin-left: 1rem;">
+                            Page <?php echo $page; ?> of <?php echo $total_pages; ?>
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="table" style="overflow-x: auto;">
+                            <table style="min-width: 900px;">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>User</th>
+                                        <th>Role</th>
+                                        <th>Action</th>
+                                        <th>Module</th>
+                                        <th>Description</th>
+                                        <th>Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if (!empty($audit_logs)): ?>
+                                        <?php foreach ($audit_logs as $log): ?>
+                                        <tr>
+                                            <td>
+                                                <span style="font-family: 'Inter', monospace; font-size: 0.75rem; color: var(--muted);">
+                                                    #<?php echo $log['activity_id']; ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <strong><?php echo htmlspecialchars($log['user_name'] ?? 'System'); ?></strong>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-<?php echo $log['user_role']; ?>">
+                                                    <?php echo htmlspecialchars(ucfirst($log['user_role'])); ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-<?php 
+                                                    echo $log['action_type'] === 'login_success' ? 'success' : 
+                                                         ($log['action_type'] === 'login_failed' ? 'danger' : 'primary'); 
+                                                ?>">
+                                                    <?php echo htmlspecialchars(ucfirst(str_replace('_', ' ', $log['action_type']))); ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span style="color: var(--text-secondary); font-size: 0.875rem;">
+                                                    <?php echo htmlspecialchars(ucfirst($log['module'] ?? 'N/A')); ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div style="max-width: 250px; word-break: break-word;">
+                                                    <?php echo htmlspecialchars($log['description']); ?>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="text-muted">
+                                                    <?php echo date('M j, Y H:i:s', strtotime($log['created_at'])); ?>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td colspan="7" style="text-align: center; padding: 3rem; color: var(--muted);">
+                                                No activities found in the log
+                                            </td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
                         </div>
                         
-                        <form class="search-form" method="GET">
-                            <input type="text" name="search" class="search-input" placeholder="Search activities..." value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>">
-                            <button type="submit" class="btn btn-primary">Search</button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Audit Log Table -->
-                <div class="card">
-                    <div class="card-header">Activity Log Entries</div>
-                    <div class="card-body">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Timestamp</th>
-                                    <th>User</th>
-                                    <th>Role</th>
-                                    <th>Action</th>
-                                    <th>Module</th>
-                                    <th>Activity</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($audit_logs as $log): ?>
-                                <tr>
-                                    <td>
-                                        <div class="activity-time">
-                                            <?php echo date('M j, Y H:i:s', strtotime($log['created_at'])); ?>
-                                        </div>
-                                    </td>
-                                    <td><?php echo htmlspecialchars($log['user_name'] ?? 'System'); ?></td>
-                                    <td>
-                                        <span class="role-badge <?php echo $log['user_role']; ?>">
-                                            <?php echo htmlspecialchars($log['user_role']); ?>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span style="color: var(--accent); font-size: 12px; font-family: 'Space Mono', monospace;">
-                                            <?php echo htmlspecialchars($log['action_type'] ?? 'N/A'); ?>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span style="color: var(--muted); font-size: 12px; font-family: 'Space Mono', monospace;">
-                                            <?php echo htmlspecialchars($log['module'] ?? 'N/A'); ?>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="activity-description">
-                                            <?php echo htmlspecialchars($log['description']); ?>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                        
-                        <?php if (empty($audit_logs)): ?>
-                        <div style="text-align: center; padding: 40px; color: var(--muted);">
-                            No activity logs found matching your criteria.
+                        <!-- Pagination -->
+                        <?php if ($total_pages > 1): ?>
+                        <div style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+                            <?php if ($page > 1): ?>
+                                <a href="?page=<?php echo $page - 1; ?>" class="btn btn-secondary">
+                                    ← Previous
+                                </a>
+                            <?php endif; ?>
+                            
+                            <div style="display: flex; gap: 0.5rem;">
+                                <?php 
+                                $start_page = max(1, $page - 2);
+                                $end_page = min($total_pages, $page + 2);
+                                
+                                for ($i = $start_page; $i <= $end_page; $i++): 
+                                ?>
+                                    <a href="?page=<?php echo $i; ?>" class="btn <?php echo $i === $page ? 'btn-primary' : 'btn-secondary'; ?>" style="padding: 0.5rem 0.75rem;">
+                                        <?php echo $i; ?>
+                                    </a>
+                                <?php endfor; ?>
+                            </div>
+                            
+                            <?php if ($page < $total_pages): ?>
+                                <a href="?page=<?php echo $page + 1; ?>" class="btn btn-secondary">
+                                    Next →
+                                </a>
+                            <?php endif; ?>
                         </div>
                         <?php endif; ?>
                     </div>
                 </div>
 
-                <!-- Pagination -->
-                <?php if ($total_pages > 1): ?>
-                <div class="pagination">
-                    <?php if ($page > 1): ?>
-                        <a href="?page=<?php echo $page - 1; ?>">« Previous</a>
-                    <?php endif; ?>
-                    
-                    <?php
-                    $start = max(1, $page - 2);
-                    $end = min($total_pages, $page + 2);
-                    
-                    for ($i = $start; $i <= $end; $i++):
-                    ?>
-                        <a href="?page=<?php echo $i; ?>" class="<?php echo $i == $page ? 'active' : ''; ?>">
-                            <?php echo $i; ?>
-                        </a>
-                    <?php endfor; ?>
-                    
-                    <?php if ($page < $total_pages): ?>
-                        <a href="?page=<?php echo $page + 1; ?>">Next »</a>
-                    <?php endif; ?>
+                <!-- Export Options -->
+                <div class="card" style="margin-top: 2rem;">
+                    <div class="card-header">
+                        Export Options
+                    </div>
+                    <div class="card-body">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                            <button class="btn btn-primary" onclick="exportToCSV()">
+                                📊 Export to CSV
+                            </button>
+                            <button class="btn btn-secondary" onclick="window.print()">
+                                🖨️ Print Report
+                            </button>
+                            <button class="btn btn-secondary" onclick="exportToPDF()">
+                                📄 Export to PDF
+                            </button>
+                            <button class="btn btn-secondary" onclick="clearLog()">
+                                🗑️ Clear Log
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <?php endif; ?>
 
             </div>
         </main>
     </div>
 
     <script>
-        // Toggle navigation groups
-        document.querySelectorAll('.nav-group-toggle').forEach(toggle => {
-            toggle.addEventListener('click', function() {
-                this.parentElement.classList.toggle('active');
-            });
+        // Activity Trends Chart
+        const trendsCtx = document.getElementById('activityTrendsChart').getContext('2d');
+        new Chart(trendsCtx, {
+            type: 'line',
+            data: {
+                labels: <?php echo json_encode(array_map(function($date) { 
+                    return date('M j', strtotime($date)); 
+                }, array_column($trends_data ?? [], 'date'))); ?>,
+                datasets: [{
+                    label: 'Activities',
+                    data: <?php echo json_encode(array_column($trends_data ?? [], 'activities')); ?>,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4
+                }, {
+                    label: 'Active Users',
+                    data: <?php echo json_encode(array_column($trends_data ?? [], 'active_users')); ?>,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
         });
 
-        // Filter by role
-        function filterByRole() {
-            const role = document.getElementById('roleFilter').value;
-            let url = 'audit_log.php';
-            if (role) {
-                url += '?role=' + encodeURIComponent(role);
+        // Export Functions
+        function exportToCSV() {
+            alert('CSV export functionality would be implemented here');
+        }
+
+        function exportToPDF() {
+            alert('PDF export functionality would be implemented here');
+        }
+
+        function clearLog() {
+            if (confirm('Are you sure you want to clear the activity log? This action cannot be undone.')) {
+                alert('Clear log functionality would be implemented here');
             }
-            window.location.href = url;
         }
     </script>
 </body>
