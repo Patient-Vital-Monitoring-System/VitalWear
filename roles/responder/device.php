@@ -131,7 +131,7 @@ Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_
 <a href="device.php"><i class="fa fa-tablet"></i> My Device</a>
 <a href="active_incidents.php"><i class="fa fa-exclamation-circle"></i> Active Incidents</a>
 <a href="create_incident.php"><i class="fa fa-plus-circle"></i> Create Incident</a>
-<a href="record_vitals.php"><i class="fa fa-heartbeat"></i> Record Vitals</a>
+<a href="patient_vitals.php"><i class="fa fa-line-chart"></i> View Vitals</a>
 <a href="transfer_incident.php"><i class="fa fa-exchange"></i> Transfer to Rescuer</a>
 <a href="incident_history.php"><i class="fa fa-history"></i> Incident History</a>
 <a href="../../api/auth/logout.php"><i class="fa fa-sign-out"></i> Logout</a>
@@ -159,12 +159,6 @@ Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_
         <p style="font-size:24px;font-weight:bold;"><?php echo htmlspecialchars($assigned_device['dev_serial']); ?></p>
         <p style="color:#22c55e;font-weight:600;margin:10px 0;">Device Assigned</p>
         <p style="color:#777;font-size:14px;">Assigned on: <?php echo date('M d, Y h:i A', strtotime($assigned_device['date_assigned'])); ?></p>
-        
-        <form method="POST" style="margin-top:25px;">
-            <button type="submit" name="return_device" onclick="return confirm('Are you sure you want to return this device?');" style="padding:12px 30px;background:#ef4444;color:white;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:14px;">
-                <i class="fa fa-reply"></i> Return Device
-            </button>
-        </form>
     </div>
     <?php else: ?>
     <div style="text-align:center;padding:30px;">
@@ -218,11 +212,6 @@ Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_
 <a href="create_incident.php" class="bottom-item">
 <i class="fa fa-plus-circle"></i>
 <span>Incident</span>
-</a>
-
-<a href="record_vitals.php" class="bottom-item">
-<i class="fa fa-heartbeat"></i>
-<span>Vitals</span>
 </a>
 
 <a href="incident_history.php" class="bottom-item">

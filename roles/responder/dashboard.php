@@ -37,7 +37,7 @@ Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_
 <a href="device.php"><i class="fa fa-tablet"></i> My Device</a>
 <a href="active_incidents.php"><i class="fa fa-exclamation-circle"></i> Active Incidents</a>
 <a href="create_incident.php"><i class="fa fa-plus-circle"></i> Create Incident</a>
-<a href="record_vitals.php"><i class="fa fa-heartbeat"></i> Record Vitals</a>
+<a href="patient_vitals.php"><i class="fa fa-line-chart"></i> View Vitals</a>
 <a href="transfer_incident.php"><i class="fa fa-exchange"></i> Transfer to Rescuer</a>
 <a href="incident_history.php"><i class="fa fa-history"></i> Incident History</a>
 <a href="../../api/auth/logout.php"><i class="fa fa-sign-out"></i> Logout</a>
@@ -104,7 +104,7 @@ $stmt = $conn->prepare("
     <p style="font-size:18px;font-weight:bold;">Incident #<?php echo $incident['incident_id']; ?></p>
     <p style="color:#777;">Patient: <?php echo htmlspecialchars($patient['pat_name'] ?? 'Unknown'); ?></p>
     <p style="color:#f59e0b;font-weight:600;"><?php echo ucfirst($incident['status']); ?></p>
-    <a href="record_vitals.php" style="color:#22c55e;">Record Vitals →</a>
+    <a href="patient_vitals.php" style="color:#22c55e;">View Vitals →</a>
     <?php else: ?>
     <p style="color:#777;">No active incidents</p>
     <a href="create_incident.php" style="color:#dd4c56;">Create Incident →</a>
@@ -167,13 +167,13 @@ $stmt = $conn->prepare("
         </div>
     </div>
     <div style="margin-top:15px;">
-        <a href="record_vitals.php" style="color:#dd4c56;font-size:14px;">Update Vitals →</a>
+        <a href="patient_vitals.php" style="color:#dd4c56;font-size:14px;">View Vitals →</a>
     </div>
     <?php else: ?>
     <div style="text-align:center;padding:20px;color:#777;">
         <p style="font-size:14px;margin-bottom:10px;">No vital readings available</p>
         <?php if($incident): ?>
-        <a href="record_vitals.php" style="display:inline-block;padding:10px 20px;background:#dd4c56;color:white;text-decoration:none;border-radius:8px;font-weight:bold;">Record Vitals</a>
+        <a href="patient_vitals.php" style="display:inline-block;padding:10px 20px;background:#dd4c56;color:white;text-decoration:none;border-radius:8px;font-weight:bold;">View Vitals</a>
         <?php else: ?>
         <p style="font-size:12px;color:#999;">Create an incident to record vitals.</p>
         <?php endif; ?>
@@ -190,19 +190,14 @@ $stmt = $conn->prepare("
 <span>Home</span>
 </a>
 
-<a href="device.php" class="bottom-item">
-<i class="fa fa-tablet"></i>
-<span>Device</span>
+<a href="patient_vitals.php" class="bottom-item">
+<i class="fa fa-line-chart"></i>
+<span>Vitals</span>
 </a>
 
 <a href="create_incident.php" class="bottom-item">
 <i class="fa fa-plus-circle"></i>
 <span>Incident</span>
-</a>
-
-<a href="record_vitals.php" class="bottom-item">
-<i class="fa fa-heartbeat"></i>
-<span>Vitals</span>
 </a>
 
 <a href="incident_history.php" class="bottom-item">

@@ -58,7 +58,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             if ($inc_stmt->execute()) {
                 $incident_id = $conn->insert_id;
-                header("Location: record_vitals.php?incident_id=" . $incident_id);
+                
+                // Auto-insert initial vital stats with default values
+                $vital_stmt = $conn->prepare("INSERT INTO vitalstat (incident_id, recorded_by, bp_systolic, bp_diastolic, heart_rate, oxygen_level) VALUES (?, 'responder', 0, 0, 0, 0)");
+                $vital_stmt->bind_param("i", $incident_id);
+                $vital_stmt->execute();
+                
+                header("Location: patient_vitals.php?incident_id=" . $incident_id);
                 exit;
             } else {
                 $message = "Failed to create incident";
@@ -91,7 +97,7 @@ Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_
 <a href="device.php"><i class="fa fa-tablet"></i> My Device</a>
 <a href="active_incidents.php"><i class="fa fa-exclamation-circle"></i> Active Incidents</a>
 <a href="create_incident.php"><i class="fa fa-plus-circle"></i> Create Incident</a>
-<a href="record_vitals.php"><i class="fa fa-heartbeat"></i> Record Vitals</a>
+<a href="patient_vitals.php"><i class="fa fa-line-chart"></i> View Vitals</a>
 <a href="transfer_incident.php"><i class="fa fa-exchange"></i> Transfer to Rescuer</a>
 <a href="incident_history.php"><i class="fa fa-history"></i> Incident History</a>
 <a href="../../api/auth/logout.php"><i class="fa fa-sign-out"></i> Logout</a>
@@ -131,7 +137,6 @@ Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_
 <a href="dashboard.php" class="bottom-item"><i class="fa fa-gauge"></i><span>Home</span></a>
 <a href="device.php" class="bottom-item"><i class="fa fa-tablet"></i><span>Device</span></a>
 <a href="create_incident.php" class="bottom-item"><i class="fa fa-plus-circle"></i><span>Incident</span></a>
-<a href="record_vitals.php" class="bottom-item"><i class="fa fa-heartbeat"></i><span>Vitals</span></a>
 <a href="incident_history.php" class="bottom-item"><i class="fa fa-history"></i><span>History</span></a>
 <a href="../../api/auth/logout.php"><i class="fa fa-sign-out"></i></a>
 </nav>
