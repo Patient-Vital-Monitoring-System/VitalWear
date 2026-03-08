@@ -1,167 +1,96 @@
 <?php
 session_start();
-require_once '../../../database/connection.php';
+require_once '../../database/connection.php';
 
 // Check if admin user is logged in
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
-    header('Location: ../../login.html');
+    header('Location: /VitalWear-1/login.html');
     exit();
 }
 
 $conn = getDBConnection();
-$message = '';
-$alert_type = '';
 
-// Handle form submissions for user management
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['action'])) {
-        if ($_POST['action'] === 'add_user') {
-            $role = $_POST['role'];
-            $name = trim($_POST['name']);
-            $email = trim($_POST['email']);
-            $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-            $contact = trim($_POST['contact'] ?? '');
-            
-            // Insert based on role
-            switch ($role) {
-                case 'admin':
-                    $stmt = $conn->prepare("INSERT INTO admin (admin_name, admin_email, admin_password) VALUES (?, ?, ?)");
-                    $stmt->bind_param("sss", $name, $email, $password);
-                    break;
-                case 'management':
-                    $stmt = $conn->prepare("INSERT INTO management (mgmt_name, mgmt_email, mgmt_password) VALUES (?, ?, ?)");
-                    $stmt->bind_param("sss", $name, $email, $password);
-                    break;
-                case 'responder':
-                    $stmt = $conn->prepare("INSERT INTO responder (resp_name, resp_email, resp_password, resp_contact) VALUES (?, ?, ?, ?)");
-                    $stmt->bind_param("ssss", $name, $email, $password, $contact);
-                    break;
-                case 'rescuer':
-                    $stmt = $conn->prepare("INSERT INTO rescuer (resc_name, resc_email, resc_password, resc_contact) VALUES (?, ?, ?, ?)");
-                    $stmt->bind_param("ssss", $name, $email, $password, $contact);
-                    break;
-            }
-            
-            if ($stmt->execute()) {
-                $message = "User added successfully!";
-                $alert_type = "success";
-                
-                // Log activity
-                $log_desc = "Admin added new $role user: $name ($email)";
-                $stmt_log = $conn->prepare("INSERT INTO activity_log (user_name, user_role, action_type, module, description) VALUES (?, ?, 'add', 'user_management', ?)");
-                $stmt_log->bind_param("sss", $_SESSION['user_name'], $_SESSION['user_role'], $log_desc);
-                $stmt_log->execute();
-            } else {
-                $message = "Error adding user: " . $conn->error;
-                $alert_type = "danger";
-            }
-        } elseif ($_POST['action'] === 'toggle_status') {
-            $role = $_POST['role'];
-            $user_id = $_POST['user_id'];
-            $status = $_POST['status'];
-            
-            // Update based on role
-            switch ($role) {
-                case 'responder':
-                    $stmt = $conn->prepare("UPDATE responder SET status = ? WHERE resp_id = ?");
-                    $stmt->bind_param("si", $status, $user_id);
-                    break;
-                case 'rescuer':
-                    $stmt = $conn->prepare("UPDATE rescuer SET status = ? WHERE resc_id = ?");
-                    $stmt->bind_param("si", $status, $user_id);
-                    break;
-            }
-            
-            if ($stmt->execute()) {
-                $message = "User status updated successfully!";
-                $alert_type = "success";
-            } else {
-                $message = "Error updating status: " . $conn->error;
-                $alert_type = "danger";
-            }
-        } elseif ($_POST['action'] === 'delete_user') {
-            $role = $_POST['role'];
-            $user_id = $_POST['user_id'];
-            
-            // Delete based on role (with safety checks)
-            switch ($role) {
-                case 'admin':
-                    // Don't allow deleting the last admin
-                    $admin_count = $conn->query("SELECT COUNT(*) as count FROM admin")->fetch_assoc()['count'];
-                    if ($admin_count > 1) {
-                        $stmt = $conn->prepare("DELETE FROM admin WHERE admin_id = ?");
-                        $stmt->bind_param("i", $user_id);
-                    } else {
-                        $message = "Cannot delete the last admin user!";
-                        $alert_type = "danger";
-                    }
-                    break;
-                case 'management':
-                    $stmt = $conn->prepare("DELETE FROM management WHERE mgmt_id = ?");
-                    $stmt->bind_param("i", $user_id);
-                    break;
-                case 'responder':
-                    $stmt = $conn->prepare("DELETE FROM responder WHERE resp_id = ?");
-                    $stmt->bind_param("i", $user_id);
-                    break;
-                case 'rescuer':
-                    $stmt = $conn->prepare("DELETE FROM rescuer WHERE resc_id = ?");
-                    $stmt->bind_param("i", $user_id);
-                    break;
-            }
-            
-            if (isset($stmt) && $stmt->execute()) {
-                $message = "User deleted successfully!";
-                $alert_type = "success";
-            } elseif (empty($message)) {
-                $message = "Error deleting user: " . $conn->error;
-                $alert_type = "danger";
-            }
+// Get all users from different tables
+$users = [];
+$error_message = '';
+
+// Get admin users
+try {
+    $result = $conn->query("SELECT admin_id as id, admin_name as name, admin_email as email, 'admin' as role, NULL as contact, NULL as status, created_at FROM admin");
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $row['status'] = 'active'; // Admins are always active
+            $users[] = $row;
         }
     }
+} catch (Exception $e) {
+    $error_message .= "Error fetching admin users: " . $e->getMessage() . "<br>";
 }
 
-// Get all users by role
-$users = [
-    'admin' => [],
-    'management' => [],
-    'responder' => [],
-    'rescuer' => []
+// Get management users
+try {
+    $result = $conn->query("SELECT mgmt_id as id, mgmt_name as name, mgmt_email as email, 'management' as role, NULL as contact, NULL as status, created_at FROM management");
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $row['status'] = 'active'; // Management are always active
+            $users[] = $row;
+        }
+    }
+} catch (Exception $e) {
+    $error_message .= "Error fetching management users: " . $e->getMessage() . "<br>";
+}
+
+// Get responder users
+try {
+    $result = $conn->query("SELECT resp_id as id, resp_name as name, resp_email as email, resp_contact as contact, 'responder' as role, status, created_at FROM responder");
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $users[] = $row;
+        }
+    }
+} catch (Exception $e) {
+    $error_message .= "Error fetching responder users: " . $e->getMessage() . "<br>";
+}
+
+// Get rescuer users
+try {
+    $result = $conn->query("SELECT resc_id as id, resc_name as name, resc_email as email, resc_contact as contact, 'rescuer' as role, status, created_at FROM rescuer");
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $users[] = $row;
+        }
+    }
+} catch (Exception $e) {
+    $error_message .= "Error fetching rescuer users: " . $e->getMessage() . "<br>";
+}
+
+// Sort users by role and name
+usort($users, function($a, $b) {
+    if ($a['role'] !== $b['role']) {
+        $role_order = ['admin' => 0, 'management' => 1, 'responder' => 2, 'rescuer' => 3];
+        return $role_order[$a['role']] - $role_order[$b['role']];
+    }
+    return strcmp($a['name'], $b['name']);
+});
+
+// Get statistics
+$stats = [
+    'total_users' => count($users),
+    'admin_count' => 0,
+    'management_count' => 0,
+    'responder_count' => 0,
+    'rescuer_count' => 0,
+    'active_responders' => 0,
+    'active_rescuers' => 0
 ];
 
-// Admin users
-$result = $conn->query("SELECT admin_id as user_id, admin_name as name, admin_email as email, created_at FROM admin ORDER BY created_at DESC");
-if ($result) {
-    while ($row = $result->fetch_assoc()) {
-        $row['role'] = 'admin';
-        $users['admin'][] = $row;
+foreach ($users as $user) {
+    $stats[$user['role'] . '_count']++;
+    if ($user['role'] === 'responder' && ($user['status'] ?? 'active') === 'active') {
+        $stats['active_responders']++;
     }
-}
-
-// Management users
-$result = $conn->query("SELECT mgmt_id as user_id, mgmt_name as name, mgmt_email as email, created_at FROM management ORDER BY created_at DESC");
-if ($result) {
-    while ($row = $result->fetch_assoc()) {
-        $row['role'] = 'management';
-        $users['management'][] = $row;
-    }
-}
-
-// Responder users
-$result = $conn->query("SELECT resp_id as user_id, resp_name as name, resp_email as email, resp_contact as contact, status, created_at FROM responder ORDER BY created_at DESC");
-if ($result) {
-    while ($row = $result->fetch_assoc()) {
-        $row['role'] = 'responder';
-        $users['responder'][] = $row;
-    }
-}
-
-// Rescuer users
-$result = $conn->query("SELECT resc_id as user_id, resc_name as name, resc_email as email, resc_contact as contact, status, created_at FROM rescuer ORDER BY created_at DESC");
-if ($result) {
-    while ($row = $result->fetch_assoc()) {
-        $row['role'] = 'rescuer';
-        $users['rescuer'][] = $row;
+    if ($user['role'] === 'rescuer' && ($user['status'] ?? 'active') === 'active') {
+        $stats['active_rescuers']++;
     }
 }
 ?>
@@ -171,485 +100,287 @@ if ($result) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Management - VitalWear Admin</title>
-    <link rel="stylesheet" href="../../../assets/css/styles.css">
-    <style>
-        .admin-header {
-            background: #dc3545;
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            transition: background-color 0.2s;
-        }
-        
-        .btn-primary { background: #007bff; color: white; }
-        .btn-danger { background: #dc3545; color: white; }
-        .btn-warning { background: #ffc107; color: black; }
-        .btn-success { background: #28a745; color: white; }
-        .btn-secondary { background: #6c757d; color: white; }
-        
-        .btn:hover { opacity: 0.9; }
-        
-        .users-container {
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-        }
-        
-        .role-section {
-            margin-bottom: 40px;
-        }
-        
-        .role-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #eee;
-        }
-        
-        .role-title {
-            font-size: 24px;
-            font-weight: bold;
-            color: #333;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .role-badge {
-            padding: 4px 12px;
-            border-radius: 15px;
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-        
-        .role-admin { background: #dc3545; color: white; }
-        .role-management { background: #007bff; color: white; }
-        .role-responder { background: #28a745; color: white; }
-        .role-rescuer { background: #ffc107; color: black; }
-        
-        .user-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        
-        .user-table th, .user-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        
-        .user-table th {
-            background: #f8f9fa;
-            font-weight: bold;
-        }
-        
-        .status-badge {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        
-        .status-active { background: #d4edda; color: #155724; }
-        .status-inactive { background: #f8d7da; color: #721c24; }
-        
-        .actions {
-            display: flex;
-            gap: 5px;
-            flex-wrap: wrap;
-        }
-        
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-        }
-        
-        .modal-content {
-            background-color: white;
-            margin: 5% auto;
-            padding: 30px;
-            border-radius: 10px;
-            width: 90%;
-            max-width: 500px;
-        }
-        
-        .form-group {
-            margin-bottom: 15px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        
-        .alert {
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-        }
-        
-        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .alert-danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        
-        .user-count {
-            background: #f8f9fa;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            color: #666;
-        }
-    </style>
+    <title>User Management - Admin</title>
+    <link rel="stylesheet" href="../../assets/css/admin.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <header class="admin-header">
-            <div>
-                <h1 style="margin: 0;">👥 User Management</h1>
-                <p style="margin: 5px 0 0 0; opacity: 0.9;">Manage all system users across roles</p>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">VitalWear Admin</div>
+                <div class="sidebar-subtitle">System Management</div>
             </div>
-            <div>
-                <a href="dashboard.php" class="btn btn-secondary">← Back to Dashboard</a>
-                <button class="btn btn-primary" onclick="openAddModal()">+ Add User</button>
-            </div>
-        </header>
-
-        <?php if ($message): ?>
-            <div class="alert alert-<?php echo $alert_type; ?>">
-                <?php echo $message; ?>
-            </div>
-        <?php endif; ?>
-
-        <div class="users-container">
-            <!-- Admin Users -->
-            <div class="role-section">
-                <div class="role-header">
-                    <div class="role-title">
-                        👑 Administrators
-                        <span class="role-badge role-admin">Admin</span>
-                        <span class="user-count"><?php echo count($users['admin']); ?> users</span>
-                    </div>
-                </div>
-                <table class="user-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Created</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($users['admin'] as $user): ?>
-                            <tr>
-                                <td><?php echo $user['user_id']; ?></td>
-                                <td><?php echo htmlspecialchars($user['name']); ?></td>
-                                <td><?php echo htmlspecialchars($user['email']); ?></td>
-                                <td><?php echo date('M j, Y', strtotime($user['created_at'])); ?></td>
-                                <td>
-                                    <div class="actions">
-                                        <form method="POST" style="display:inline;">
-                                            <input type="hidden" name="action" value="delete_user">
-                                            <input type="hidden" name="role" value="admin">
-                                            <input type="hidden" name="user_id" value="<?php echo $user['user_id']; ?>">
-                                            <button type="submit" class="btn btn-danger" onclick="return confirm('Delete this admin user?')" 
-                                                    <?php echo count($users['admin']) <= 1 ? 'disabled' : ''; ?>>
-                                                Delete
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Management Users -->
-            <div class="role-section">
-                <div class="role-header">
-                    <div class="role-title">
-                        📋 Management
-                        <span class="role-badge role-management">Management</span>
-                        <span class="user-count"><?php echo count($users['management']); ?> users</span>
-                    </div>
-                </div>
-                <table class="user-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Created</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($users['management'] as $user): ?>
-                            <tr>
-                                <td><?php echo $user['user_id']; ?></td>
-                                <td><?php echo htmlspecialchars($user['name']); ?></td>
-                                <td><?php echo htmlspecialchars($user['email']); ?></td>
-                                <td><?php echo date('M j, Y', strtotime($user['created_at'])); ?></td>
-                                <td>
-                                    <div class="actions">
-                                        <form method="POST" style="display:inline;">
-                                            <input type="hidden" name="action" value="delete_user">
-                                            <input type="hidden" name="role" value="management">
-                                            <input type="hidden" name="user_id" value="<?php echo $user['user_id']; ?>">
-                                            <button type="submit" class="btn btn-danger" onclick="return confirm('Delete this management user?')">Delete</button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Responder Users -->
-            <div class="role-section">
-                <div class="role-header">
-                    <div class="role-title">
-                        🚑 Responders
-                        <span class="role-badge role-responder">Responder</span>
-                        <span class="user-count"><?php echo count($users['responder']); ?> users</span>
-                    </div>
-                </div>
-                <table class="user-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Contact</th>
-                            <th>Status</th>
-                            <th>Created</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($users['responder'] as $user): ?>
-                            <tr>
-                                <td><?php echo $user['user_id']; ?></td>
-                                <td><?php echo htmlspecialchars($user['name']); ?></td>
-                                <td><?php echo htmlspecialchars($user['email']); ?></td>
-                                <td><?php echo htmlspecialchars($user['contact'] ?: 'N/A'); ?></td>
-                                <td>
-                                    <span class="status-badge status-<?php echo $user['status']; ?>">
-                                        <?php echo ucfirst($user['status']); ?>
-                                    </span>
-                                </td>
-                                <td><?php echo date('M j, Y', strtotime($user['created_at'])); ?></td>
-                                <td>
-                                    <div class="actions">
-                                        <?php if ($user['status'] === 'active'): ?>
-                                            <form method="POST" style="display:inline;">
-                                                <input type="hidden" name="action" value="toggle_status">
-                                                <input type="hidden" name="role" value="responder">
-                                                <input type="hidden" name="user_id" value="<?php echo $user['user_id']; ?>">
-                                                <input type="hidden" name="status" value="inactive">
-                                                <button type="submit" class="btn btn-warning">Deactivate</button>
-                                            </form>
-                                        <?php else: ?>
-                                            <form method="POST" style="display:inline;">
-                                                <input type="hidden" name="action" value="toggle_status">
-                                                <input type="hidden" name="role" value="responder">
-                                                <input type="hidden" name="user_id" value="<?php echo $user['user_id']; ?>">
-                                                <input type="hidden" name="status" value="active">
-                                                <button type="submit" class="btn btn-success">Activate</button>
-                                            </form>
-                                        <?php endif; ?>
-                                        <form method="POST" style="display:inline;">
-                                            <input type="hidden" name="action" value="delete_user">
-                                            <input type="hidden" name="role" value="responder">
-                                            <input type="hidden" name="user_id" value="<?php echo $user['user_id']; ?>">
-                                            <button type="submit" class="btn btn-danger" onclick="return confirm('Delete this responder?')">Delete</button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Rescuer Users -->
-            <div class="role-section">
-                <div class="role-header">
-                    <div class="role-title">
-                        🆘 Rescuers
-                        <span class="role-badge role-rescuer">Rescuer</span>
-                        <span class="user-count"><?php echo count($users['rescuer']); ?> users</span>
-                    </div>
-                </div>
-                <table class="user-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Contact</th>
-                            <th>Status</th>
-                            <th>Created</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($users['rescuer'] as $user): ?>
-                            <tr>
-                                <td><?php echo $user['user_id']; ?></td>
-                                <td><?php echo htmlspecialchars($user['name']); ?></td>
-                                <td><?php echo htmlspecialchars($user['email']); ?></td>
-                                <td><?php echo htmlspecialchars($user['contact'] ?: 'N/A'); ?></td>
-                                <td>
-                                    <span class="status-badge status-<?php echo $user['status']; ?>">
-                                        <?php echo ucfirst($user['status']); ?>
-                                    </span>
-                                </td>
-                                <td><?php echo date('M j, Y', strtotime($user['created_at'])); ?></td>
-                                <td>
-                                    <div class="actions">
-                                        <?php if ($user['status'] === 'active'): ?>
-                                            <form method="POST" style="display:inline;">
-                                                <input type="hidden" name="action" value="toggle_status">
-                                                <input type="hidden" name="role" value="rescuer">
-                                                <input type="hidden" name="user_id" value="<?php echo $user['user_id']; ?>">
-                                                <input type="hidden" name="status" value="inactive">
-                                                <button type="submit" class="btn btn-warning">Deactivate</button>
-                                            </form>
-                                        <?php else: ?>
-                                            <form method="POST" style="display:inline;">
-                                                <input type="hidden" name="action" value="toggle_status">
-                                                <input type="hidden" name="role" value="rescuer">
-                                                <input type="hidden" name="user_id" value="<?php echo $user['user_id']; ?>">
-                                                <input type="hidden" name="status" value="active">
-                                                <button type="submit" class="btn btn-success">Activate</button>
-                                            </form>
-                                        <?php endif; ?>
-                                        <form method="POST" style="display:inline;">
-                                            <input type="hidden" name="action" value="delete_user">
-                                            <input type="hidden" name="role" value="rescuer">
-                                            <input type="hidden" name="user_id" value="<?php echo $user['user_id']; ?>">
-                                            <button type="submit" class="btn btn-danger" onclick="return confirm('Delete this rescuer?')">Delete</button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add User Modal -->
-    <div id="addModal" class="modal">
-        <div class="modal-content">
-            <h2>Add New User</h2>
-            <form method="POST">
-                <input type="hidden" name="action" value="add_user">
-                
-                <div class="form-group">
-                    <label for="role">Role:</label>
-                    <select id="role" name="role" required>
-                        <option value="">Select Role</option>
-                        <option value="admin">Admin</option>
-                        <option value="management">Management</option>
-                        <option value="responder">Responder</option>
-                        <option value="rescuer">Rescuer</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="name">Name:</label>
-                    <input type="text" id="name" name="name" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="email">Email:</label>
-                    <input type="email" id="email" name="email" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="password">Password:</label>
-                    <input type="password" id="password" name="password" required>
-                </div>
-                
-                <div class="form-group" id="contactGroup" style="display:none;">
-                    <label for="contact">Contact Number:</label>
-                    <input type="text" id="contact" name="contact">
-                </div>
-                
-                <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('addModal')">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Add User</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <script>
-        function openAddModal() {
-            document.getElementById('addModal').style.display = 'block';
-        }
-        
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-        
-        // Show/hide contact field based on role
-        document.getElementById('role').addEventListener('change', function() {
-            const contactGroup = document.getElementById('contactGroup');
-            const role = this.value;
             
-            if (role === 'responder' || role === 'rescuer') {
-                contactGroup.style.display = 'block';
-            } else {
-                contactGroup.style.display = 'none';
-            }
-        });
-        
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
-            }
-        }
-    </script>
+            <nav class="nav-menu">
+                <div class="nav-group">
+                    <a href="dashboard.php" class="nav-item">
+                        🏠 Dashboard
+                    </a>
+                </div>
+                
+                <div class="nav-group">
+                    <div class="nav-group-title">User Management</div>
+                    <div class="nav-group-items">
+                        <a href="users.php" class="nav-item active">
+                            👥 Staff Directory
+                        </a>
+                        <a href="users/view_management.php" class="nav-item">
+                            👨‍💼 Management
+                        </a>
+                        <a href="users/view_responders.php" class="nav-item">
+                            🚑 Responders
+                        </a>
+                        <a href="users/view_rescuers.php" class="nav-item">
+                            🆘 Rescuers
+                        </a>
+                        <a href="users/view_admins.php" class="nav-item">
+                            👨‍💻 Admins
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="nav-group">
+                    <div class="nav-group-title">Reports</div>
+                    <div class="nav-group-items">
+                        <a href="system_reports.php" class="nav-item">
+                            📊 System Reports
+                        </a>
+                        <a href="vitals_analytics.php" class="nav-item">
+                            ❤️ Vital Analytics
+                        </a>
+                        <a href="audit_log.php" class="nav-item">
+                            📋 Activity Log
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="nav-group">
+                    <div class="nav-group-title">Monitoring</div>
+                    <div class="nav-group-items">
+                        <a href="device_incidents.php" class="nav-item">
+                            📦 Device Overview
+                        </a>
+                        <a href="vitals.php" class="nav-item">
+                            👤 User Activity
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Top Navigation -->
+            <header class="navbar">
+                <div>
+                    <h1 class="navbar-brand">User Management</h1>
+                </div>
+                <div class="navbar-actions">
+                    <span class="text-muted">Welcome, <?php echo htmlspecialchars($_SESSION['user_name']); ?></span>
+                    <a href="/VitalWear-1/api/auth/logout.php" class="btn btn-secondary">Logout</a>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="content">
+                <div class="content-header">
+                    <h1 class="content-title">Staff Directory</h1>
+                    <p class="content-subtitle">View all system users and their information</p>
+                </div>
+
+                <!-- User Statistics -->
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-icon">👥</div>
+                        <div class="metric-value"><?php echo number_format($stats['total_users']); ?></div>
+                        <div class="metric-label">Total Users</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-icon">👨‍💼</div>
+                        <div class="metric-value"><?php echo number_format($stats['management_count']); ?></div>
+                        <div class="metric-label">Management</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-icon">🚑</div>
+                        <div class="metric-value"><?php echo number_format($stats['responder_count']); ?></div>
+                        <div class="metric-label">Responders</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-icon">🆘</div>
+                        <div class="metric-value"><?php echo number_format($stats['rescuer_count']); ?></div>
+                        <div class="metric-label">Rescuers</div>
+                    </div>
+                </div>
+
+                <!-- Additional Stats -->
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-icon">👨‍💻</div>
+                        <div class="metric-value"><?php echo number_format($stats['admin_count']); ?></div>
+                        <div class="metric-label">Admins</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-icon">✅</div>
+                        <div class="metric-value"><?php echo number_format($stats['active_responders']); ?></div>
+                        <div class="metric-label">Active Responders</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-icon">✅</div>
+                        <div class="metric-value"><?php echo number_format($stats['active_rescuers']); ?></div>
+                        <div class="metric-label">Active Rescuers</div>
+                    </div>
+                </div>
+
+                <!-- Error Display -->
+                <?php if (!empty($error_message)): ?>
+                <div class="card" style="margin-bottom: 2rem;">
+                    <div class="card-header" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%); color: var(--danger);">
+                        Database Connection Issues
+                    </div>
+                    <div class="card-body">
+                        <div style="color: var(--danger); padding: 1rem; background: rgba(239, 68, 68, 0.05); border-radius: var(--radius); border: 1px solid rgba(239, 68, 68, 0.2);">
+                            <?php echo $error_message; ?>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <!-- User List -->
+                <div class="card">
+                    <div class="card-header">
+                        All Users Directory (<?php echo count($users); ?> users found)
+                    </div>
+                    <div class="card-body">
+                        <div class="table" style="overflow-x: auto;">
+                            <table style="width: 100%; min-width: 800px;">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 20%;">Name</th>
+                                        <th style="width: 25%;">Email</th>
+                                        <th style="width: 15%;">Role</th>
+                                        <th style="width: 15%;">Contact</th>
+                                        <th style="width: 10%;">Status</th>
+                                        <th style="width: 15%;">Joined</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if (!empty($users)): ?>
+                                        <?php foreach ($users as $user): ?>
+                                        <tr style="border-bottom: 1px solid var(--border);">
+                                            <td style="padding: 1rem; vertical-align: middle;">
+                                                <div style="font-weight: 600; color: var(--text);">
+                                                    <?php echo htmlspecialchars($user['name'] ?? 'N/A'); ?>
+                                                </div>
+                                            </td>
+                                            <td style="padding: 1rem; vertical-align: middle;">
+                                                <div style="color: var(--text-secondary); word-break: break-word;">
+                                                    <?php echo htmlspecialchars($user['email'] ?? 'N/A'); ?>
+                                                </div>
+                                            </td>
+                                            <td style="padding: 1rem; vertical-align: middle;">
+                                                <span class="badge badge-<?php echo $user['role']; ?>">
+                                                    <?php 
+                                                    $role_display = ucfirst($user['role']);
+                                                    echo $role_display === 'Management' ? 'Staff' : $role_display;
+                                                    ?>
+                                                </span>
+                                            </td>
+                                            <td style="padding: 1rem; vertical-align: middle;">
+                                                <div style="color: var(--text-secondary);">
+                                                    <?php 
+                                                    if (!empty($user['contact']) && $user['contact'] !== 'NULL') {
+                                                        echo htmlspecialchars($user['contact']);
+                                                    } else {
+                                                        echo '<span style="color: var(--muted); font-style: italic;">Not provided</span>';
+                                                    }
+                                                    ?>
+                                                </div>
+                                            </td>
+                                            <td style="padding: 1rem; vertical-align: middle;">
+                                                <span class="badge badge-<?php echo ($user['status'] ?? 'active') === 'active' ? 'success' : 'warning'; ?>">
+                                                    <?php echo htmlspecialchars(ucfirst($user['status'] ?? 'active')); ?>
+                                                </span>
+                                            </td>
+                                            <td style="padding: 1rem; vertical-align: middle;">
+                                                <div style="color: var(--muted); font-size: 0.875rem; font-family: 'Inter', monospace;">
+                                                    <?php 
+                                                    if (!empty($user['created_at']) && $user['created_at'] !== 'NULL') {
+                                                        echo date('M j, Y', strtotime($user['created_at']));
+                                                    } else {
+                                                        echo 'N/A';
+                                                    }
+                                                    ?>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td colspan="6" style="text-align: center; padding: 3rem; color: var(--muted);">
+                                                <div style="font-size: 1.1rem; margin-bottom: 0.5rem;">No users found in the system</div>
+                                                <div style="font-size: 0.9rem;">Please check the database connection or add users through the appropriate channels</div>
+                                            </td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Info -->
+                <div class="card" style="margin-top: 2rem;">
+                    <div class="card-header">
+                        System Information
+                    </div>
+                    <div class="card-body">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+                            <div>
+                                <h4 style="color: var(--text); margin-bottom: 1rem;">User Roles Overview</h4>
+                                <ul style="list-style: none; padding: 0;">
+                                    <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">
+                                        <strong>Admins:</strong> System administrators with full access
+                                    </li>
+                                    <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">
+                                        <strong>Management:</strong> Staff who manage devices and operations
+                                    </li>
+                                    <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">
+                                        <strong>Responders:</strong> First responders who handle incidents
+                                    </li>
+                                    <li style="padding: 0.5rem 0;">
+                                        <strong>Rescuers:</strong> Medical rescue team members
+                                    </li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 style="color: var(--text); margin-bottom: 1rem;">Status Information</h4>
+                                <ul style="list-style: none; padding: 0;">
+                                    <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">
+                                        <strong>Active:</strong> User is currently active in the system
+                                    </li>
+                                    <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">
+                                        <strong>Inactive:</strong> User account is temporarily disabled
+                                    </li>
+                                    <li style="padding: 0.5rem 0;">
+                                        <strong>Contact:</strong> Phone number for field staff members
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
 </body>
 </html>

@@ -1,10 +1,10 @@
 <?php
 session_start();
-require_once '../../../database/connection.php';
+require_once '../../database/connection.php';
 
 // Check if admin user is logged in
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
-    header('Location: ../../login.html');
+    header('Location: /VitalWear-1/login.html');
     exit();
 }
 
@@ -49,10 +49,6 @@ if ($result) {
         $recent_activities[] = $row;
     }
 }
-
-// Get system health metrics
-$database_status = $conn->ping() ? 'Connected' : 'Disconnected';
-$system_uptime = 'Running'; // Could be enhanced with actual uptime tracking
 ?>
 
 <!DOCTYPE html>
@@ -61,297 +57,193 @@ $system_uptime = 'Running'; // Could be enhanced with actual uptime tracking
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - VitalWear</title>
-    <link rel="stylesheet" href="../../../assets/css/styles.css">
-    <style>
-        .admin-header {
-            background: #dc3545;
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            transition: background-color 0.2s;
-        }
-        
-        .btn-primary { background: #007bff; color: white; }
-        .btn-danger { background: #dc3545; color: white; }
-        .btn-warning { background: #ffc107; color: black; }
-        .btn-success { background: #28a745; color: white; }
-        .btn-secondary { background: #6c757d; color: white; }
-        
-        .btn:hover { opacity: 0.9; }
-        
-        .admin-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .admin-card {
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            border-left: 4px solid #dc3545;
-            text-align: center;
-        }
-        
-        .admin-number {
-            font-size: 36px;
-            font-weight: bold;
-            color: #dc3545;
-            margin-bottom: 10px;
-        }
-        
-        .admin-label {
-            color: #666;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .functions-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
-            margin-bottom: 30px;
-        }
-        
-        .function-card {
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
-        }
-        
-        .function-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-        }
-        
-        .function-icon {
-            font-size: 48px;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-        
-        .function-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 10px;
-            text-align: center;
-        }
-        
-        .function-description {
-            color: #666;
-            margin-bottom: 15px;
-            text-align: center;
-            font-size: 14px;
-        }
-        
-        .system-health {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-        }
-        
-        .health-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .health-item:last-child {
-            border-bottom: none;
-        }
-        
-        .status-good { color: #28a745; font-weight: bold; }
-        .status-warning { color: #ffc107; font-weight: bold; }
-        .status-danger { color: #dc3545; font-weight: bold; }
-        
-        .recent-activities {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        
-        .activity-item {
-            padding: 10px 0;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .activity-item:last-child {
-            border-bottom: none;
-        }
-        
-        .role-badge {
-            padding: 2px 6px;
-            border-radius: 10px;
-            font-size: 11px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-        
-        .role-admin { background: #dc3545; color: white; }
-        .role-management { background: #007bff; color: white; }
-        .role-responder { background: #28a745; color: white; }
-        .role-rescuer { background: #ffc107; color: black; }
-    </style>
+    <link rel="stylesheet" href="../../assets/css/admin.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <header class="admin-header">
-            <div>
-                <h1 style="margin: 0;">🔐 Admin Dashboard</h1>
-                <p style="margin: 5px 0 0 0; opacity: 0.9;">System Administration & Oversight</p>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">VitalWear Admin</div>
+                <div class="sidebar-subtitle">System Management</div>
             </div>
-            <div>
-                <div style="color: white; font-size: 14px; margin-bottom: 10px;">
-                    Admin: <?php echo htmlspecialchars($_SESSION['user_name']); ?>
+            
+            <nav class="nav-menu">
+                <div class="nav-group">
+                    <a href="dashboard.php" class="nav-item active">
+                        🏠 Dashboard
+                    </a>
                 </div>
-                <a href="../../../api/auth/logout.php" class="btn btn-secondary">Logout</a>
-            </div>
-        </header>
-
-        <div class="admin-grid">
-            <div class="admin-card">
-                <div class="admin-number"><?php echo $total_users; ?></div>
-                <div class="admin-label">Total Users</div>
-            </div>
-            
-            <div class="admin-card">
-                <div class="admin-number"><?php echo $total_devices; ?></div>
-                <div class="admin-label">Total Devices</div>
-            </div>
-            
-            <div class="admin-card">
-                <div class="admin-number"><?php echo $total_incidents; ?></div>
-                <div class="admin-label">Total Incidents</div>
-            </div>
-            
-            <div class="admin-card">
-                <div class="admin-number"><?php echo $total_activities; ?></div>
-                <div class="admin-label">System Activities</div>
-            </div>
-        </div>
-
-        <div class="functions-grid">
-            <div class="function-card">
-                <div class="function-icon">👥</div>
-                <h3 class="function-title">User Management</h3>
-                <p class="function-description">Manage all system users across all roles</p>
-                <div style="text-align: center;">
-                    <a href="users.php" class="btn btn-danger">Manage Users</a>
-                </div>
-            </div>
-            
-            <div class="function-card">
-                <div class="function-icon">📋</div>
-                <h3 class="function-title">Audit Logs</h3>
-                <p class="function-description">View complete system audit trail</p>
-                <div style="text-align: center;">
-                    <a href="audit_logs.php" class="btn btn-danger">View Logs</a>
-                </div>
-            </div>
-            
-            <div class="function-card">
-                <div class="function-icon">📊</div>
-                <h3 class="function-title">System Reports</h3>
-                <p class="function-description">Generate comprehensive system reports</p>
-                <div style="text-align: center;">
-                    <a href="reports.php" class="btn btn-danger">Generate Reports</a>
-                </div>
-            </div>
-            
-            <div class="function-card">
-                <div class="function-icon">📦</div>
-                <h3 class="function-title">Device Oversight</h3>
-                <p class="function-description">Monitor all device assignments and status</p>
-                <div style="text-align: center;">
-                    <a href="devices.php" class="btn btn-danger">View Devices</a>
-                </div>
-            </div>
-            
-            <div class="function-card">
-                <div class="function-icon">⚙️</div>
-                <h3 class="function-title">System Settings</h3>
-                <p class="function-description">Configure system-wide settings</p>
-                <div style="text-align: center;">
-                    <a href="#" class="btn btn-secondary">Coming Soon</a>
-                </div>
-            </div>
-            
-            <div class="function-card">
-                <div class="function-icon">🔧</div>
-                <h3 class="function-title">System Maintenance</h3>
-                <p class="function-description">Perform system maintenance tasks</p>
-                <div style="text-align: center;">
-                    <a href="#" class="btn btn-warning">Maintenance</a>
-                </div>
-            </div>
-        </div>
-
-        <div class="system-health">
-            <h3 style="margin: 0 0 20px 0;">🏥 System Health</h3>
-            <div class="health-item">
-                <span>Database Connection</span>
-                <span class="status-good"><?php echo $database_status; ?></span>
-            </div>
-            <div class="health-item">
-                <span>System Status</span>
-                <span class="status-good"><?php echo $system_uptime; ?></span>
-            </div>
-            <div class="health-item">
-                <span>Last Backup</span>
-                <span class="status-warning">Not Available</span>
-            </div>
-            <div class="health-item">
-                <span>Active Sessions</span>
-                <span class="status-good">Normal</span>
-            </div>
-        </div>
-
-        <?php if (!empty($recent_activities)): ?>
-        <div class="recent-activities">
-            <h3 style="margin: 0 0 20px 0;">📝 Recent System Activities</h3>
-            <?php foreach ($recent_activities as $activity): ?>
-                <div class="activity-item">
-                    <div>
-                        <strong><?php echo htmlspecialchars($activity['user_name'] ?? 'System'); ?></strong>
-                        <span class="role-badge role-<?php echo $activity['user_role']; ?>">
-                            <?php echo $activity['user_role']; ?>
-                        </span>
-                        - <?php echo htmlspecialchars($activity['description'] ?? 'No description'); ?>
-                    </div>
-                    <div style="color: #999; font-size: 12px;">
-                        <?php echo date('M j, H:i', strtotime($activity['created_at'])); ?>
+                
+                <div class="nav-group">
+                    <div class="nav-group-title">User Management</div>
+                    <div class="nav-group-items">
+                        <a href="users.php" class="nav-item">
+                            👥 Staff Directory
+                        </a>
+                        <a href="users/view_management.php" class="nav-item">
+                            👨‍💼 Management
+                        </a>
+                        <a href="users/view_responders.php" class="nav-item">
+                            🚑 Responders
+                        </a>
+                        <a href="users/view_rescuers.php" class="nav-item">
+                            🆘 Rescuers
+                        </a>
+                        <a href="users/view_admins.php" class="nav-item">
+                            👨‍💻 Admins
+                        </a>
                     </div>
                 </div>
-            <?php endforeach; ?>
-        </div>
-        <?php endif; ?>
+                
+                <div class="nav-group">
+                    <div class="nav-group-title">Reports</div>
+                    <div class="nav-group-items">
+                        <a href="system_reports.php" class="nav-item">
+                            📊 System Reports
+                        </a>
+                        <a href="vitals_analytics.php" class="nav-item">
+                            ❤️ Vital Analytics
+                        </a>
+                        <a href="audit_log.php" class="nav-item">
+                            📋 Activity Log
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="nav-group">
+                    <div class="nav-group-title">Monitoring</div>
+                    <div class="nav-group-items">
+                        <a href="device_incidents.php" class="nav-item">
+                            📦 Device Overview
+                        </a>
+                        <a href="vitals.php" class="nav-item">
+                            👤 User Activity
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Top Navigation -->
+            <header class="navbar">
+                <div>
+                    <h1 class="navbar-brand">Admin Dashboard</h1>
+                </div>
+                <div class="navbar-actions">
+                    <span class="text-muted">Welcome, <?php echo htmlspecialchars($_SESSION['user_name']); ?></span>
+                    <a href="/VitalWear-1/api/auth/logout.php" class="btn btn-secondary">Logout</a>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="content">
+                <div class="content-header">
+                    <h1 class="content-title">System Overview</h1>
+                    <p class="content-subtitle">Monitor and manage the VitalWear system</p>
+                </div>
+
+                <!-- Metrics Grid -->
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-icon">👥</div>
+                        <div class="metric-value"><?php echo number_format($total_users); ?></div>
+                        <div class="metric-label">Total Users</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-icon">📦</div>
+                        <div class="metric-value"><?php echo number_format($total_devices); ?></div>
+                        <div class="metric-label">Devices</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-icon">🚨</div>
+                        <div class="metric-value"><?php echo number_format($total_incidents); ?></div>
+                        <div class="metric-label">Incidents</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-icon">📊</div>
+                        <div class="metric-value"><?php echo number_format($total_activities); ?></div>
+                        <div class="metric-label">Activities</div>
+                    </div>
+                </div>
+
+                <!-- Recent Activities -->
+                <div class="card">
+                    <div class="card-header">
+                        Recent System Activities
+                    </div>
+                    <div class="card-body">
+                        <?php if (!empty($recent_activities)): ?>
+                            <div class="table">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>User</th>
+                                            <th>Role</th>
+                                            <th>Action</th>
+                                            <th>Time</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($recent_activities as $activity): ?>
+                                        <tr>
+                                            <td><?php echo htmlspecialchars($activity['user_name'] ?? 'System'); ?></td>
+                                            <td>
+                                                <span class="badge badge-<?php echo $activity['user_role']; ?>">
+                                                    <?php echo htmlspecialchars(ucfirst($activity['user_role'])); ?>
+                                                </span>
+                                            </td>
+                                            <td><?php echo htmlspecialchars($activity['description']); ?></td>
+                                            <td>
+                                                <span class="text-muted">
+                                                    <?php echo date('M j, H:i', strtotime($activity['created_at'])); ?>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <?php else: ?>
+                            <div class="text-center text-muted">
+                                <p>No recent activities found.</p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card" style="margin-top: 2rem;">
+                    <div class="card-header">
+                        Quick Actions
+                    </div>
+                    <div class="card-body">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                            <a href="users.php" class="btn btn-primary">
+                                👥 Manage Users
+                            </a>
+                            <a href="device_incidents.php" class="btn btn-secondary">
+                                📦 View Devices
+                            </a>
+                            <a href="system_reports.php" class="btn btn-secondary">
+                                📊 Generate Reports
+                            </a>
+                            <a href="audit_log.php" class="btn btn-secondary">
+                                📋 View Activity Log
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 </body>
 </html>

@@ -199,7 +199,7 @@ if ($result) {
                 </div>
                 <div style="text-align: right;">
                     <div class="user-info">Welcome, <?php echo htmlspecialchars($_SESSION['user_name']); ?></div>
-                    <a href="../../../api/auth/logout.php" class="logout-btn">Logout</a>
+                    <a href="/VitalWear-1/api/auth/logout.php" class="btn btn-secondary">Logout</a>
                 </div>
             </div>
         </header>

@@ -10,19 +10,19 @@ document.addEventListener('DOMContentLoaded', function() {
     // Redirect based on user role
     switch(userRole) {
       case 'admin':
-        window.location.href = 'roles/admin/dashboard.php';
+        window.location.href = '/VitalWear-1/roles/admin/dashboard.php';
         break;
       case 'management':
-        window.location.href = 'roles/management/dashboard.php';
+        window.location.href = '/VitalWear-1/roles/management/dashboard.php';
         break;
       case 'responder':
-        window.location.href = 'roles/responder/dashboard.php';
+        window.location.href = '/VitalWear-1/roles/responder/dashboard.php';
         break;
       case 'rescuer':
-        window.location.href = 'roles/rescuer/dashboard.php';
+        window.location.href = '/VitalWear-1/roles/rescuer/dashboard.php';
         break;
       default:
-        window.location.href = 'roles/responder/dashboard.php';
+        window.location.href = '/VitalWear-1/roles/responder/dashboard.php';
     }
     return;
   }
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
       formData.append('email', email);
       formData.append('password', password);
 
-      const response = await fetch('api/auth/login.php', {
+      const response = await fetch('/VitalWear-1/api/auth/login.php', {
         method: 'POST',
         body: formData
       });
@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function() {
           formData.append('user_name', data.user_name);
           formData.append('user_role', data.user_role);
           
-          await fetch('api/auth/session_bridge.php', {
+          await fetch('/VitalWear-1/api/auth/session_bridge.php', {
             method: 'POST',
             body: formData
           });
@@ -86,19 +86,19 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
           switch(data.user_role) {
             case 'admin':
-              window.location.href = 'roles/admin/dashboard.php';
+              window.location.href = '/VitalWear-1/roles/admin/dashboard.php';
               break;
             case 'management':
-              window.location.href = 'roles/management/dashboard.php';
+              window.location.href = '/VitalWear-1/roles/management/dashboard.php';
               break;
             case 'responder':
-              window.location.href = 'roles/responder/dashboard.php';
+              window.location.href = '/VitalWear-1/roles/responder/dashboard.php';
               break;
             case 'rescuer':
-              window.location.href = 'roles/rescuer/dashboard.php';
+              window.location.href = '/VitalWear-1/roles/rescuer/dashboard.php';
               break;
             default:
-              window.location.href = 'roles/responder/dashboard.php';
+              window.location.href = '/VitalWear-1/roles/responder/dashboard.php';
           }
         }, 1000);
       } else if (data.status === 'empty') {
