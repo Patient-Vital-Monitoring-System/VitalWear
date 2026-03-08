@@ -33,13 +33,13 @@ Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_
 
 <nav id="sidebar">
 
-<a href="roles/responder/dashboard.php"><i class="fa fa-gauge"></i> Dashboard</a>
-<a href="roles/responder/device.php"><i class="fa fa-tablet"></i> My Device</a>
-<a href="roles/responder/active_incidents.php"><i class="fa fa-exclamation-circle"></i> Active Incidents</a>
-<a href="roles/responder/create_incident.php"><i class="fa fa-plus-circle"></i> Create Incident</a>
-<a href="roles/responder/record_vitals.php"><i class="fa fa-heartbeat"></i> Record Vitals</a>
-<a href="roles/responder/transfer_incident.php"><i class="fa fa-exchange"></i> Transfer to Rescuer</a>
-<a href="roles/responder/incident_history.php"><i class="fa fa-history"></i> Incident History</a>
+<a href="dashboard.php"><i class="fa fa-gauge"></i> Dashboard</a>
+<a href="device.php"><i class="fa fa-tablet"></i> My Device</a>
+<a href="active_incidents.php"><i class="fa fa-exclamation-circle"></i> Active Incidents</a>
+<a href="create_incident.php"><i class="fa fa-plus-circle"></i> Create Incident</a>
+<a href="record_vitals.php"><i class="fa fa-heartbeat"></i> Record Vitals</a>
+<a href="transfer_incident.php"><i class="fa fa-exchange"></i> Transfer to Rescuer</a>
+<a href="incident_history.php"><i class="fa fa-history"></i> Incident History</a>
 <a href="../../api/auth/logout.php"><i class="fa fa-sign-out"></i> Logout</a>
 
 
@@ -178,27 +178,27 @@ Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_
 
 <nav class="bottom-nav">
 
-<a href="roles/responder/dashboard.php" class="bottom-item">
+<a href="dashboard.php" class="bottom-item">
 <i class="fa fa-gauge"></i>
 <span>Home</span>
 </a>
 
-<a href="roles/responder/device.php" class="bottom-item">
+<a href="device.php" class="bottom-item">
 <i class="fa fa-tablet"></i>
 <span>Device</span>
 </a>
 
-<a href="roles/responder/create_incident.php" class="bottom-item">
+<a href="create_incident.php" class="bottom-item">
 <i class="fa fa-plus-circle"></i>
 <span>Incident</span>
 </a>
 
-<a href="roles/responder/record_vitals.php" class="bottom-item">
+<a href="record_vitals.php" class="bottom-item">
 <i class="fa fa-heartbeat"></i>
 <span>Vitals</span>
 </a>
 
-<a href="roles/responder/incident_history.php" class="bottom-item">
+<a href="incident_history.php" class="bottom-item">
 <i class="fa fa-history"></i>
 <span>History</span>
 </a>
