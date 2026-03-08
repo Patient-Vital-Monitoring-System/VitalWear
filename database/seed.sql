@@ -19,20 +19,20 @@ INSERT INTO admin (admin_name, admin_email, admin_password) VALUES
 ('Audit Admin', 'admin2@vitalwear.com', MD5('admin123'));
 
 -- Insert Responder users
-INSERT INTO responder (resp_name, resp_email, resp_password, resp_contact) VALUES
-('Juan Dela Cruz', 'juan@responder.com', MD5('resp123'), '09123456789'),
-('Mark Villanueva', 'mark@responder.com', MD5('resp123'), '09112223344'),
-('Leo Ramirez', 'leo@responder.com', MD5('resp123'), '09223334455'),
-('Pedro Santos', 'pedro@responder.com', MD5('resp123'), '09334445566'),
-('John Smith', 'john@responder.com', MD5('resp123'), '09445556677');
+INSERT INTO responder (resp_name, resp_email, resp_password, resp_contact, status) VALUES
+('Juan Dela Cruz', 'juan@responder.com', MD5('resp123'), '09123456789', 'active'),
+('Mark Villanueva', 'mark@responder.com', MD5('resp123'), '09112223344', 'active'),
+('Leo Ramirez', 'leo@responder.com', MD5('resp123'), '09223334455', 'active'),
+('Pedro Santos', 'pedro@responder.com', MD5('resp123'), '09334445566', 'active'),
+('John Smith', 'john@responder.com', MD5('resp123'), '09445556677', 'active');
 
 -- Insert Rescuer users
-INSERT INTO rescuer (resc_name, resc_email, resc_password, resc_contact) VALUES
-('Maria Santos', 'maria@rescuer.com', MD5('resc123'), '09987654321'),
-('Ana Lopez', 'ana@rescuer.com', MD5('resc123'), '09887776655'),
-('David Garcia', 'david@rescuer.com', MD5('resc123'), '09778889900'),
-('Sarah Wilson', 'sarah@rescuer.com', MD5('resc123'), '09669990011'),
-('Michael Brown', 'michael@rescuer.com', MD5('resc123'), '09550011223');
+INSERT INTO rescuer (resc_name, resc_email, resc_password, resc_contact, status) VALUES
+('Maria Santos', 'maria@rescuer.com', MD5('resc123'), '09987654321', 'active'),
+('Ana Lopez', 'ana@rescuer.com', MD5('resc123'), '09887776655', 'active'),
+('David Garcia', 'david@rescuer.com', MD5('resc123'), '09778889900', 'active'),
+('Sarah Wilson', 'sarah@rescuer.com', MD5('resc123'), '09669990011', 'active'),
+('Michael Brown', 'michael@rescuer.com', MD5('resc123'), '09550011223', 'active');
 
 -- Insert Devices
 INSERT INTO device (dev_serial, dev_status) VALUES
@@ -57,29 +57,20 @@ INSERT INTO patient (pat_name, birthdate, contact_number) VALUES
 ('Miguel Hernandez', '1990-12-01', '09335556677'),
 ('Antonio Garcia', '1982-07-18', '09446667788');
 
--- Insert Incidents
+-- Insert Incidents (using 'ongoing' status)
 INSERT INTO incident (log_id, pat_id, resp_id, status, start_time) VALUES
-(1, 1, 1, 'active', NOW() - INTERVAL 2 HOUR),
-(2, 2, 2, 'pending', NOW() - INTERVAL 5 HOUR),
-(3, 3, 3, 'transferred', NOW() - INTERVAL 1 DAY),
-(1, 4, 1, 'completed', NOW() - INTERVAL 2 DAY),
-(2, 5, 2, 'resolved', NOW() - INTERVAL 3 DAY);
+(1, 1, 1, 'ongoing', NOW() - INTERVAL 2 HOUR),
+(2, 2, 2, 'ongoing', NOW() - INTERVAL 5 HOUR),
+(3, 3, 3, 'transferred', NOW() - INTERVAL 1 DAY);
 
--- Update incidents to transferred
+-- Update incident to transferred
 UPDATE incident SET resc_id = 1, status = 'transferred' WHERE incident_id = 3;
-UPDATE incident SET resc_id = 2 WHERE incident_id = 4;
 
--- Update incidents to completed
-UPDATE incident SET status = 'completed', end_time = NOW() - INTERVAL 1 DAY WHERE incident_id = 4;
-UPDATE incident SET status = 'resolved', end_time = NOW() - INTERVAL 2 DAY WHERE incident_id = 5;
-
--- Insert Vital Statistics
+-- Insert Vital Statistics (using enum values for recorded_by)
 INSERT INTO vitalstat (incident_id, recorded_by, bp_systolic, bp_diastolic, heart_rate, oxygen_level, recorded_at) VALUES
 (1, 'responder', 120, 80, 75, 98, NOW() - INTERVAL 1 HOUR),
 (2, 'responder', 135, 85, 88, 96, NOW() - INTERVAL 4 HOUR),
 (3, 'responder', 140, 90, 95, 94, NOW() - INTERVAL 12 HOUR),
-(4, 'rescuer', 118, 78, 72, 99, NOW() - INTERVAL 1 DAY),
-(5, 'rescuer', 130, 82, 85, 97, NOW() - INTERVAL 2 DAY),
 (1, 'rescuer', 115, 75, 70, 99, NOW() - INTERVAL 30 MINUTE),
 (3, 'rescuer', 125, 80, 78, 97, NOW() - INTERVAL 6 HOUR);
 
@@ -99,8 +90,13 @@ INSERT INTO activity_log (user_name, user_role, action_type, module, description
 ('Rescuer', 'rescuer', 'complete_incident', 'incident', 'Emergency incidents successfully completed'),
 ('Operations Manager', 'management', 'return_device', 'device', 'Devices returned and verified');
 
--- Update device status after return
-UPDATE device SET dev_status = 'available' WHERE dev_id IN (1, 2);
+-- Insert Users table (unified)
+INSERT INTO users (email, password, role, name, status, source_table, source_id) VALUES
+('admin1@vitalwear.com', MD5('admin123'), 'admin', 'System Admin', 'active', 'admin', 1),
+('ops@vitalwear.com', MD5('manager123'), 'management', 'Operations Manager', 'active', 'management', 1),
+('juan@responder.com', MD5('resp123'), 'responder', 'Juan Dela Cruz', 'active', 'responder', 1),
+('mark@responder.com', MD5('resp123'), 'responder', 'Mark Villanueva', 'active', 'responder', 2),
+('maria@rescuer.com', MD5('resc123'), 'rescuer', 'Maria Santos', 'active', 'rescuer', 1);
 
 -- ============================================
 -- QUICK LOGIN REFERENCE

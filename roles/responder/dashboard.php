@@ -47,6 +47,13 @@ Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_
 
 <main class="container" style="display:block;overflow-y:auto;">
 
+<!-- Quick Create Incident Button -->
+<div style="margin-bottom:20px;width:100%;">
+    <a href="create_incident.php" style="display:inline-block;width:100%;padding:15px;background:#dd4c56;color:white;text-decoration:none;border-radius:15px;font-weight:bold;font-size:16px;text-align:center;box-shadow:0 5px 15px rgba(221,76,86,0.3);">
+        <i class="fa fa-plus-circle"></i> Quick Create Incident
+    </a>
+</div>
+
 <!-- Assigned Device Card -->
 <div style="background:white;padding:20px;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.1);width:100%;margin-bottom:20px;">
     <h3 style="color:#dd4c56;margin-bottom:10px;">📦 Assigned Device</h3>
@@ -69,7 +76,7 @@ Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_
     <p style="color:<?php echo $device['dev_status']=='available'?'#22c55e':'#f59e0b'; ?>;"><?php echo ucfirst($device['dev_status']); ?></p>
     <?php else: ?>
     <p style="color:#777;">No device assigned</p>
-    <a href="create_incident.php" style="color:#dd4c56;">Request Device →</a>
+    <a href="device.php" style="color:#dd4c56;">Request Device →</a>
     <?php endif; ?>
 </div>
 
@@ -77,9 +84,9 @@ Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_
 <div style="background:white;padding:20px;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.1);width:100%;margin-bottom:20px;">
     <h3 style="color:#dd4c56;margin-bottom:10px;">🚨 Active Incident</h3>
     <?php
-    $stmt = $conn->prepare("
+$stmt = $conn->prepare("
         SELECT incident_id, pat_id, status, start_time FROM incident 
-        WHERE resp_id = ? AND status IN ('active', 'pending')
+        WHERE resp_id = ? AND status = 'ongoing'
         ORDER BY start_time DESC
         LIMIT 1
     ");
@@ -121,7 +128,7 @@ Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_
         FROM vitalstat v
         JOIN incident i ON v.incident_id = i.incident_id
         JOIN patient p ON i.pat_id = p.pat_id
-        WHERE i.resp_id = ? AND i.status IN ('active', 'pending')
+        WHERE i.resp_id = ? AND i.status = 'ongoing'
         ORDER BY v.recorded_at DESC
         LIMIT 1
     ");

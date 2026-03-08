@@ -24,9 +24,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['request_device'])) {
         $device = $result->fetch_assoc();
         $dev_id = $device['dev_id'];
         
+        // Get mgmt_id (default to 1 if not available)
+        $mgmt_id = 1;
+        
         // Assign device to responder
-        $assign_stmt = $conn->prepare("INSERT INTO device_log (dev_id, resp_id, date_assigned) VALUES (?, ?, NOW())");
-        $assign_stmt->bind_param("ii", $dev_id, $responder_id);
+        $assign_stmt = $conn->prepare("INSERT INTO device_log (dev_id, resp_id, mgmt_id, date_assigned) VALUES (?, ?, ?, NOW())");
+        $assign_stmt->bind_param("iii", $dev_id, $responder_id, $mgmt_id);
         
         if ($assign_stmt->execute()) {
             // Update device status
