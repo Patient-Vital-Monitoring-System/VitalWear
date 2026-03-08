@@ -36,8 +36,18 @@ if ($incident_id > 0) {
     $vitals_stmt->bind_param("i", $incident_id);
     $vitals_stmt->execute();
     $vitals_result = $vitals_stmt->get_result();
+    
+    // Debug: Check if query returns anything
+    echo "<!-- Debug: Query executed for incident_id: " . $incident_id . " -->";
+    echo "<!-- Debug: Query result rows: " . $vitals_result->num_rows . " -->";
+    
     while ($row = $vitals_result->fetch_assoc()) {
         $vitals[] = $row;
+    }
+    
+    // Debug: Show first vital if exists
+    if (count($vitals) > 0) {
+        echo "<!-- Debug: First vital: " . print_r($vitals[0], true) . " -->";
     }
 }
 
@@ -51,7 +61,11 @@ $incidents_stmt = $conn->prepare("
 ");
 $incidents_stmt->bind_param("i", $responder_id);
 $incidents_stmt->execute();
-$incidents = $incidents_stmt->get_result();
+$incidents_result = $incidents_stmt->get_result();
+$incidents = [];
+while ($row = $incidents_result->fetch_assoc()) {
+    $incidents[] = $row;
+}
 ?>
 
 <!DOCTYPE html>
@@ -134,14 +148,20 @@ Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_
     <label style="display:block;margin-bottom:8px;font-weight:600;color:#333;">Select Incident</label>
     <select id="incidentSelector" onchange="window.location.href='patient_vitals.php?incident_id='+this.value" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
         <option value="">-- Select Incident --</option>
-        <?php while($inc = $incidents->fetch_assoc()): ?>
+        <?php foreach($incidents as $inc): ?>
         <option value="<?php echo $inc['incident_id']; ?>" <?php echo $incident_id == $inc['incident_id'] ? 'selected' : ''; ?>>
             #<?php echo $inc['incident_id']; ?> - <?php echo htmlspecialchars($inc['pat_name']); ?> (<?php echo $inc['status']; ?>)
         </option>
-        <?php endwhile; ?>
+        <?php endforeach; ?>
     </select>
 </div>
 
+<?php 
+// Debug information
+echo "<!-- Debug: Incident ID: " . $incident_id . " -->";
+echo "<!-- Debug: Patient name: '" . $patient_name . "' -->";
+echo "<!-- Debug: Vitals count: " . count($vitals) . " -->";
+?>
 <?php if($incident_id > 0 && $patient_name): ?>
 <!-- Patient Info -->
 <div style="background:#fef2f2;padding:15px;border-radius:10px;margin-bottom:20px;text-align:center;">
@@ -152,12 +172,49 @@ Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_
 <!-- Auto-refresh indicator -->
 <div style="text-align:center;margin-bottom:15px;">
     <span style="display:inline-flex;align-items:center;background:#dcfce7;color:#166534;padding:6px 12px;border-radius:20px;font-size:12px;">
-        <i class="fa fa-refresh fa-spin" style="margin-right:5px;"></i> Auto-refreshing every 5s
+        <i class="fa fa-refresh fa-spin" style="margin-right:5px;"></i> Auto-refreshing every 10s
     </span>
     <span class="auto-badge">LIVE</span>
 </div>
 
+<!-- Latest Vital Display -->
+<?php if(count($vitals) > 0): ?>
+<div style="background:white;padding:20px;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.1);width:100%;margin-bottom:20px;">
+    <h3 style="color:#22c55e;margin-bottom:15px;text-align:center;">📈 Latest Vital Reading</h3>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:15px;text-align:center;">
+        <div style="background:#fef2f2;padding:15px;border-radius:10px;">
+            <div class="vital-label">Heart Rate</div>
+            <div style="font-size:24px;font-weight:800;color:#e74c3c;">
+                <?php echo $vitals[0]['heart_rate'] > 0 ? $vitals[0]['heart_rate'] . ' bpm' : '-'; ?>
+            </div>
+        </div>
+        <div style="background:#f0fdf4;padding:15px;border-radius:10px;">
+            <div class="vital-label">Blood Pressure</div>
+            <div style="font-size:20px;font-weight:bold;color:#22c55e;">
+                <?php echo ($vitals[0]['bp_systolic'] > 0 ? $vitals[0]['bp_systolic'] : '-') . '/' . ($vitals[0]['bp_diastolic'] > 0 ? $vitals[0]['bp_diastolic'] : '-'); ?>
+            </div>
+        </div>
+        <div style="background:#eff6ff;padding:15px;border-radius:10px;">
+            <div class="vital-label">Oxygen (SpO2)</div>
+            <div style="font-size:24px;font-weight:800;color:#0ea5e9;">
+                <?php echo $vitals[0]['oxygen_level'] > 0 ? $vitals[0]['oxygen_level'] . '%' : '-'; ?>
+            </div>
+        </div>
+        <div style="background:#f5f3ff;padding:15px;border-radius:10px;">
+            <div class="vital-label">Last Updated</div>
+            <div style="font-size:14px;font-weight:bold;color:#7c3aed;">
+                <?php echo date('h:i:s A', strtotime($vitals[0]['recorded_at'])); ?>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
 <!-- Vitals History -->
+<?php 
+// Debug: Show vital count
+echo "<!-- Debug: Total vitals found: " . count($vitals) . " -->";
+?>
 <?php if(count($vitals) > 0): ?>
     <div style="margin-bottom:20px;">
         <p style="color:#777;font-size:14px;margin-bottom:10px;">Total Records: <?php echo count($vitals); ?></p>
@@ -232,11 +289,11 @@ Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_
 </nav>
 
 <script>
-// Auto-refresh page every 5 seconds if an incident is selected
+// Auto-refresh page every 10 seconds if an incident is selected
 <?php if($incident_id > 0): ?>
 setInterval(function() {
     location.reload();
-}, 5000);
+}, 10000);
 <?php endif; ?>
 </script>
 

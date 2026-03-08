@@ -129,9 +129,9 @@ Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_
 </nav>
 
 <script>
-// Simulate vital stats display every 2 seconds (NO database insert)
+// Simulate vital stats and insert into database every 10 seconds
 function simulateVitals(incidentId) {
-    // Generate realistic random vital values (for display only)
+    // Generate realistic random vital values
     // Heart rate: 60-100 bpm
     var heartRate = Math.floor(Math.random() * (100 - 60 + 1)) + 60;
     // Systolic BP: 100-140 mmHg
@@ -145,7 +145,27 @@ function simulateVitals(incidentId) {
     var now = new Date();
     var timeString = now.toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit'});
     
-    // Update vitals display without inserting to database
+    // Insert vitals into database via API
+    fetch('../../api/vitals/record_vitals.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `incident_id=${incidentId}&bp_systolic=${bpSystolic}&bp_diastolic=${bpDiastolic}&heart_rate=${heartRate}&oxygen_level=${oxygenLevel}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Vitals recorded successfully:', data.vital);
+        } else {
+            console.error('Failed to record vitals:', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error recording vitals:', error);
+    });
+    
+    // Update vitals display
     var displayDiv = document.getElementById('vitalsDisplay' + incidentId);
     displayDiv.innerHTML = `
         <div style="margin-top:15px;padding-top:15px;border-top:1px solid #eee;">
@@ -187,10 +207,10 @@ function startSimulation(incidentId) {
     // Simulate immediately
     simulateVitals(incidentId);
     
-    // Then simulate every 2 seconds
+    // Then simulate every 10 seconds
     simulateIntervals[incidentId] = setInterval(function() {
         simulateVitals(incidentId);
-    }, 2000);
+    }, 10000);
 }
 
 // Stop simulating vitals for an incident
@@ -217,6 +237,26 @@ function toggleAutoInsert(incidentId) {
         btn.style.background = '#ef4444';
     }
 }
+
+// Automatically start simulation for all active incidents when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    <?php if($incidents->num_rows > 0): ?>
+        // Reset incidents pointer and loop through them again
+        <?php 
+        $incidents->data_seek(0);
+        while($inc = $incidents->fetch_assoc()): 
+        ?>
+        startSimulation(<?php echo $inc['incident_id']; ?>);
+        
+        // Update button to show it's running
+        var btn = document.getElementById('autoBtn<?php echo $inc['incident_id']; ?>');
+        if (btn) {
+            btn.innerHTML = '<i class="fa fa-stop"></i> Stop Live';
+            btn.style.background = '#ef4444';
+        }
+        <?php endwhile; ?>
+    <?php endif; ?>
+});
 </script>
 
 </body>
