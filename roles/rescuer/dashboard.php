@@ -189,7 +189,7 @@ $transferred_incidents = $stmt->get_result();
         <div class="header">
             <h1>🏠 Rescuer Dashboard</h1>
             <p>Welcome back, <?php echo htmlspecialchars($rescuer['resc_name']); ?>!</p>
-            <a href="#" onclick="logout()" class="logout-btn">Logout</a>
+            <a href="/VitalWear-1/api/auth/logout.php" class="btn btn-secondary">Logout</a>
         </div>
 
         <div class="stats-grid">
@@ -258,15 +258,15 @@ $transferred_incidents = $stmt->get_result();
             sessionStorage.clear();
             
             // Call PHP logout
-            fetch('../../api/auth/logout.php', {
+            fetch('/VitalWear-1/api/auth/logout.php', {
                 method: 'POST'
             }).then(() => {
                 // Redirect to login
-                window.location.href = '../../login.html';
+                window.location.href = '/VitalWear-1/login.html';
             }).catch(error => {
                 console.error('Logout error:', error);
                 // Still redirect even if fetch fails
-                window.location.href = '../../login.html';
+                window.location.href = '/VitalWear-1/login.html';
             });
         }
     }

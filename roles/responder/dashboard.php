@@ -40,7 +40,7 @@ Responder: <?php echo isset($_SESSION['user_name']) ? $_SESSION['user_name'] : '
 <a href="patient_vitals.php"><i class="fa fa-line-chart"></i> View Vitals</a>
 <a href="transfer_incident.php"><i class="fa fa-exchange"></i> Transfer to Rescuer</a>
 <a href="incident_history.php"><i class="fa fa-history"></i> Incident History</a>
-<a href="../../api/auth/logout.php"><i class="fa fa-sign-out"></i> Logout</a>
+<a href="/VitalWear-1/api/auth/logout.php" class="btn btn-secondary">Logout</a>
 
 
 </nav>
@@ -205,7 +205,7 @@ $stmt = $conn->prepare("
 <span>History</span>
 </a>
 
-<a href="../../api/auth/logout.php"><i class="fa fa-sign-out"></i></a>
+<a href="/VitalWear-1/api/auth/logout.php"><i class="fa fa-sign-out"></i></a>
 </nav>
 
 </body>
