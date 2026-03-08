@@ -16,26 +16,45 @@ echo json_encode(["status"=>"empty"]);
 exit();
 }
 
-$password = md5($password);
-
-// Check all user tables
+// Check all user tables - handle both MD5 and password_hash
 $queries = [
-    'admin' => "SELECT admin_id as user_id, admin_name as user_name, 'admin' as user_role FROM admin WHERE admin_email=? AND admin_password=?",
-    'management' => "SELECT mgmt_id as user_id, mgmt_name as user_name, 'management' as user_role FROM management WHERE mgmt_email=? AND mgmt_password=?",
-    'responder' => "SELECT resp_id as user_id, resp_name as user_name, 'responder' as user_role FROM responder WHERE resp_email=? AND resp_password=?",
-    'rescuer' => "SELECT resc_id as user_id, resc_name as user_name, 'rescuer' as user_role FROM rescuer WHERE resc_email=? AND resc_password=?"
+    'admin' => "SELECT admin_id as user_id, admin_name as user_name, 'admin' as user_role, admin_password as password FROM admin WHERE admin_email=?",
+    'management' => "SELECT mgmt_id as user_id, mgmt_name as user_name, 'management' as user_role, mgmt_password as password FROM management WHERE mgmt_email=?",
+    'responder' => "SELECT resp_id as user_id, resp_name as user_name, 'responder' as user_role, resp_password as password FROM responder WHERE resp_email=?",
+    'rescuer' => "SELECT resc_id as user_id, resc_name as user_name, 'rescuer' as user_role, resc_password as password FROM rescuer WHERE resc_email=?"
 ];
 
 $user = null;
 foreach ($queries as $role => $query) {
     $stmt = $conn->prepare($query);
-    $stmt->bind_param("ss", $email, $password);
+    $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
     
     if ($result->num_rows > 0) {
-        $user = $result->fetch_assoc();
-        break;
+        $userData = $result->fetch_assoc();
+        $storedPassword = $userData['password'];
+        
+        // Check password with both MD5 and password_hash
+        $md5Password = md5($password);
+        $passwordValid = false;
+        
+        if ($storedPassword === $md5Password) {
+            // MD5 hash matches (for seed data)
+            $passwordValid = true;
+        } elseif (password_verify($password, $storedPassword)) {
+            // Modern password hash matches (for newly created users)
+            $passwordValid = true;
+        }
+        
+        if ($passwordValid) {
+            $user = [
+                'user_id' => $userData['user_id'],
+                'user_name' => $userData['user_name'],
+                'user_role' => $userData['user_role']
+            ];
+            break;
+        }
     }
 }
 

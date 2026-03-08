@@ -4,12 +4,12 @@ $dbStatus = isset($conn) && !$conn->connect_error;
 session_start();
 
 // Check if logged in
-if (!isset($_SESSION['responder_id'])) {
+if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'responder') {
     header("Location: ../../login.html");
     exit;
 }
 
-$responder_id = $_SESSION['responder_id'];
+$responder_id = $_SESSION['user_id'];
 $message = "";
 $message_type = "";
 

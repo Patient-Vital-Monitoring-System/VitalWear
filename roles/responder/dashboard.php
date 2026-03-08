@@ -3,13 +3,13 @@ include("../../database/connection.php");
 $dbStatus = isset($conn) && !$conn->connect_error;
 session_start();
 
-// Check if logged in
-if (!isset($_SESSION['responder_id'])) {
+// Check if logged in as responder
+if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'responder') {
     header("Location: ../../login.html");
     exit;
 }
 
-$responder_id = $_SESSION['responder_id'];
+$responder_id = $_SESSION['user_id'];
 ?>
 
 <!DOCTYPE html>
@@ -28,7 +28,7 @@ $responder_id = $_SESSION['responder_id'];
 <body>
 
 <header class="topbar">
-Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_name'] : 'Medical Monitoring'; ?>
+Responder: <?php echo isset($_SESSION['user_name']) ? $_SESSION['user_name'] : 'Medical Monitoring'; ?>
 </header>
 
 <nav id="sidebar">
