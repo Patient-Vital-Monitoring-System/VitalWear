@@ -1,0 +1,451 @@
+/* ========================= */
+/* RESET */
+/* ========================= */
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  font-family:"Segoe UI", sans-serif;
+  background:linear-gradient(135deg,#e3e9f2,#f6f8fc);
+  color:#111;
+  overflow-x:hidden;
+}
+
+/* ========================= */
+/* TOPBAR */
+/* ========================= */
+
+.topbar{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:55px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  background:linear-gradient(90deg,#dd4c56,#c93c46);
+  color:white;
+  font-weight:700;
+
+  z-index:900;
+
+  box-shadow:0 5px 20px rgba(0,0,0,.1);
+}
+
+/* ========================= */
+/* SIDEBAR */
+/* ========================= */
+
+#sidebar{
+  position:fixed;
+  left:0;
+  top:0;
+
+  width:230px;
+  height:100vh;
+
+  padding-top:90px;
+
+  background:linear-gradient(180deg,#dd4c56,#c93c46);
+
+  display:flex;
+  flex-direction:column;
+
+  z-index:1000;
+}
+
+#sidebar a{
+  display:flex;
+  align-items:center;
+  gap:12px;
+
+  color:white;
+  text-decoration:none;
+
+  padding:15px 18px;
+  margin:10px 18px;
+
+  border-radius:12px;
+
+  transition:.3s;
+}
+
+#sidebar a:hover{
+  background:rgba(255,255,255,.2);
+  transform:translateX(5px);
+}
+
+/* LOGOUT BUTTON */
+
+#sidebar a:last-child{
+  margin-top:auto;
+
+  background:rgba(0,0,0,.2);
+
+  font-weight:600;
+
+  box-shadow:0 8px 20px rgba(0,0,0,.2);
+}
+
+#sidebar a:last-child:hover{
+  background:#ef4444;
+}
+
+/* ========================= */
+/* MAIN CONTAINER */
+/* ========================= */
+
+.container{
+  position:fixed;
+
+  top:55px;
+  left:230px;
+
+  width:calc(100% - 230px);
+  height:calc(100vh - 55px);
+
+  display:flex;
+  justify-content:center;
+  align-items:center;
+
+  padding:25px;
+}
+
+/* ========================= */
+/* CARD */
+/* ========================= */
+
+.monitor-card{
+  width:100%;
+  max-width:450px;
+
+  background:white;
+
+  padding:40px 30px;
+
+  border-radius:28px;
+
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:25px;
+
+  /* STRONG SHADOW */
+  box-shadow:
+  0 25px 60px rgba(0,0,0,.20),
+  0 10px 25px rgba(0,0,0,.15),
+  0 2px 8px rgba(0,0,0,.08);
+
+  position:relative;
+}
+
+/* PATIENT NAME */
+
+.patient-name{
+  font-size:24px;
+  font-weight:700;
+  text-align:center;
+}
+
+/* DATE */
+
+.card-date{
+  position:absolute;
+  top:18px;
+  right:25px;
+
+  font-size:14px;
+  color:#777;
+}
+
+/* ========================= */
+/* HR RING */
+/* ========================= */
+
+.circle-wrapper{
+  position:relative;
+  width:100%;
+
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.bp-svg{
+  width:190px;
+  height:190px;
+
+  transform:rotate(-90deg);
+}
+
+.bp-bg{
+  fill:none;
+  stroke:#e5e9f0;
+  stroke-width:14;
+}
+
+.bp-progress{
+  fill:none;
+  stroke:#22c55e;
+  stroke-width:14;
+  stroke-linecap:round;
+
+  stroke-dasharray:440;
+  stroke-dashoffset:440;
+
+  transition:.9s ease;
+}
+
+/* CENTER TEXT */
+
+.bp-center-text{
+  position:absolute;
+
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+
+  text-align:center;
+}
+
+.hr-main{
+  font-size:42px;
+  font-weight:800;
+  color:#e74c3c;
+
+  animation:heartbeat 1.2s infinite;
+}
+
+.hr-label{
+  font-size:13px;
+  color:#777;
+}
+
+@keyframes heartbeat{
+  0%{transform:scale(1);}
+  50%{transform:scale(1.15);}
+  100%{transform:scale(1);}
+}
+
+/* ========================= */
+/* BP LINE UI */
+/* ========================= */
+
+.bp-line-container{
+  width:100%;
+}
+
+.bp-label{
+  font-weight:600;
+  margin-bottom:8px;
+}
+
+.bp-line{
+  width:100%;
+  height:10px;
+
+  background:#f1f5f9;
+
+  border-radius:20px;
+  overflow:hidden;
+}
+
+#bpLineFill{
+  height:100%;
+  width:0%;
+
+  background:linear-gradient(90deg,#22c55e,#f59e0b,#ef4444);
+
+  transition:.8s ease;
+}
+
+.bp-text{
+  text-align:center;
+  margin-top:8px;
+  font-weight:700;
+}
+
+/* ========================= */
+/* OXYGEN */
+/* ========================= */
+
+.oxygen-box{
+  width:100%;
+
+  text-align:center;
+
+  background:#f1f9ff;
+
+  padding:16px;
+
+  border-radius:16px;
+
+  font-weight:700;
+  color:#0ea5e9;
+}
+
+/* ========================= */
+/* REMOVE CAROUSEL */
+/* ========================= */
+
+.patient-carousel{
+  display:none;
+}
+
+/* ========================= */
+/* DB STATUS */
+/* ========================= */
+
+.db-indicator{
+  position:fixed;
+  bottom:20px;
+  right:20px;
+
+  padding:10px 18px;
+
+  border-radius:14px;
+
+  font-weight:600;
+
+  box-shadow:0 8px 20px rgba(0,0,0,.1);
+
+  z-index:2000;
+}
+
+.connected{
+  background:#dcfce7;
+  color:#166534;
+}
+
+.disconnected{
+  background:#fee2e2;
+  color:#991b1b;
+}
+
+/* ========================= */
+/* MOBILE NAV */
+/* ========================= */
+
+.bottom-nav{
+  display:none;
+
+  position:fixed;
+  bottom:0;
+  left:0;
+
+  width:100%;
+  height:70px;
+
+  background:white;
+
+  box-shadow:0 -8px 25px rgba(0,0,0,.15);
+
+  justify-content:space-around;
+  align-items:center;
+
+  z-index:2000;
+}
+
+.bottom-item{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+
+  font-size:13px;
+  color:#555;
+  text-decoration:none;
+}
+
+.bottom-item i{
+  font-size:20px;
+  margin-bottom:4px;
+}
+
+/* MOBILE LOGOUT BUTTON */
+
+.mobile-logout{
+  display:none;
+
+  position:fixed;
+  bottom:90px;
+  right:20px;
+
+  background:#ef4444;
+  color:white;
+
+  padding:12px 20px;
+
+  border-radius:30px;
+
+  font-weight:600;
+
+  text-decoration:none;
+
+  box-shadow:0 10px 25px rgba(0,0,0,.25);
+
+  z-index:2100;
+}
+
+/* ========================= */
+/* MOBILE RESPONSIVE */
+/* ========================= */
+
+@media(max-width:768px){
+
+  #sidebar{
+    display:none;
+  }
+
+  .container{
+    position:fixed;
+
+    top:55px;
+    left:0;
+
+    width:100%;
+    height:calc(100vh - 55px);
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    padding:20px 15px 100px;
+  }
+
+  .monitor-card{
+    width:100%;
+    max-width:380px;
+
+    padding:30px 20px;
+
+    box-shadow:
+    0 20px 40px rgba(0,0,0,.25),
+    0 10px 20px rgba(0,0,0,.15);
+  }
+
+  .bp-svg{
+    width:140px;
+    height:140px;
+  }
+
+  .db-indicator{
+    display:none;
+  }
+
+  .bottom-nav{
+    display:flex;
+  }
+
+  .mobile-logout{
+    display:block;
+  }
+
+}

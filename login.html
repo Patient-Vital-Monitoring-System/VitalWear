@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VitalWear - Login</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <style>
+    /* Login Page Specific Styles */
+    .login-page {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .login-container {
+      width: 100%;
+      max-width: 400px;
+      background: white;
+      padding: 40px 30px;
+      border-radius: 28px;
+      box-shadow: 0 25px 60px rgba(0,0,0,.20), 0 10px 25px rgba(0,0,0,.15), 0 2px 8px rgba(0,0,0,.08);
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .login-logo h1 {
+      color: #dd4c56;
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    .login-logo p {
+      color: #777;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #333;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e5e9f0;
+      border-radius: 12px;
+      font-size: 15px;
+      transition: 0.3s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #dd4c56;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(90deg, #dd4c56, #c93c46);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .login-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(221, 76, 86, 0.3);
+    }
+
+    .login-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .error-message {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: center;
+      display: none;
+    }
+
+    .success-message {
+      background: #dcfce7;
+      color: #166534;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: center;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-container">
+      <div class="login-logo">
+        <h1>VitalWear</h1>
+        <p>Sign in to continue</p>
+      </div>
+      
+      <div id="errorMessage" class="error-message"></div>
+      <div id="successMessage" class="success-message">Login successful! Redirecting...</div>
+      
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" name="email" placeholder="Enter your email" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="Enter your password" required>
+        </div>
+        
+        <button type="submit" class="login-btn" id="loginBtn">Sign In</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="assets/js/login.js"></script>
+</body>
+</html>
+
