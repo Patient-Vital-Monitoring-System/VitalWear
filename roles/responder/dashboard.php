@@ -12,7 +12,7 @@ session_start();
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Responder Medical Dashboard</title>
 
-<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="stylesheet" href="../../assets/css/styles.css">
 <script src="https://kit.fontawesome.com/96e37b53f1.js"></script>
 
 </head>
