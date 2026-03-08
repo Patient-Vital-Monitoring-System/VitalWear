@@ -5,8 +5,25 @@ document.addEventListener('DOMContentLoaded', function() {
   const successMessage = document.getElementById('successMessage');
 
   // Check if already logged in
-  if (sessionStorage.getItem('responder_id')) {
-    window.location.href = 'roles/responder/dashboard.php';
+  const userRole = sessionStorage.getItem('user_role');
+  if (sessionStorage.getItem('user_id')) {
+    // Redirect based on user role
+    switch(userRole) {
+      case 'admin':
+        window.location.href = 'roles/admin/dashboard.php';
+        break;
+      case 'management':
+        window.location.href = 'roles/management/dashboard.php';
+        break;
+      case 'responder':
+        window.location.href = 'roles/responder/dashboard.php';
+        break;
+      case 'rescuer':
+        window.location.href = 'roles/rescuer/dashboard.php';
+        break;
+      default:
+        window.location.href = 'roles/responder/dashboard.php';
+    }
     return;
   }
 
@@ -44,15 +61,45 @@ document.addEventListener('DOMContentLoaded', function() {
 
       if (data.status === 'success') {
         // Store session data
-        sessionStorage.setItem('responder_id', data.responder_id);
-        sessionStorage.setItem('responder_name', data.responder_name);
-        sessionStorage.setItem('user_role', 'responder');
+        sessionStorage.setItem('user_id', data.user_id);
+        sessionStorage.setItem('user_name', data.user_name);
+        sessionStorage.setItem('user_role', data.user_role);
+
+        // Sync with PHP session
+        try {
+          const formData = new FormData();
+          formData.append('user_id', data.user_id);
+          formData.append('user_name', data.user_name);
+          formData.append('user_role', data.user_role);
+          
+          await fetch('api/auth/session_bridge.php', {
+            method: 'POST',
+            body: formData
+          });
+        } catch (error) {
+          console.warn('Session sync failed:', error);
+        }
 
         successMessage.style.display = 'block';
         
-        // Redirect to responder dashboard
+        // Redirect based on user role
         setTimeout(() => {
-          window.location.href = 'roles/responder/dashboard.php';
+          switch(data.user_role) {
+            case 'admin':
+              window.location.href = 'roles/admin/dashboard.php';
+              break;
+            case 'management':
+              window.location.href = 'roles/management/dashboard.php';
+              break;
+            case 'responder':
+              window.location.href = 'roles/responder/dashboard.php';
+              break;
+            case 'rescuer':
+              window.location.href = 'roles/rescuer/dashboard.php';
+              break;
+            default:
+              window.location.href = 'roles/responder/dashboard.php';
+          }
         }, 1000);
       } else if (data.status === 'empty') {
         showError('Please enter both email and password');
