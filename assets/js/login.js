@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Validate inputs
     if (!email || !password) {
       showError('Please enter both email and password');
-      return;
+      return; 
     }
 
     // Disable button during request
