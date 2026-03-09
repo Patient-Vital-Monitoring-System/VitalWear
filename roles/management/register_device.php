@@ -12,6 +12,12 @@ $conn = getDBConnection();
 $message = '';
 $alert_type = '';
 
+// Handle success message from redirect
+if (isset($_GET['success']) && $_GET['success'] == '1') {
+    $message = "Device registered successfully!";
+    $alert_type = "success";
+}
+
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action']) && $_POST['action'] === 'register_device') {
@@ -40,6 +46,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt_log = $conn->prepare("INSERT INTO activity_log (user_name, user_role, action_type, module, description) VALUES (?, ?, 'add', 'device', ?)");
                     $stmt_log->bind_param("sss", $_SESSION['user_name'], $_SESSION['user_role'], $log_desc);
                     $stmt_log->execute();
+                    
+                    // Redirect to clear form and show success message
+                    header("Location: register_device.php?success=1");
+                    exit();
                 } else {
                     $message = "Error registering device: " . $conn->error;
                     $alert_type = "danger";
@@ -66,168 +76,563 @@ if ($result) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register Device - VitalWear</title>
     <link rel="stylesheet" href="../../../assets/css/styles.css">
+    <script src="https://kit.fontawesome.com/96e37b53f1.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* VitalWear Soft UI Design System */
+        :root {
+            --authority-blue: #1B3F72;
+            --dashboard-light: #F4F7FC;
+            --pure-white: #FFFFFF;
+            --secondary-text: #7E91B3;
+            --system-success: #2CC990;
+            --system-warning: #FFC107;
+            --system-error: #DC3545;
+            --interface-border: #D1E0F1;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --shadow-sm: 0 2px 4px rgba(27, 63, 114, 0.06);
+            --shadow: 0 4px 12px rgba(27, 63, 114, 0.08);
+            --shadow-md: 0 8px 24px rgba(27, 63, 114, 0.12);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--dashboard-light);
+            color: var(--authority-blue);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Soft UI Sidebar */
+        #sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            height: 100vh;
+            background: var(--pure-white);
+            border-right: 1px solid var(--interface-border);
+            box-shadow: var(--shadow);
+            z-index: 1000;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-logo {
+            padding: 24px 20px;
+            text-align: center;
+            background: linear-gradient(135deg, var(--authority-blue) 0%, #2a5298 100%);
+            margin: 12px;
+            border-radius: var(--radius);
+        }
+
+        .sidebar-logo img {
+            max-width: 140px;
+            height: auto;
+            filter: brightness(0) invert(1);
+        }
+
+        #sidebar a {
+            color: var(--authority-blue);
+            margin: 6px 12px;
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            transition: all 0.2s ease;
+            border: none;
+            font-weight: 500;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #sidebar a:hover {
+            background: rgba(27, 63, 114, 0.1);
+            color: var(--authority-blue);
+            transform: translateX(4px);
+        }
+
+        #sidebar a.active {
+            background: rgba(27, 63, 114, 0.15);
+            color: var(--authority-blue);
+        }
+
+        /* Soft UI Header */
+        .topbar {
+            position: fixed;
+            top: 0;
+            left: 260px;
+            right: 0;
+            background: var(--pure-white);
+            color: var(--authority-blue);
+            border-bottom: 1px solid var(--interface-border);
+            box-shadow: var(--shadow-sm);
+            padding: 16px 24px;
+            font-weight: 600;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Main Container */
+        .container {
+            margin-left: 260px;
+            margin-top: 80px;
+            padding: 24px;
+            min-height: calc(100vh - 80px);
+            transition: margin-left 0.3s ease;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--authority-blue);
+            font-weight: 700;
+            line-height: 1.3;
+        }
+
+        /* Page Header */
         .page-header {
-            background: #007bff;
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 30px;
+            background: linear-gradient(135deg, var(--authority-blue) 0%, #2a5298 100%);
+            color: var(--pure-white);
+            padding: 32px;
+            border-radius: var(--radius-lg);
+            margin-bottom: 32px;
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .page-header-content {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: relative;
+            z-index: 1;
         }
-        
+
+        .page-header h1 {
+            color: var(--pure-white);
+            margin: 0 0 8px 0;
+            font-size: 1.75rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .page-header p {
+            color: rgba(255,255,255,0.9);
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        .page-header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        /* Buttons */
         .btn {
-            padding: 10px 20px;
+            padding: 12px 24px;
             border: none;
-            border-radius: 5px;
+            border-radius: var(--radius);
             cursor: pointer;
             text-decoration: none;
-            display: inline-block;
-            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
-        
-        .btn-primary { background: #007bff; color: white; }
-        .btn-success { background: #28a745; color: white; }
-        .btn-warning { background: #ffc107; color: black; }
-        .btn-danger { background: #dc3545; color: white; }
-        .btn-secondary { background: #6c757d; color: white; }
-        
-        .btn:hover { opacity: 0.9; }
-        
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--system-success) 0%, #20c997 100%);
+            color: var(--pure-white);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--secondary-text) 0%, #6b7280 100%);
+            color: var(--pure-white);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Content Grid */
         .content-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 30px;
+            gap: 32px;
         }
         
+        /* Form Container */
         .form-container, .devices-container {
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: var(--pure-white);
+            padding: 32px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--interface-border);
+            transition: all 0.3s ease;
         }
-        
+
+        .form-container:hover, .devices-container:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .form-container h2, .devices-container h2 {
+            margin: 0 0 24px 0;
+            color: var(--authority-blue);
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Form Groups */
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
-        
+
         .form-group label {
             display: block;
             margin-bottom: 8px;
-            font-weight: bold;
-            color: #333;
+            font-weight: 600;
+            color: var(--authority-blue);
         }
-        
+
         .form-group input, .form-group select {
             width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 5px;
+            padding: 12px 16px;
+            border: 2px solid var(--interface-border);
+            border-radius: var(--radius);
+            font-family: 'Inter', sans-serif;
             font-size: 14px;
-            transition: border-color 0.2s;
+            transition: all 0.3s ease;
+            background: var(--pure-white);
         }
-        
+
         .form-group input:focus, .form-group select:focus {
             outline: none;
-            border-color: #007bff;
+            border-color: var(--authority-blue);
+            box-shadow: 0 0 0 3px rgba(27, 63, 114, 0.1);
         }
-        
+
+        /* Alerts */
         .alert {
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-        }
-        
-        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .alert-danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        
-        .devices-list {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        
-        .device-item {
-            padding: 15px;
-            border: 1px solid #eee;
-            border-radius: 5px;
-            margin-bottom: 10px;
+            padding: 16px 20px;
+            border-radius: var(--radius);
+            margin-bottom: 24px;
+            border: 1px solid;
+            font-weight: 500;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            transition: background-color 0.2s;
+            gap: 12px;
         }
-        
-        .device-item:hover {
-            background-color: #f8f9fa;
+
+        .alert-success {
+            background: rgba(44, 201, 144, 0.15);
+            color: var(--system-success);
+            border-color: rgba(44, 201, 144, 0.3);
         }
-        
-        .device-info h4 {
-            margin: 0 0 5px 0;
-            color: #333;
+
+        .alert-danger {
+            background: rgba(220, 53, 69, 0.15);
+            color: var(--system-error);
+            border-color: rgba(220, 53, 69, 0.3);
         }
-        
-        .device-info p {
-            margin: 0;
-            font-size: 12px;
-            color: #666;
-        }
-        
-        .status-badge {
-            padding: 6px 12px;
-            border-radius: 15px;
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-        
-        .status-available { background: #d4edda; color: #155724; }
-        .status-assigned { background: #fff3cd; color: #856404; }
-        .status-maintenance { background: #f8d7da; color: #721c24; }
-        
+
+        /* Stats Grid */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
+            gap: 16px;
+            margin-bottom: 24px;
         }
-        
+
         .stat-card {
+            background: var(--dashboard-light);
+            padding: 20px;
+            border-radius: var(--radius);
             text-align: center;
-            padding: 15px;
-            border-radius: 5px;
-            background: #f8f9fa;
+            border: 1px solid var(--interface-border);
+            transition: all 0.3s ease;
         }
-        
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
         .stat-number {
-            font-size: 24px;
-            font-weight: bold;
-            color: #007bff;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--authority-blue);
+            margin-bottom: 8px;
         }
-        
+
         .stat-label {
             font-size: 12px;
-            color: #666;
+            color: var(--secondary-text);
             text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
         }
-        
+
+        /* Devices List */
+        .devices-list {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        .device-item {
+            padding: 16px;
+            border: 1px solid var(--interface-border);
+            border-radius: var(--radius);
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            background: var(--pure-white);
+        }
+
+        .device-item:hover {
+            background: var(--dashboard-light);
+            transform: translateX(4px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .device-info h4 {
+            margin: 0 0 4px 0;
+            color: var(--authority-blue);
+            font-weight: 600;
+        }
+
+        .device-info p {
+            margin: 0;
+            font-size: 12px;
+            color: var(--secondary-text);
+            font-weight: 500;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid;
+        }
+
+        .status-available {
+            background: rgba(44, 201, 144, 0.15);
+            color: var(--system-success);
+            border-color: rgba(44, 201, 144, 0.3);
+        }
+
+        .status-assigned {
+            background: rgba(255, 193, 7, 0.15);
+            color: var(--system-warning);
+            border-color: rgba(255, 193, 7, 0.3);
+        }
+
+        .status-maintenance {
+            background: rgba(220, 53, 69, 0.15);
+            color: var(--system-error);
+            border-color: rgba(220, 53, 69, 0.3);
+        }
+
+        /* Info Box */
+        .info-box {
+            margin-top: 24px;
+            padding: 20px;
+            background: var(--dashboard-light);
+            border-radius: var(--radius);
+            border: 1px solid var(--interface-border);
+        }
+
+        .info-box h4 {
+            margin: 0 0 12px 0;
+            color: var(--authority-blue);
+            font-weight: 600;
+        }
+
+        .info-box ul {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 14px;
+            color: var(--authority-blue);
+        }
+
+        .info-box li {
+            margin-bottom: 8px;
+        }
+
+        .info-box strong {
+            color: var(--authority-blue);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            color: var(--secondary-text);
+            padding: 32px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Responsive Design */
         @media (max-width: 768px) {
+            #sidebar {
+                transform: translateX(-100%);
+            }
+            
+            #sidebar.open {
+                transform: translateX(0);
+            }
+            
+            .topbar {
+                left: 0;
+            }
+            
+            .container {
+                margin-left: 0;
+                padding: 16px;
+            }
+            
             .content-grid {
                 grid-template-columns: 1fr;
+                gap: 24px;
             }
+            
+            .page-header-content {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+            
+            .page-header-actions {
+                width: 100%;
+            }
+            
+            .page-header-actions .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--dashboard-light);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--secondary-text);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--authority-blue);
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <header class="topbar">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <i class="fa fa-cogs" style="font-size: 24px; color: var(--authority-blue);"></i>
+            <span style="font-size: 18px; font-weight: 700;">VitalWear</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; color: var(--authority-blue); font-weight: 500;">
+            <i class="fa fa-user-circle" style="font-size: 20px; color: var(--authority-blue);"></i>
+            <span><?php echo htmlspecialchars($_SESSION['user_name']); ?></span>
+        </div>
+    </header>
+
+    <nav id="sidebar">
+        <div class="sidebar-logo">
+            <img src="../../../assets/logo.png" alt="VitalWear Logo">
+        </div>
+        <a href="dashboard.php"><i class="fa fa-gauge"></i> Dashboard</a>
+        <a href="manage_responders.php"><i class="fa fa-user-md"></i> Manage Responders</a>
+        <a href="manage_rescuers.php"><i class="fa fa-user-shield"></i> Manage Rescuers</a>
+        <a href="register_device.php" class="active"><i class="fa fa-plus-circle"></i> Register Device</a>
+        <a href="device_list.php"><i class="fa fa-box"></i> Device List</a>
+        <a href="assign_device.php"><i class="fa fa-exchange-alt"></i> Assign Device</a>
+        <a href="verify_return.php"><i class="fa fa-check-double"></i> Verify Return</a>
+        <a href="reports/device_assignment_history.php"><i class="fa fa-chart-bar"></i> Reports</a>
+        <a href="../../../api/auth/logout.php" class="btn btn-secondary">Logout</a>
+    </nav>
+
+    <main class="container">
         <header class="page-header">
-            <div>
-                <h1 style="margin: 0;">📦 Register Device</h1>
-                <p style="margin: 5px 0 0 0; opacity: 0.9;">Add new monitoring devices to the system</p>
-            </div>
-            <div>
-                <a href="device_list.php" class="btn btn-primary">View All Devices</a>
+            <div class="page-header-content">
+                <div>
+                    <h1><i class="fa fa-plus-circle"></i> Register Device</h1>
+                    <p>Add new monitoring devices to the system</p>
+                </div>
+                <div class="page-header-actions">
+                    <a href="device_list.php" class="btn btn-primary">
+                        <i class="fa fa-box"></i> View All Devices
+                    </a>
+                </div>
             </div>
         </header>
 
@@ -239,7 +644,7 @@ if ($result) {
 
         <div class="content-grid">
             <div class="form-container">
-                <h2>Register New Device</h2>
+                <h2><i class="fa fa-plus-circle"></i> Register New Device</h2>
                 <form method="POST">
                     <input type="hidden" name="action" value="register_device">
                     
@@ -259,15 +664,19 @@ if ($result) {
                         </select>
                     </div>
                     
-                    <div style="display: flex; gap: 10px;">
-                        <button type="submit" class="btn btn-primary" style="flex: 1;">Register Device</button>
-                        <button type="reset" class="btn btn-secondary" style="flex: 1;">Clear Form</button>
+                    <div style="display: flex; gap: 12px;">
+                        <button type="submit" class="btn btn-primary" style="flex: 1;">
+                            <i class="fa fa-save"></i> Register Device
+                        </button>
+                        <button type="reset" class="btn btn-secondary" style="flex: 1;">
+                            <i class="fa fa-times"></i> Clear Form
+                        </button>
                     </div>
                 </form>
                 
-                <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
-                    <h4 style="margin: 0 0 10px 0;">Device Status Guide:</h4>
-                    <ul style="margin: 0; padding-left: 20px; font-size: 14px;">
+                <div class="info-box">
+                    <h4><i class="fa fa-info-circle"></i> Device Status Guide:</h4>
+                    <ul>
                         <li><strong>Available:</strong> Device is ready for assignment</li>
                         <li><strong>Maintenance:</strong> Device is under maintenance</li>
                         <li><strong>Assigned:</strong> Device is currently assigned to a responder</li>
@@ -276,7 +685,7 @@ if ($result) {
             </div>
 
             <div class="devices-container">
-                <h2>Recently Registered Devices</h2>
+                <h2><i class="fa fa-clock"></i> Recently Registered Devices</h2>
                 
                 <?php
                 // Calculate device statistics
@@ -311,7 +720,10 @@ if ($result) {
                 
                 <div class="devices-list">
                     <?php if (empty($devices)): ?>
-                        <p style="text-align: center; color: #666; padding: 20px;">No devices registered yet.</p>
+                        <div class="empty-state">
+                            <i class="fa fa-box-open" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
+                            <p>No devices registered yet.</p>
+                        </div>
                     <?php else: ?>
                         <?php 
                         // Show only last 10 devices
@@ -320,8 +732,8 @@ if ($result) {
                         ?>
                             <div class="device-item">
                                 <div class="device-info">
-                                    <h4><?php echo htmlspecialchars($device['dev_serial']); ?></h4>
-                                    <p>Registered: <?php echo date('M j, Y H:i', strtotime($device['created_at'])); ?></p>
+                                    <h4><i class="fa fa-box"></i> <?php echo htmlspecialchars($device['dev_serial']); ?></h4>
+                                    <p><i class="fa fa-clock"></i> Registered: <?php echo date('M j, Y H:i', strtotime($device['created_at'])); ?></p>
                                 </div>
                                 <span class="status-badge status-<?php echo $device['dev_status']; ?>">
                                     <?php echo ucfirst($device['dev_status']); ?>
@@ -332,12 +744,14 @@ if ($result) {
                 </div>
                 
                 <?php if (count($devices) > 10): ?>
-                    <div style="text-align: center; margin-top: 15px;">
-                        <a href="device_list.php" class="btn btn-secondary">View All Devices (<?php echo count($devices); ?> total)</a>
+                    <div style="text-align: center; margin-top: 20px;">
+                        <a href="device_list.php" class="btn btn-secondary">
+                            <i class="fa fa-list"></i> View All Devices (<?php echo count($devices); ?> total)
+                        </a>
                     </div>
                 <?php endif; ?>
             </div>
         </div>
-    </div>
+    </main>
 </body>
 </html>
