@@ -1,704 +1,928 @@
 <?php
-require_once 'session_check.php';
 require_once '../../database/connection.php';
+session_start();
+
+if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'rescuer') {
+    header("Location: ../../login.html");
+    exit;
+}
 
 $rescuer_id = $_SESSION['user_id'];
 $conn = getDBConnection();
 
-// Get ongoing incidents for this rescuer
-$ongoing_query = "SELECT i.incident_id, i.start_time, p.pat_name, p.birthdate, p.contact_number,
-                  r.resp_name, COUNT(v.vital_id) as vital_count
-                  FROM incident i 
-                  JOIN patient p ON i.pat_id = p.pat_id 
-                  JOIN responder r ON i.resp_id = r.resp_id 
-                  LEFT JOIN vitalstat v ON i.incident_id = v.incident_id
-                  WHERE i.resc_id = ? AND i.status = 'ongoing' 
-                  GROUP BY i.incident_id, i.start_time, p.pat_name, p.birthdate, p.contact_number, r.resp_name
-                  ORDER BY i.start_time DESC";
-$stmt = $conn->prepare($ongoing_query);
-$stmt->bind_param("i", $rescuer_id);
-$stmt->execute();
-$ongoing_incidents = $stmt->get_result();
-
-// If specific incident ID is provided, get detailed data
-$specific_incident = null;
-if (isset($_GET['id'])) {
-    $incident_id = $_GET['id'];
-    $detail_query = "SELECT i.incident_id, i.start_time, p.pat_name, p.birthdate, p.contact_number,
-                    r.resp_name, r.resp_contact
-                    FROM incident i 
-                    JOIN patient p ON i.pat_id = p.pat_id 
-                    JOIN responder r ON i.resp_id = r.resp_id 
-                    WHERE i.incident_id = ? AND i.resc_id = ? AND i.status = 'ongoing'";
-    $stmt = $conn->prepare($detail_query);
-    $stmt->bind_param("ii", $incident_id, $rescuer_id);
-    $stmt->execute();
-    $specific_incident = $stmt->get_result()->fetch_assoc();
-    
-    if ($specific_incident) {
-        // Get vital statistics for this incident
-        $vitals_query = "SELECT bp_systolic, bp_diastolic, heart_rate, oxygen_level, recorded_at, recorded_by 
-                        FROM vitalstat 
-                        WHERE incident_id = ? 
-                        ORDER BY recorded_at DESC";
-        $stmt = $conn->prepare($vitals_query);
-        $stmt->bind_param("i", $incident_id);
+// Get rescuer info
+$rescuer = ['resc_name' => 'Rescuer'];
+if ($conn && !$conn->connect_error) {
+    $rescuer_query = "SELECT resc_name, resc_email FROM rescuer WHERE resc_id = ?";
+    $stmt = $conn->prepare($rescuer_query);
+    if ($stmt) {
+        $stmt->bind_param("i", $rescuer_id);
         $stmt->execute();
-        $vitals = $stmt->get_result();
+        $result = $stmt->get_result()->fetch_assoc();
+        if ($result) {
+            $rescuer = $result;
+        }
+    }
+}
+
+// Get ongoing incidents for this rescuer
+$ongoing_incidents = false;
+if ($conn && !$conn->connect_error) {
+    $ongoing_query = "SELECT i.incident_id, i.start_time, p.pat_name, p.birthdate, p.contact_number,
+                      r.resp_name, COUNT(v.vital_id) as vital_count
+                      FROM incident i 
+                      JOIN patient p ON i.pat_id = p.pat_id 
+                      JOIN responder r ON i.resp_id = r.resp_id 
+                      LEFT JOIN vitalstat v ON i.incident_id = v.incident_id
+                      WHERE i.resc_id = ? AND i.status = 'ongoing' 
+                      GROUP BY i.incident_id, i.start_time, p.pat_name, p.birthdate, p.contact_number, r.resp_name
+                      ORDER BY i.start_time DESC";
+    $stmt = $conn->prepare($ongoing_query);
+    if ($stmt) {
+        $stmt->bind_param("i", $rescuer_id);
+        $stmt->execute();
+        $ongoing_incidents = $stmt->get_result();
     }
 }
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ongoing Monitoring - VitalWear</title>
-    <link rel="stylesheet" href="../../../assets/css/styles.css">
-    <script src="https://kit.fontawesome.com/96e37b53f1.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .header {
-            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            position: relative;
-        }
-        .back-btn {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(255,255,255,0.2);
-            color: white;
-            padding: 10px 20px;
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 5px;
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-        .back-btn:hover {
-            background: rgba(255,255,255,0.3);
-        }
-        .logout-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(255,255,255,0.2);
-            color: white;
-            padding: 10px 20px;
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 5px;
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-        .logout-btn:hover {
-            background: rgba(255,255,255,0.3);
-        }
-        .incidents-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .incident-card {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 20px;
-            transition: transform 0.3s ease;
-            cursor: pointer;
-        }
-        .incident-card:hover {
-            transform: translateY(-3px);
-        }
-        .incident-title {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #2d3748;
-            margin-bottom: 15px;
-        }
-        .incident-info {
-            margin-bottom: 10px;
-        }
-        .info-label {
-            font-weight: 600;
-            color: #4a5568;
-        }
-        .info-value {
-            color: #2d3748;
-        }
-        .monitor-btn {
-            background: #48bb78;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            margin-top: 15px;
-            transition: all 0.3s ease;
-        }
-        .monitor-btn:hover {
-            background: #38a169;
-            transform: translateY(-2px);
-        }
-        .btn-secondary {
-            background: #ed8936;
-            color: white;
-        }
-        .monitoring-detail {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        .charts-container {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 30px;
-            margin-top: 20px;
-        }
-        .chart-wrapper {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .chart-wrapper canvas {
-            max-height: 300px;
-        }
-        .monitoring-header {
-            background: #f7fafc;
-            padding: 20px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        .monitoring-body {
-            padding: 20px;
-        }
-        .btn-primary {
-            background: #48bb78;
-            color: white;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: all 0.3s ease;
-        }
-        .btn-primary:hover {
-            background: #38a169;
-            transform: translateY(-2px);
-        }
-        .btn-danger {
-            background: #f56565;
-            color: white;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: all 0.3s ease;
-        }
-        .btn-danger:hover {
-            background: #e53e3e;
-            transform: translateY(-2px);
-        }
-        .vitals-history {
-            margin-top: 30px;
-        }
-        .vitals-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        .vitals-table th,
-        .vitals-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        .vitals-table th {
-            background: #f7fafc;
-            font-weight: 600;
-            color: #4a5568;
-        }
-        .vitals-table tr:hover {
-            background: #f7fafc;
-        }
-        .recorded-by-responder {
-            background: #e6fffa;
-        }
-        .recorded-by-rescuer {
-            background: #f0fff4;
-        }
-        .no-ongoing {
-            text-align: center;
-            padding: 60px 20px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .no-ongoing h3 {
-            color: #718096;
-            margin-bottom: 10px;
-        }
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <a href="dashboard.php" class="back-btn">← Back to Dashboard</a>
-            <a href="#" onclick="logout()" class="logout-btn">Logout</a>
-            <h1>❤️ Ongoing Monitoring</h1>
-            <p>Continue monitoring patient vital signs</p>
-        </div>
 
-        <?php if ($specific_incident): ?>
-            <div class="monitoring-detail">
-                <div class="monitoring-header">
-                    <h2>Incident #<?php echo $specific_incident['incident_id']; ?> - <?php echo htmlspecialchars($specific_incident['pat_name']); ?></h2>
-                    <p>Started: <?php echo date('M j, Y H:i', strtotime($specific_incident['start_time'])); ?></p>
-                </div>
-                
-                <div class="monitoring-body">
-                    <div class="patient-info">
-                        <h3>Patient Information</h3>
-                        <p><strong>Name:</strong> <?php echo htmlspecialchars($specific_incident['pat_name']); ?></p>
-                        <p><strong>Age:</strong> <?php echo date('Y') - date('Y', strtotime($specific_incident['birthdate'])); ?> years</p>
-                        <p><strong>Contact:</strong> <?php echo htmlspecialchars($specific_incident['contact_number'] ?: 'N/A'); ?></p>
-                        <p><strong>Initial Responder:</strong> <?php echo htmlspecialchars($specific_incident['resp_name']); ?></p>
-                    </div>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ongoing Monitoring - VitalWear</title>
 
-                    <div class="vital-stats">
-                        <h3>📈 Current Vital Statistics</h3>
-                        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center;margin-top:15px;">
-                            <div style="background:#fef2f2;padding:10px;border-radius:8px;">
-                                <p style="color:#777;font-size:11px;">Heart Rate</p>
-                                <p style="font-size:16px;font-weight:bold;color:#e74c3c;" id="currentHR">-</p>
-                            </div>
-                            <div style="background:#f0fdf4;padding:10px;border-radius:8px;">
-                                <p style="color:#777;font-size:11px;">Blood Pressure</p>
-                                <p style="font-size:16px;font-weight:bold;color:#22c55e;" id="currentBP">-</p>
-                            </div>
-                            <div style="background:#eff6ff;padding:10px;border-radius:8px;">
-                                <p style="color:#777;font-size:11px;">Oxygen</p>
-                                <p style="font-size:16px;font-weight:bold;color:#0ea5e9;" id="currentO2">-</p>
-                            </div>
-                            <div style="background:#f5f3ff;padding:10px;border-radius:8px;">
-                                <p style="color:#777;font-size:11px;">Time</p>
-                                <p style="font-size:12px;font-weight:bold;color:#7c3aed;" id="lastVitalTime">-</p>
-                            </div>
-                        </div>
-                        
-                        <div style="margin-top:20px;padding-top:15px;border-top:1px solid #eee;">
-                            <p style="font-size:14px;font-weight:600;color:#333;margin-bottom:10px;">Statistics:</p>
-                            <div style="display:grid;grid-template-columns:repeat(1,1fr);gap:10px;text-align:center;">
-                                <div style="background:#f7fafc;padding:10px;border-radius:8px;">
-                                    <p style="color:#777;font-size:11px;">Total Readings</p>
-                                    <p style="font-size:16px;font-weight:bold;color:#4a5568;" id="totalReadings">-</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+<link rel="stylesheet" href="../../assets/css/styles.css">
+<script src="https://kit.fontawesome.com/96e37b53f1.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-                    <div class="vitals-history">
-                        <h3>📈 Vital Signs History</h3>
-                        <div class="charts-container">
-                            <div class="chart-wrapper">
-                                <canvas id="heartRateChart"></canvas>
-                            </div>
-                            <div class="chart-wrapper">
-                                <canvas id="bloodPressureChart"></canvas>
-                            </div>
-                            <div class="chart-wrapper">
-                                <canvas id="oxygenChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="action-buttons">
-                        <button id="autoBtn<?php echo $specific_incident['incident_id']; ?>" onclick="toggleAutoInsert(<?php echo $specific_incident['incident_id']; ?>)" style="display:inline-block;margin-right:10px;padding:8px 16px;background:#3b82f6;color:white;border:none;border-radius:6px;font-size:13px;cursor:pointer;"><i class="fa fa-play"></i> Auto Start</button>
-                        <a href="complete_incident.php?id=<?php echo $specific_incident['incident_id']; ?>" class="btn-danger" onclick="return confirm('Are you sure you want to complete this incident?')">✅ Complete Incident</a>
-                        <a href="ongoing_monitoring.php" class="monitor-btn">← Back to All Incidents</a>
-                        <a href="transferred_incidents.php" class="monitor-btn">View Transferred Incidents</a>
-                    </div>
-                </div>
-            </div>
-        <?php else: ?>
-            <?php if ($ongoing_incidents->num_rows > 0): ?>
-                <h2 style="margin-bottom: 20px;">Select Incident to Monitor</h2>
-                <div class="incidents-grid">
-                    <?php while ($incident = $ongoing_incidents->fetch_assoc()): ?>
-                        <div class="incident-card" onclick="window.location.href='ongoing_monitoring.php?id=<?php echo $incident['incident_id']; ?>'">
-                            <div class="incident-title">Incident #<?php echo $incident['incident_id']; ?></div>
-                            <div class="incident-info">
-                                <p><span class="info-label">Patient:</span> <span class="info-value"><?php echo htmlspecialchars($incident['pat_name']); ?></span></p>
-                                <p><span class="info-label">Started:</span> <span class="info-value"><?php echo date('M j, Y H:i', strtotime($incident['start_time'])); ?></span></p>
-                                <p><span class="info-label">Vital Records:</span> <span class="info-value"><?php echo $incident['vital_count']; ?></span></p>
-                            </div>
-                            <a href="ongoing_monitoring.php?id=<?php echo $incident['incident_id']; ?>" class="monitor-btn">Continue Monitoring</a>
-                        </div>
-                    <?php endwhile; ?>
-                </div>
-            <?php else: ?>
-                <div class="no-ongoing">
-                    <h3>❤️ No Ongoing Incidents</h3>
-                    <p>You have no ongoing incidents to monitor at the moment.</p>
-                    <a href="transferred_incidents.php" class="monitor-btn" style="margin-top: 20px;">View Transferred Incidents</a>
-                </div>
-            <?php endif; ?>
-        <?php endif; ?>
-    </div>
-    
-    <?php require_once 'logout_script.php'; ?>
-    
-    <script>
-// Simulate vital stats and insert into database every 10 seconds
-function simulateVitals(incidentId) {
-    // Generate realistic random vital values
-    // Heart rate: 60-100 bpm
-    var heartRate = Math.floor(Math.random() * (100 - 60 + 1)) + 60;
-    // Systolic BP: 100-140 mmHg
-    var bpSystolic = Math.floor(Math.random() * (140 - 100 + 1)) + 100;
-    // Diastolic BP: 60-90 mmHg
-    var bpDiastolic = Math.floor(Math.random() * (90 - 60 + 1)) + 60;
-    // Oxygen level: 95-100%
-    var oxygenLevel = Math.floor(Math.random() * (100 - 95 + 1)) + 95;
-    
-    // Get current time
-    var now = new Date();
-    var timeString = now.toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit'});
-    
-    // Insert vitals into database via API
-    fetch('add_vitals.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `incident_id=${incidentId}&bp_systolic=${bpSystolic}&bp_diastolic=${bpDiastolic}&heart_rate=${heartRate}&oxygen_level=${oxygenLevel}`
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            console.log('Vitals recorded successfully');
-            // Update the vital display
-            updateVitalDisplay(incidentId, heartRate, bpSystolic, bpDiastolic, oxygenLevel, timeString);
-        } else {
-            console.error('Failed to record vitals:', data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error recording vitals:', error);
-    });
+<style>
+/* VitalWear Soft UI Design System */
+:root {
+    --deep-hospital-blue: #0A2A55;
+    --medical-cyan: #00B6CC;
+    --trust-blue: #0A85CC;
+    --health-green: #2EDBB3;
+    --clinical-white: #F0F4F8;
+    --system-gray: #A9B7C6;
+    --surface: #ffffff;
+    --radius: 12px;
+    --radius-lg: 16px;
+    --shadow-sm: 0 2px 4px rgba(10, 42, 85, 0.06);
+    --shadow: 0 4px 12px rgba(10, 42, 85, 0.08);
+    --shadow-md: 0 8px 24px rgba(10, 42, 85, 0.12);
 }
 
-// Update vital display without LIVE indicator
-function updateVitalDisplay(incidentId, heartRate, bpSystolic, bpDiastolic, oxygenLevel, timeString) {
-    document.getElementById('currentHR').innerHTML = heartRate + ' bpm';
-    document.getElementById('currentBP').innerHTML = bpSystolic + '/' + bpDiastolic;
-    document.getElementById('currentO2').innerHTML = oxygenLevel + '%';
-    document.getElementById('lastVitalTime').innerHTML = timeString;
+body {
+    background-color: var(--clinical-white);
+    color: var(--deep-hospital-blue);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Soft UI Sidebar */
+#sidebar {
+    background: var(--surface);
+    border-right: 1px solid rgba(169, 183, 198, 0.3);
+    box-shadow: var(--shadow);
+}
+
+.sidebar-logo {
+    padding: 24px 20px;
+    text-align: center;
+    background: linear-gradient(135deg, var(--deep-hospital-blue) 0%, var(--trust-blue) 100%);
+    margin: 12px;
+    border-radius: var(--radius);
+}
+
+.sidebar-logo img {
+    max-width: 140px;
+    height: auto;
+    filter: brightness(0) invert(1);
+}
+
+#sidebar a {
+    color: var(--deep-hospital-blue);
+    margin: 6px 12px;
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    transition: all 0.2s ease;
+    border: none;
+    font-weight: 500;
+}
+
+#sidebar a:hover {
+    background: rgba(0, 182, 204, 0.1);
+    color: var(--medical-cyan);
+    transform: translateX(4px);
+}
+
+/* Soft UI Header */
+.topbar {
+    background: var(--surface);
+    color: var(--deep-hospital-blue);
+    border-bottom: 1px solid rgba(169, 183, 198, 0.2);
+    box-shadow: var(--shadow-sm);
+    padding: 16px 24px;
+    font-weight: 600;
+}
+
+h2, h3, h4 {
+    color: var(--deep-hospital-blue);
+    font-weight: 700;
+}
+
+/* Modern Soft Edge Navigation */
+.bottom-nav {
+    background: var(--surface);
+    border-top: 1px solid rgba(169, 183, 198, 0.3);
+    box-shadow: 0 -4px 20px rgba(10, 42, 85, 0.08);
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.bottom-nav .bottom-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border-radius: var(--radius);
+    color: var(--system-gray);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    font-size: 12px;
+}
+
+.bottom-nav .bottom-item i {
+    font-size: 20px;
+    transition: all 0.3s ease;
+}
+
+.bottom-nav .bottom-item:hover {
+    color: var(--medical-cyan);
+    background: rgba(0, 182, 204, 0.1);
+    transform: translateY(-2px);
+}
+
+.bottom-nav .bottom-item.active {
+    color: var(--medical-cyan);
+    background: rgba(0, 182, 204, 0.15);
+}
+
+.bottom-nav .bottom-item.active i {
+    transform: scale(1.1);
+}
+
+/* Modern Soft Edge Cards */
+.dashboard-card {
+    background: var(--surface);
+    padding: 24px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(169, 183, 198, 0.2);
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+.dashboard-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.dashboard-card h3 {
+    color: var(--deep-hospital-blue);
+    margin-bottom: 16px;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Modern Soft Edge Buttons */
+.btn-quick-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: var(--radius-lg);
+    font-weight: 600;
+    font-size: 14px;
+    box-shadow: var(--shadow);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-quick-action:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-link {
+    color: var(--medical-cyan);
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-link:hover {
+    color: var(--trust-blue);
+    transform: translateX(4px);
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.status-ongoing {
+    background: rgba(46, 219, 179, 0.15);
+    color: var(--health-green);
+}
+
+/* Soft UI Chart */
+.chart-container {
+    background: var(--surface);
+    padding: 24px;
+    border-radius: var(--radius-lg);
+    margin: 24px 0;
+    box-shadow: var(--shadow);
+    min-height: 380px;
+    border: 1px solid rgba(169, 183, 198, 0.2);
+}
+
+.chart-container canvas {
+    width: 100% !important;
+    height: 280px !important;
+}
+
+.chart-tabs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.chart-tab {
+    padding: 10px 20px;
+    background: var(--clinical-white);
+    border: 1px solid rgba(169, 183, 198, 0.3);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--deep-hospital-blue);
+    font-weight: 500;
+}
+
+.chart-tab:hover {
+    background: rgba(0, 182, 204, 0.1);
+    border-color: var(--medical-cyan);
+}
+
+.chart-tab.active {
+    background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%);
+    color: white;
+    border-color: transparent;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Incident Card Styles */
+.incident-card {
+    background: var(--surface);
+    padding: 24px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(169, 183, 198, 0.2);
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+.incident-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.incident-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.incident-info h3 {
+    color: var(--deep-hospital-blue);
+    font-size: 1.25rem;
+    margin: 0 0 8px 0;
+    font-weight: 700;
+}
+
+.incident-info p {
+    color: var(--system-gray);
+    margin: 4px 0;
+    font-size: 14px;
+}
+
+.incident-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: var(--radius);
+    font-weight: 600;
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, var(--health-green) 0%, #20c997 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: var(--radius);
+    font-weight: 600;
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: var(--radius);
+    font-weight: 600;
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: var(--radius);
+    font-weight: 600;
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.vital-count {
+    font-size: 12px;
+    color: var(--system-gray);
+    margin-top: 8px;
+}
+</style>
+
+</head>
+
+<body>
+
+<header class="topbar">
+    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <i class="fa fa-heart-pulse" style="font-size: 24px; color: var(--medical-cyan);"></i>
+            <span style="font-size: 18px; font-weight: 700;">VitalWear</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; color: var(--deep-hospital-blue); font-weight: 500;">
+            <i class="fa fa-user-circle" style="font-size: 20px; color: var(--medical-cyan);"></i>
+            <span><?php echo htmlspecialchars($rescuer['resc_name'] ?? 'Rescuer'); ?></span>
+        </div>
+    </div>
+</header>
+
+<nav id="sidebar">
+<div class="sidebar-logo">
+    <img src="../../assets/logo.png" alt="VitalWear Logo">
+</div>
+<a href="dashboard.php"><i class="fa fa-gauge"></i> Dashboard</a>
+<a href="transferred_incidents.php"><i class="fa fa-exclamation-circle"></i> Transferred Incidents</a>
+<a href="ongoing_monitoring.php"><i class="fa fa-heart-pulse"></i> Ongoing Monitoring</a>
+<a href="completed_cases.php"><i class="fa fa-check-circle"></i> Completed Cases</a>
+<a href="incident_records.php"><i class="fa fa-folder"></i> Incident Records</a>
+<a href="return_device.php"><i class="fa fa-undo"></i> Return Device</a>
+<a href="../../api/auth/logout.php" class="btn btn-secondary">Logout</a>
+</nav>
+
+<main class="container" style="display:block;overflow-y:auto;">
+
+<!-- Welcome Banner -->
+<div style="background: linear-gradient(135deg, var(--deep-hospital-blue) 0%, var(--trust-blue) 100%); padding: 32px; border-radius: var(--radius-lg); margin-bottom: 24px; color: white; box-shadow: var(--shadow-md);">
+    <div style="display: flex; align-items: center; gap: 16px;">
+        <div style="width: 60px; height: 60px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+            ❤️
+        </div>
+        <div>
+            <h1 style="color: white; margin: 0; font-size: 1.75rem; font-weight: 700;">Ongoing Monitoring</h1>
+            <p style="color: rgba(255,255,255,0.9); margin: 4px 0 0 0; font-size: 1rem;">Track and manage active patient cases</p>
+        </div>
+    </div>
+</div>
+
+<?php if ($ongoing_incidents && $ongoing_incidents->num_rows > 0): ?>
+    <?php while ($incident = $ongoing_incidents->fetch_assoc()): ?>
+        <div class="incident-card">
+            <div class="incident-header">
+                <div class="incident-info">
+                    <h3>Incident #<?php echo $incident['incident_id']; ?></h3>
+                    <p><i class="fa fa-user"></i> Patient: <?php echo htmlspecialchars($incident['pat_name']); ?></p>
+                    <p><i class="fa fa-user-md"></i> From: <?php echo htmlspecialchars($incident['resp_name']); ?></p>
+                    <p><i class="fa fa-clock"></i> Started: <?php echo date('M j, Y H:i', strtotime($incident['start_time'])); ?></p>
+                    <div class="vital-count">
+                        <i class="fa fa-heartbeat"></i> <?php echo $incident['vital_count']; ?> vitals recorded
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <span class="status-badge status-ongoing">
+                        <i class="fa fa-circle" style="font-size: 8px; margin-right: 6px;"></i>
+                        Ongoing
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Vitals Chart -->
+            <div class="chart-container">
+                <h4 style="margin-bottom: 15px;">📈 Vitals Trend</h4>
+                <div class="chart-tabs">
+                    <div class="chart-tab active" onclick="switchChart(<?php echo $incident['incident_id']; ?>, 'all', this)">All Vitals</div>
+                    <div class="chart-tab" onclick="switchChart(<?php echo $incident['incident_id']; ?>, 'heartRate', this)">Heart Rate</div>
+                    <div class="chart-tab" onclick="switchChart(<?php echo $incident['incident_id']; ?>, 'bloodPressure', this)">Blood Pressure</div>
+                    <div class="chart-tab" onclick="switchChart(<?php echo $incident['incident_id']; ?>, 'oxygen', this)">Oxygen Level</div>
+                </div>
+                <div style="border: 2px solid #e9ecef; border-radius: 8px; padding: 10px; background: #f8f9fa;">
+                    <canvas id="chart-<?php echo $incident['incident_id']; ?>" style="background: white;"></canvas>
+                </div>
+            </div>
+            
+            <div class="incident-actions">
+                <a href="#" class="btn-primary" onclick="startMonitoring(<?php echo $incident['incident_id']; ?>)">
+                    <i class="fa fa-play"></i> Start Monitoring
+                </a>
+                <a href="case_vitals_history.php?id=<?php echo $incident['incident_id']; ?>" class="btn-secondary">
+                    <i class="fa fa-chart-line"></i> View History
+                </a>
+                <a href="complete_incident.php?id=<?php echo $incident['incident_id']; ?>" class="btn-warning">
+                    <i class="fa fa-check"></i> Complete
+                </a>
+            </div>
+        </div>
+    <?php endwhile; ?>
+<?php else: ?>
+    <div class="dashboard-card" style="text-align:center;">
+        <div style="font-size:64px;margin-bottom:20px;color:var(--system-gray);">
+            ❤️
+        </div>
+        <h3 style="color:var(--deep-hospital-blue);margin-bottom:12px;">No Ongoing Monitoring</h3>
+        <p style="color:var(--system-gray);margin-bottom:24px;">There are no ongoing incidents at the moment.</p>
+        <a href="transferred_incidents.php" class="btn-quick-action">
+            <i class="fa fa-exclamation-circle"></i> View Transferred Cases
+        </a>
+    </div>
+<?php endif; ?>
+
+</main>
+
+<nav class="bottom-nav">
+<a href="dashboard.php" class="bottom-item">
+    <i class="fa fa-gauge"></i>
+    <span>Home</span>
+</a>
+
+<a href="transferred_incidents.php" class="bottom-item">
+    <i class="fa fa-exclamation-circle"></i>
+    <span>Transfer</span>
+</a>
+
+<a href="ongoing_monitoring.php" class="bottom-item active">
+    <i class="fa fa-heart-pulse"></i>
+    <span>Monitor</span>
+</a>
+
+<a href="completed_cases.php" class="bottom-item">
+    <i class="fa fa-check-circle"></i>
+    <span>Complete</span>
+</a>
+
+<a href="../../api/auth/logout.php" class="bottom-item">
+    <i class="fa fa-sign-out"></i>
+    <span>Logout</span>
+</a>
+</nav>
+
+<script>
+let charts = {};
+let chartData = {};
+
+function initializeChart(incidentId) {
+    console.log('Initializing chart for incident:', incidentId);
     
-    // Update total readings
-    var totalElement = document.getElementById('totalReadings');
-    var currentTotal = parseInt(totalElement.textContent) || 0;
-    totalElement.textContent = currentTotal + 1;
+    const canvas = document.getElementById('chart-' + incidentId);
+    if (!canvas) {
+        console.error('Canvas not found for incident:', incidentId);
+        return;
+    }
     
-    // Update charts with new data
-    updateCharts({
+    const ctx = canvas.getContext('2d');
+    
+    // Initialize data structure with sample data for testing
+    if (!chartData[incidentId]) {
+        chartData[incidentId] = {
+            labels: ['12:00:00', '12:00:05', '12:00:10'],
+            heartRate: [72, 75, 73],
+            bpSystolic: [120, 122, 118],
+            bpDiastolic: [80, 82, 78],
+            oxygenLevel: [98, 97, 99]
+        };
+    }
+    
+    try {
+        charts[incidentId] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartData[incidentId].labels,
+                datasets: [
+                    {
+                        label: 'Heart Rate',
+                        data: chartData[incidentId].heartRate,
+                        borderColor: '#0A85CC',
+                        backgroundColor: 'rgba(10, 133, 204, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Systolic BP',
+                        data: chartData[incidentId].bpSystolic,
+                        borderColor: '#00B6CC',
+                        backgroundColor: 'rgba(0, 182, 204, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Diastolic BP',
+                        data: chartData[incidentId].bpDiastolic,
+                        borderColor: '#2EDBB3',
+                        backgroundColor: 'rgba(46, 219, 179, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Oxygen Level',
+                        data: chartData[incidentId].oxygenLevel,
+                        borderColor: '#0A2A55',
+                        backgroundColor: 'rgba(10, 42, 85, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: 50,
+                        max: 180,
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                }
+            }
+        });
+        console.log('Chart successfully created for incident:', incidentId);
+    } catch (error) {
+        console.error('Error creating chart for incident:', incidentId, error);
+    }
+}
+
+function switchChart(incidentId, type, tabElement) {
+    // Update tab styles
+    const container = tabElement.parentElement;
+    const tabs = container.querySelectorAll('.chart-tab');
+    tabs.forEach(tab => tab.classList.remove('active'));
+    tabElement.classList.add('active');
+    
+    // Update chart datasets visibility
+    const chart = charts[incidentId];
+    if (!chart) return;
+    
+    chart.data.datasets.forEach((dataset, index) => {
+        switch(type) {
+            case 'heartRate':
+                dataset.hidden = index !== 0;
+                break;
+            case 'bloodPressure':
+                dataset.hidden = index !== 1 && index !== 2;
+                break;
+            case 'oxygen':
+                dataset.hidden = index !== 3;
+                break;
+            case 'all':
+            default:
+                dataset.hidden = false;
+                break;
+        }
+    });
+    
+    chart.update();
+}
+
+function startMonitoring(incidentId) {
+    // Change button to stop monitoring
+    const button = event.target;
+    if (button.classList.contains('btn-primary')) {
+        button.innerHTML = '<i class="fa fa-stop"></i> Stop Monitoring';
+        button.classList.remove('btn-primary');
+        button.classList.add('btn-danger');
+        
+        // Start real-time updates (simulate with random data)
+        startRealTimeUpdates(incidentId);
+        
+        // Show notification
+        showNotification('Monitoring started for Incident #' + incidentId + ' - Saving vital signs to database', 'success');
+    } else {
+        button.innerHTML = '<i class="fa fa-play"></i> Start Monitoring';
+        button.classList.remove('btn-danger');
+        button.classList.add('btn-primary');
+        
+        // Stop real-time updates
+        stopRealTimeUpdates(incidentId);
+        
+        // Show notification
+        showNotification('Monitoring stopped for Incident #' + incidentId, 'info');
+    }
+}
+
+function showNotification(message, type) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 16px 24px;
+        border-radius: 12px;
+        color: white;
+        font-weight: 600;
+        z-index: 9999;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+    `;
+    
+    // Set background color based on type
+    switch(type) {
+        case 'success':
+            notification.style.background = 'linear-gradient(135deg, #27ae60 0%, #229954 100%)';
+            break;
+        case 'info':
+            notification.style.background = 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)';
+            break;
+        case 'error':
+            notification.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
+            break;
+        default:
+            notification.style.background = 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)';
+    }
+    
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+}
+
+let monitoringIntervals = {};
+
+function startRealTimeUpdates(incidentId) {
+    // Update chart every 2 seconds with simulated data
+    monitoringIntervals[incidentId] = setInterval(() => {
+        updateChartWithRandomData(incidentId);
+    }, 2000);
+}
+
+function stopRealTimeUpdates(incidentId) {
+    if (monitoringIntervals[incidentId]) {
+        clearInterval(monitoringIntervals[incidentId]);
+        delete monitoringIntervals[incidentId];
+    }
+}
+
+function updateChartWithRandomData(incidentId) {
+    if (!chartData[incidentId]) {
+        chartData[incidentId] = {
+            labels: [],
+            heartRate: [],
+            bpSystolic: [],
+            bpDiastolic: [],
+            oxygenLevel: []
+        };
+    }
+    
+    const time = new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', second: '2-digit'});
+    
+    // Generate realistic random vital signs
+    const heartRate = 65 + Math.floor(Math.random() * 25); // 65-90 bpm
+    const bpSystolic = 110 + Math.floor(Math.random() * 30); // 110-140 mmHg
+    const bpDiastolic = 70 + Math.floor(Math.random() * 20); // 70-90 mmHg
+    const oxygenLevel = 95 + Math.floor(Math.random() * 5); // 95-100%
+    
+    // Save to database via API
+    saveVitalsToDatabase(incidentId, heartRate, bpSystolic, bpDiastolic, oxygenLevel)
+        .then(response => {
+            if (response.success) {
+                console.log('✅ Vitals saved to database successfully');
+                // Update chart with saved data
+                updateChartData(incidentId, time, heartRate, bpSystolic, bpDiastolic, oxygenLevel);
+            } else {
+                console.error('❌ Failed to save vitals:', response.message);
+                // Show error notification
+                showNotification('Failed to save vitals: ' + response.message, 'error');
+                // Still update chart even if save fails, so user sees monitoring
+                updateChartData(incidentId, time, heartRate, bpSystolic, bpDiastolic, oxygenLevel);
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error saving vitals:', error);
+            // Show error notification
+            showNotification('Error saving vitals to database', 'error');
+            // Still update chart even if save fails
+            updateChartData(incidentId, time, heartRate, bpSystolic, bpDiastolic, oxygenLevel);
+        });
+}
+
+function saveVitalsToDatabase(incidentId, heartRate, bpSystolic, bpDiastolic, oxygenLevel) {
+    console.log('Saving vitals to database:', {
+        incidentId: incidentId,
         heartRate: heartRate,
         bpSystolic: bpSystolic,
         bpDiastolic: bpDiastolic,
         oxygenLevel: oxygenLevel
     });
-}
-
-// Store interval IDs for each incident
-var simulateIntervals = {};
-
-// Start simulating vitals for an incident
-function startSimulation(incidentId) {
-    // Clear existing interval if any
-    if (simulateIntervals[incidentId]) {
-        clearInterval(simulateIntervals[incidentId]);
-    }
     
-    // Simulate immediately
-    simulateVitals(incidentId);
-    
-    // Then simulate every 10 seconds
-    simulateIntervals[incidentId] = setInterval(function() {
-        simulateVitals(incidentId);
-    }, 10000);
-}
-
-// Stop simulating vitals for an incident
-function stopSimulation(incidentId) {
-    if (simulateIntervals[incidentId]) {
-        clearInterval(simulateIntervals[incidentId]);
-        delete simulateIntervals[incidentId];
-    }
-}
-
-// Toggle simulation mode
-function toggleAutoInsert(incidentId) {
-    var btn = document.getElementById('autoBtn' + incidentId);
-    
-    if (simulateIntervals[incidentId]) {
-        // Stop simulation
-        stopSimulation(incidentId);
-        btn.innerHTML = '<i class="fa fa-play"></i> Auto Start';
-        btn.style.background = '#3b82f6';
+    // Use the original API with database
+    return fetch('api/save_vitals.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            incident_id: incidentId,
+            heart_rate: heartRate,
+            bp_systolic: bpSystolic,
+            bp_diastolic: bpDiastolic,
+            oxygen_level: oxygenLevel
+        })
+    })
+    .then(response => {
+        console.log('API response status:', response.status);
         
-        // Remove LIVE indicators
-        document.getElementById('currentHR').innerHTML = document.getElementById('currentHR').textContent.replace(/ <span.*?<\/span>/, '');
-    } else {
-        // Start simulation
-        startSimulation(incidentId);
-        btn.innerHTML = '<i class="fa fa-stop"></i> Stop Live';
-        btn.style.background = '#ef4444';
-    }
-}
-
-// Do not auto-start simulation - user must manually start
-document.addEventListener('DOMContentLoaded', function() {
-    <?php if ($specific_incident): ?>
-        // Load initial vital data
-        loadInitialVitals(<?php echo $specific_incident['incident_id']; ?>);
-        
-        // Auto-start disabled - simulation must be started manually
-        // startSimulation(<?php echo $specific_incident['incident_id']; ?>);
-        
-        // Keep button in initial state
-        var btn = document.getElementById('autoBtn<?php echo $specific_incident['incident_id']; ?>');
-        if (btn) {
-            btn.innerHTML = '<i class="fa fa-play"></i> Auto Start';
-            btn.style.background = '#3b82f6';
+        // Check if response is actually JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            console.error('Non-JSON response, content-type:', contentType);
+            return response.text().then(text => {
+                console.error('Response text:', text);
+                throw new Error('Server returned non-JSON response: ' + text.substring(0, 200));
+            });
         }
+        
+        return response.text().then(text => {
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                console.error('Failed to parse JSON:', text);
+                throw new Error('Invalid JSON response: ' + text.substring(0, 100));
+            }
+        });
+    })
+    .then(data => {
+        console.log('API response data:', data);
+        return data;
+    })
+    .catch(error => {
+        console.error('API call error:', error);
+        throw error;
+    });
+}
+
+function updateChartData(incidentId, time, heartRate, bpSystolic, bpDiastolic, oxygenLevel) {
+    // Add new data to chart
+    chartData[incidentId].labels.push(time);
+    chartData[incidentId].heartRate.push(heartRate);
+    chartData[incidentId].bpSystolic.push(bpSystolic);
+    chartData[incidentId].bpDiastolic.push(bpDiastolic);
+    chartData[incidentId].oxygenLevel.push(oxygenLevel);
+    
+    // Keep only last 20 data points
+    if (chartData[incidentId].labels.length > 20) {
+        chartData[incidentId].labels.shift();
+        chartData[incidentId].heartRate.shift();
+        chartData[incidentId].bpSystolic.shift();
+        chartData[incidentId].bpDiastolic.shift();
+        chartData[incidentId].oxygenLevel.shift();
+    }
+    
+    // Update chart
+    if (charts[incidentId]) {
+        charts[incidentId].data.labels = chartData[incidentId].labels;
+        charts[incidentId].data.datasets[0].data = chartData[incidentId].heartRate;
+        charts[incidentId].data.datasets[1].data = chartData[incidentId].bpSystolic;
+        charts[incidentId].data.datasets[2].data = chartData[incidentId].bpDiastolic;
+        charts[incidentId].data.datasets[3].data = chartData[incidentId].oxygenLevel;
+        charts[incidentId].update('none'); // Update without animation for smooth real-time updates
+    }
+}
+
+// Initialize charts when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    <?php if ($ongoing_incidents && $ongoing_incidents->num_rows > 0): ?>
+        <?php 
+        // Reset the result pointer to iterate again for chart initialization
+        $ongoing_incidents->data_seek(0);
+        while ($incident = $ongoing_incidents->fetch_assoc()): 
+        ?>
+            initializeChart(<?php echo $incident['incident_id']; ?>);
+        <?php endwhile; ?>
     <?php endif; ?>
 });
-
-// Load initial vital data from database
-function loadInitialVitals(incidentId) {
-    fetch('get_vital_history.php?id=' + incidentId)
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success' && data.vitals && data.vitals.length > 0) {
-                // Update display with latest vital
-                const latest = data.vitals[0];
-                document.getElementById('currentHR').innerHTML = latest.heart_rate + ' bpm';
-                document.getElementById('currentBP').innerHTML = latest.bp_systolic + '/' + latest.bp_diastolic;
-                document.getElementById('currentO2').innerHTML = latest.oxygen_level + '%';
-                document.getElementById('lastVitalTime').innerHTML = new Date(latest.recorded_at).toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit'});
-                document.getElementById('totalReadings').textContent = data.vitals.length;
-                
-                // Initialize charts with historical data
-                initializeCharts(data.vitals);
-            } else {
-                // Initialize empty charts
-                initializeCharts([]);
-            }
-        })
-        .catch(error => {
-            console.error('Error loading initial vitals:', error);
-            initializeCharts([]);
-        });
-}
-
-// Chart variables
-let heartRateChart, bloodPressureChart, oxygenChart;
-
-// Initialize charts with vital data
-function initializeCharts(vitals) {
-    // Prepare data for charts (reverse to show oldest to newest)
-    const sortedVitals = vitals.slice().reverse();
-    const labels = sortedVitals.map(v => new Date(v.recorded_at).toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit'}));
-    const heartRateData = sortedVitals.map(v => v.heart_rate);
-    const bpSystolicData = sortedVitals.map(v => v.bp_systolic);
-    const bpDiastolicData = sortedVitals.map(v => v.bp_diastolic);
-    const oxygenData = sortedVitals.map(v => v.oxygen_level);
-
-    // Heart Rate Chart
-    const hrCtx = document.getElementById('heartRateChart').getContext('2d');
-    if (heartRateChart) heartRateChart.destroy();
-    heartRateChart = new Chart(hrCtx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Heart Rate',
-                data: heartRateData,
-                borderColor: '#e74c3c',
-                backgroundColor: 'rgba(231, 76, 60, 0.1)',
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                title: {
-                    display: true,
-                    text: '❤️ Heart Rate (bpm)'
-                },
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: false,
-                    min: 50,
-                    max: 120,
-                    title: {
-                        display: true,
-                        text: 'BPM'
-                    }
-                }
-            }
-        }
-    });
-
-    // Blood Pressure Chart
-    const bpCtx = document.getElementById('bloodPressureChart').getContext('2d');
-    if (bloodPressureChart) bloodPressureChart.destroy();
-    bloodPressureChart = new Chart(bpCtx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Systolic',
-                data: bpSystolicData,
-                borderColor: '#22c55e',
-                backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                tension: 0.4,
-                fill: true
-            }, {
-                label: 'Diastolic',
-                data: bpDiastolicData,
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                title: {
-                    display: true,
-                    text: '🩸 Blood Pressure (mmHg)'
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: false,
-                    min: 50,
-                    max: 160,
-                    title: {
-                        display: true,
-                        text: 'mmHg'
-                    }
-                }
-            }
-        }
-    });
-
-    // Oxygen Level Chart
-    const o2Ctx = document.getElementById('oxygenChart').getContext('2d');
-    if (oxygenChart) oxygenChart.destroy();
-    oxygenChart = new Chart(o2Ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Oxygen Level',
-                data: oxygenData,
-                borderColor: '#0ea5e9',
-                backgroundColor: 'rgba(14, 165, 233, 0.1)',
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                title: {
-                    display: true,
-                    text: '💨 Oxygen Level (%)'
-                },
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: false,
-                    min: 85,
-                    max: 100,
-                    title: {
-                        display: true,
-                        text: '%'
-                    }
-                }
-            }
-        }
-    });
-}
-
-// Update charts with new vital data
-function updateCharts(newVital) {
-    if (!heartRateChart || !bloodPressureChart || !oxygenChart) return;
-
-    // Add new data point
-    const newLabel = new Date().toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit'});
-    
-    // Update Heart Rate Chart
-    heartRateChart.data.labels.push(newLabel);
-    heartRateChart.data.datasets[0].data.push(newVital.heartRate);
-    if (heartRateChart.data.labels.length > 20) {
-        heartRateChart.data.labels.shift();
-        heartRateChart.data.datasets[0].data.shift();
-    }
-    heartRateChart.update();
-
-    // Update Blood Pressure Chart
-    bloodPressureChart.data.labels.push(newLabel);
-    bloodPressureChart.data.datasets[0].data.push(newVital.bpSystolic);
-    bloodPressureChart.data.datasets[1].data.push(newVital.bpDiastolic);
-    if (bloodPressureChart.data.labels.length > 20) {
-        bloodPressureChart.data.labels.shift();
-        bloodPressureChart.data.datasets[0].data.shift();
-        bloodPressureChart.data.datasets[1].data.shift();
-    }
-    bloodPressureChart.update();
-
-    // Update Oxygen Chart
-    oxygenChart.data.labels.push(newLabel);
-    oxygenChart.data.datasets[0].data.push(newVital.oxygenLevel);
-    if (oxygenChart.data.labels.length > 20) {
-        oxygenChart.data.labels.shift();
-        oxygenChart.data.datasets[0].data.shift();
-    }
-    oxygenChart.update();
-}
 </script>
+
 </body>
 </html>

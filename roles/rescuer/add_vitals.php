@@ -1,6 +1,11 @@
 <?php
-require_once 'session_check.php';
 require_once '../../database/connection.php';
+session_start();
+
+if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'rescuer') {
+    header("Location: ../../login.html");
+    exit;
+}
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ongoing_monitoring.php');
