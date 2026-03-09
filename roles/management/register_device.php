@@ -668,9 +668,6 @@ if ($result) {
                         <button type="submit" class="btn btn-primary" style="flex: 1;">
                             <i class="fa fa-save"></i> Register Device
                         </button>
-                        <button type="reset" class="btn btn-secondary" style="flex: 1;">
-                            <i class="fa fa-times"></i> Clear Form
-                        </button>
                     </div>
                 </form>
                 
