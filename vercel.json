@@ -1,12 +1,8 @@
 {
   "version": 2,
   "name": "vitalwear",
-  "builds": [
-    {
-      "src": "index.php",
-      "use": "@vercel/php"
-    }
-  ],
+  "buildCommand": "echo 'No build needed for PHP'",
+  "outputDirectory": ".",
   "routes": [
     {
       "src": "/index.php",
@@ -33,13 +29,13 @@
       "dest": "/database"
     }
   ],
-  "env": {
-    "VERCEL_ENV": "production"
-  },
   "functions": {
     "api/**/*.php": {
       "runtime": "php@8.2",
       "maxDuration": 10
+    },
+    "api/users/**/*.js": {
+      "maxDuration": 30
     }
   },
   "rewrites": [
@@ -62,15 +58,5 @@
         }
       ]
     }
-  ],
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "functions": {
-    "api/**/*.php": {
-      "runtime": "php@8.2",
-      "maxDuration": 10
-    },
-    "api/users/**/*.js": {
-      "maxDuration": 30
-    }
-  }
+  ]
 }
