@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD Operations Test - VitalWear</title>
+    <script src="https://kit.fontawesome.com/96e37b53f1.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1E7AB8;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --error: #EF4444;
+            --background: #F9FAFB;
+            --surface: #ffffff;
+            --text: #111827;
+            --border: #E5E7EB;
+            --radius: 8px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, #1A5F9A 100%);
+            color: white;
+            padding: 40px;
+            border-radius: var(--radius);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .test-section {
+            background: var(--surface);
+            padding: 30px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .test-section h2 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 5px;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-danger { background: var(--error); color: white; }
+
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 12px -1px rgba(0, 0, 0, 0.15); }
+
+        .test-result {
+            padding: 15px;
+            border-radius: var(--radius);
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .test-result.success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .test-result.error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .test-result.info {
+            background: rgba(30, 122, 184, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(30, 122, 184, 0.3);
+        }
+
+        .localStorage-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: var(--radius);
+            margin: 20px 0;
+            border: 1px solid var(--border);
+        }
+
+        .localStorage-info h3 {
+            margin-top: 0;
+            color: var(--primary);
+        }
+
+        .localStorage-data {
+            background: white;
+            padding: 15px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-indicator.success { background: var(--success); }
+        .status-indicator.error { background: var(--error); }
+        .status-indicator.pending { background: var(--warning); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fa fa-database"></i> VitalWear CRUD Operations Test</h1>
+            <p>Comprehensive testing of all CRUD operations and localStorage functionality</p>
+        </header>
+
+        <div class="localStorage-info">
+            <h3><i class="fa fa-info-circle"></i> LocalStorage Status</h3>
+            <div id="localStorage-status">Checking localStorage...</div>
+            <div class="localStorage-data" id="localStorage-data"></div>
+        </div>
+
+        <div class="grid">
+            <div class="test-section">
+                <h2><i class="fa fa-users"></i> User Management Tests</h2>
+                <button class="btn btn-primary" onclick="testCreateUser()">
+                    <i class="fa fa-plus"></i> Test Create User
+                </button>
+                <button class="btn btn-warning" onclick="testUpdateUser()">
+                    <i class="fa fa-edit"></i> Test Update User
+                </button>
+                <button class="btn btn-danger" onclick="testDeleteUser()">
+                    <i class="fa fa-trash"></i> Test Delete User
+                </button>
+                <button class="btn btn-success" onclick="testGetUsers()">
+                    <i class="fa fa-list"></i> Test Get Users
+                </button>
+                <div id="user-test-results"></div>
+            </div>
+
+            <div class="test-section">
+                <h2><i class="fa fa-box"></i> Device Management Tests</h2>
+                <button class="btn btn-primary" onclick="testCreateDevice()">
+                    <i class="fa fa-plus"></i> Test Create Device
+                </button>
+                <button class="btn btn-warning" onclick="testUpdateDevice()">
+                    <i class="fa fa-edit"></i> Test Update Device
+                </button>
+                <button class="btn btn-danger" onclick="testDeleteDevice()">
+                    <i class="fa fa-trash"></i> Test Delete Device
+                </button>
+                <button class="btn btn-success" onclick="testAssignDevice()">
+                    <i class="fa fa-exchange-alt"></i> Test Assign Device
+                </button>
+                <div id="device-test-results"></div>
+            </div>
+
+            <div class="test-section">
+                <h2><i class="fa fa-exclamation-circle"></i> Incident Management Tests</h2>
+                <button class="btn btn-primary" onclick="testCreateIncident()">
+                    <i class="fa fa-plus"></i> Test Create Incident
+                </button>
+                <button class="btn btn-warning" onclick="testUpdateIncident()">
+                    <i class="fa fa-edit"></i> Test Update Incident
+                </button>
+                <button class="btn btn-danger" onclick="testDeleteIncident()">
+                    <i class="fa fa-trash"></i> Test Delete Incident
+                </button>
+                <button class="btn btn-success" onclick="testTransferIncident()">
+                    <i class="fa fa-exchange"></i> Test Transfer Incident
+                </button>
+                <div id="incident-test-results"></div>
+            </div>
+
+            <div class="test-section">
+                <h2><i class="fa fa-heart-pulse"></i> Vitals Management Tests</h2>
+                <button class="btn btn-primary" onclick="testAddVitals()">
+                    <i class="fa fa-plus"></i> Test Add Vitals
+                </button>
+                <button class="btn btn-success" onclick="testGetVitals()">
+                    <i class="fa fa-list"></i> Test Get Vitals
+                </button>
+                <button class="btn btn-warning" onclick="testGetVitalsByIncident()">
+                    <i class="fa fa-search"></i> Test Get Vitals by Incident
+                </button>
+                <div id="vitals-test-results"></div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fa fa-history"></i> Activity Logging Tests</h2>
+            <button class="btn btn-primary" onclick="testActivityLogging()">
+                <i class="fa fa-plus"></i> Test Activity Logging
+            </button>
+            <button class="btn btn-success" onclick="testGetActivities()">
+                <i class="fa fa-list"></i> Test Get Activities
+            </button>
+            <button class="btn btn-warning" onclick="testGetStats()">
+                <i class="fa fa-chart-bar"></i> Test Get Statistics
+            </button>
+            <div id="activity-test-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fa fa-database"></i> Data Persistence Tests</h2>
+            <button class="btn btn-primary" onclick="testDataPersistence()">
+                <i class="fa fa-save"></i> Test Data Persistence
+            </button>
+            <button class="btn btn-warning" onclick="testDataExport()">
+                <i class="fa fa-download"></i> Test Data Export
+            </button>
+            <button class="btn btn-danger" onclick="testDataClear()">
+                <i class="fa fa-trash"></i> Test Data Clear
+            </button>
+            <div id="persistence-test-results"></div>
+        </div>
+    </div>
+
+    <script src="js/database.js"></script>
+    <script>
+        let testResults = {};
+
+        function showTestResult(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            const statusClass = type === 'success' ? 'success' : type === 'error' ? 'error' : 'pending';
+            
+            resultDiv.innerHTML = `
+                <span class="status-indicator ${statusClass}"></span>
+                [${timestamp}] ${message}
+            `;
+            
+            container.appendChild(resultDiv);
+            
+            // Auto-scroll to latest result
+            resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function updateLocalStorageStatus() {
+            const statusDiv = document.getElementById('localStorage-status');
+            const dataDiv = document.getElementById('localStorage-data');
+            
+            const hasData = localStorage.getItem('vitalwear_data');
+            
+            if (hasData) {
+                const data = JSON.parse(hasData);
+                const dataSize = JSON.stringify(data).length;
+                
+                statusDiv.innerHTML = `
+                    <span class="status-indicator success"></span>
+                    <strong>LocalStorage Active</strong> - ${dataSize} bytes stored
+                `;
+                
+                dataDiv.textContent = JSON.stringify(data, null, 2);
+            } else {
+                statusDiv.innerHTML = `
+                    <span class="status-indicator error"></span>
+                    <strong>No data in LocalStorage</strong>
+                `;
+                dataDiv.textContent = 'No data found';
+            }
+        }
+
+        // User Management Tests
+        function testCreateUser() {
+            try {
+                const testUser = {
+                    name: 'Test User ' + Date.now(),
+                    email: 'test' + Date.now() + '@example.com',
+                    role: 'responder'
+                };
+                
+                const result = window.vitalwearDB.addUser(testUser);
+                
+                if (result && result.id) {
+                    showTestResult('user-test-results', 
+                        `✅ User created successfully: ID=${result.id}, Name=${result.name}`, 
+                        'success');
+                    testResults.createUser = true;
+                } else {
+                    showTestResult('user-test-results', '❌ Failed to create user', 'error');
+                    testResults.createUser = false;
+                }
+            } catch (error) {
+                showTestResult('user-test-results', `❌ Error: ${error.message}`, 'error');
+                testResults.createUser = false;
+            }
+            
+            updateLocalStorageStatus();
+        }
+
+        function testUpdateUser() {
+            try {
+                const users = window.vitalwearDB.getUsers('responder');
+                if (users.length === 0) {
+                    showTestResult('user-test-results', '⚠️ No users to update. Create a user first.', 'info');
+                    return;
+                }
+                
+                const user = users[0];
+                const updatedUser = window.vitalwearDB.updateUser(user.id, 'responder', {
+                    name: 'Updated ' + user.name
+                });
+                
+                if (updatedUser && updatedUser.name.includes('Updated')) {
+                    showTestResult('user-test-results', 
+                        `✅ User updated successfully: ID=${updatedUser.id}, New Name=${updatedUser.name}`, 
+                        'success');
+                    testResults.updateUser = true;
+                } else {
+                    showTestResult('user-test-results', '❌ Failed to update user', 'error');
+                    testResults.updateUser = false;
+                }
+            } catch (error) {
+                showTestResult('user-test-results', `❌ Error: ${error.message}`, 'error');
+                testResults.updateUser = false;
+            }
+            
+            updateLocalStorageStatus();
+        }
+
+        function testDeleteUser() {
+            try {
+                const users = window.vitalwearDB.getUsers('responder');
+                if (users.length === 0) {
+                    showTestResult('user-test-results', '⚠️ No users to delete. Create a user first.', 'info');
+                    return;
+                }
+                
+                const user = users[users.length - 1]; // Delete last user
+                const success = window.vitalwearDB.deleteUser(user.id, 'responder');
+                
+                if (success) {
+                    showTestResult('user-test-results', 
+                        `✅ User deleted successfully: ID=${user.id}, Name=${user.name}`, 
+                        'success');
+                    testResults.deleteUser = true;
+                } else {
+                    showTestResult('user-test-results', '❌ Failed to delete user', 'error');
+                    testResults.deleteUser = false;
+                }
+            } catch (error) {
+                showTestResult('user-test-results', `❌ Error: ${error.message}`, 'error');
+                testResults.deleteUser = false;
+            }
+            
+            updateLocalStorageStatus();
+        }
+
+        function testGetUsers() {
+            try {
+                const users = window.vitalwearDB.getUsers();
+                const totalUsers = users.management.length + users.rescuer.length + users.responder.length;
+                
+                showTestResult('user-test-results', 
+                    `✅ Retrieved users: Management=${users.management.length}, Rescuer=${users.rescuer.length}, Responder=${users.responder.length}, Total=${totalUsers}`, 
+                    'success');
+                testResults.getUsers = true;
+            } catch (error) {
+                showTestResult('user-test-results', `❌ Error: ${error.message}`, 'error');
+                testResults.getUsers = false;
+            }
+        }
+
+        // Device Management Tests
+        function testCreateDevice() {
+            try {
+                const testDevice = {
+                    serial: 'TEST' + Date.now(),
+                    status: 'available'
+                };
+                
+                const result = window.vitalwearDB.addDevice(testDevice);
+                
+                if (result && result.id) {
+                    showTestResult('device-test-results', 
+                        `✅ Device created successfully: ID=${result.id}, Serial=${result.serial}`, 
+                        'success');
+                    testResults.createDevice = true;
+                } else {
+                    showTestResult('device-test-results', '❌ Failed to create device', 'error');
+                    testResults.createDevice = false;
+                }
+            } catch (error) {
+                showTestResult('device-test-results', `❌ Error: ${error.message}`, 'error');
+                testResults.createDevice = false;
+            }
+            
+            updateLocalStorageStatus();
+        }
+
+        function testUpdateDevice() {
+            try {
+                const devices = window.vitalwearDB.getDevices();
+                if (devices.length === 0) {
+                    showTestResult('device-test-results', '⚠️ No devices to update. Create a device first.', 'info');
+                    return;
+                }
+                
+                const device = devices[0];
+                const updatedDevice = window.vitalwearDB.updateDevice(device.id, {
+                    status: 'maintenance'
+                });
+                
+                if (updatedDevice && updatedDevice.status === 'maintenance') {
+                    showTestResult('device-test-results', 
+                        `✅ Device updated successfully: ID=${updatedDevice.id}, New Status=${updatedDevice.status}`, 
+                        'success');
+                    testResults.updateDevice = true;
+                } else {
+                    showTestResult('device-test-results', '❌ Failed to update device', 'error');
+                    testResults.updateDevice = false;
+                }
+            } catch (error) {
+                showTestResult('device-test-results', `❌ Error: ${error.message}`, 'error');
+                testResults.updateDevice = false;
+            }
+            
+            updateLocalStorageStatus();
+        }
+
+        function testDeleteDevice() {
+            try {
+                const devices = window.vitalwearDB.getDevices();
+                if (devices.length === 0) {
+                    showTestResult('device-test-results', '⚠️ No devices to delete. Create a device first.', 'info');
+                    return;
+                }
+                
+                const device = devices[devices.length - 1]; // Delete last device
+                const success = window.vitalwearDB.deleteDevice(device.id);
+                
+                if (success) {
+                    showTestResult('device-test-results', 
+                        `✅ Device deleted successfully: ID=${device.id}, Serial=${device.serial}`, 
+                        'success');
+                    testResults.deleteDevice = true;
+                } else {
+                    showTestResult('device-test-results', '❌ Failed to delete device', 'error');
+                    testResults.deleteDevice = false;
+                }
+            } catch (error) {
+                showTestResult('device-test-results', `❌ Error: ${error.message}`, 'error');
+                testResults.deleteDevice = false;
+            }
+            
+            updateLocalStorageStatus();
+        }
+
+        function testAssignDevice() {
+            try {
+                const devices = window.vitalwearDB.getDevices();
+                const users = window.vitalwearDB.getUsers();
+                
+                if (devices.length === 0) {
+                    showTestResult('device-test-results', '⚠️ No devices to assign. Create a device first.', 'info');
+                    return;
+                }
+                
+                const availableDevice = devices.find(d => d.status === 'available');
+                if (!availableDevice) {
+                    showTestResult('device-test-results', '⚠️ No available devices to assign.', 'info');
+                    return;
+                }
+                
+                const firstUser = users.responder[0] || users.rescuer[0] || users.management[0];
+                if (!firstUser) {
+                    showTestResult('device-test-results', '⚠️ No users to assign device to.', 'info');
+                    return;
+                }
+                
+                const success = window.vitalwearDB.assignDevice(availableDevice.id, firstUser.id, firstUser.role);
+                
+                if (success) {
+                    showTestResult('device-test-results', 
+                        `✅ Device assigned successfully: Device=${availableDevice.serial} to User=${firstUser.name}`, 
+                        'success');
+                    testResults.assignDevice = true;
+                } else {
+                    showTestResult('device-test-results', '❌ Failed to assign device', 'error');
+                    testResults.assignDevice = false;
+                }
+            } catch (error) {
+                showTestResult('device-test-results', `❌ Error: ${error.message}`, 'error');
+                testResults.assignDevice = false;
+            }
+            
+            updateLocalStorageStatus();
+        }
+
+        // Incident Management Tests
+        function testCreateIncident() {
+            try {
+                const testIncident = {
+                    patient_name: 'Test Patient ' + Date.now(),
+                    patient_age: 45,
+                    patient_condition: 'Test condition',
+                    incident_location: 'Test location',
+                    responder_id: 5 // Default responder ID
+                };
+                
+                const result = window.vitalwearDB.createIncident(testIncident);
+                
+                if (result && result.id) {
+                    showTestResult('incident-test-results', 
+                        `✅ Incident created successfully: ID=${result.id}, Patient=${result.patient_name}`, 
+                        'success');
+                    testResults.createIncident = true;
+                } else {
+                    showTestResult('incident-test-results', '❌ Failed to create incident', 'error');
+                    testResults.createIncident = false;
+                }
+            } catch (error) {
+                showTestResult('incident-test-results', `❌ Error: ${error.message}`, 'error');
+                testResults.createIncident = false;
+            }
+            
+            updateLocalStorageStatus();
+        }
+
+        function testUpdateIncident() {
+            try {
+                const incidents = window.vitalwearDB.getIncidents();
+                if (incidents.length === 0) {
+                    showTestResult('incident-test-results', '⚠️ No incidents to update. Create an incident first.', 'info');
+                    return;
+                }
+                
+                const incident = incidents[0];
+                const updatedIncident = window.vitalwearDB.updateIncident(incident.id, {
+                    patient_condition: 'Updated condition'
+                });
+                
+                if (updatedIncident && updatedIncident.patient_condition.includes('Updated')) {
+                    showTestResult('incident-test-results', 
+                        `✅ Incident updated successfully: ID=${updatedIncident.id}, New Condition=${updatedIncident.patient_condition}`, 
+                        'success');
+                    testResults.updateIncident = true;
+                } else {
+                    showTestResult('incident-test-results', '❌ Failed to update incident', 'error');
+                    testResults.updateIncident = false;
+                }
+            } catch (error) {
+                showTestResult('incident-test-results', `❌ Error: ${error.message}`, 'error');
+                testResults.updateIncident = false;
+            }
+            
+            updateLocalStorageStatus();
+        }
+
+        function testDeleteIncident() {
+            try {
+                const incidents = window.vitalwearDB.getIncidents();
+                if (incidents.length === 0) {
+                    showTestResult('incident-test-results', '⚠️ No incidents to delete. Create an incident first.', 'info');
+                    return;
+                }
+                
+                const incident = incidents[incidents.length - 1]; // Delete last incident
+                const success = window.vitalwearDB.deleteIncident(incident.id);
+                
+                if (success) {
+                    showTestResult('incident-test-results', 
+                        `✅ Incident deleted successfully: ID=${incident.id}, Patient=${incident.patient_name}`, 
+                        'success');
+                    testResults.deleteIncident = true;
+                } else {
+                    showTestResult('incident-test-results', '❌ Failed to delete incident', 'error');
+                    testResults.deleteIncident = false;
+                }
+            } catch (error) {
+                showTestResult('incident-test-results', `❌ Error: ${error.message}`, 'error');
+                testResults.deleteIncident = false;
+            }
+            
+            updateLocalStorageStatus();
+        }
+
+        function testTransferIncident() {
+            try {
+                const incidents = window.vitalwearDB.getIncidents();
+                const rescuers = window.vitalwearDB.getUsers('rescuer');
+                
+                if (incidents.length === 0) {
+                    showTestResult('incident-test-results', '⚠️ No incidents to transfer. Create an incident first.', 'info');
+                    return;
+                }
+                
+                if (rescuers.length === 0) {
+                    showTestResult('incident-test-results', '⚠️ No rescuers to transfer to.', 'info');
+                    return;
+                }
+                
+                const incident = incidents[0];
+                const rescuer = rescuers[0];
+                const success = window.vitalwearDB.transferIncident(incident.id, rescuer.id);
+                
+                if (success) {
+                    showTestResult('incident-test-results', 
+                        `✅ Incident transferred successfully: ID=${incident.id} to Rescuer=${rescuer.name}`, 
+                        'success');
+                    testResults.transferIncident = true;
+                } else {
+                    showTestResult('incident-test-results', '❌ Failed to transfer incident', 'error');
+                    testResults.transferIncident = false;
+                }
+            } catch (error) {
+                showTestResult('incident-test-results', `❌ Error: ${error.message}`, 'error');
+                testResults.transferIncident = false;
+            }
+            
+            updateLocalStorageStatus();
+        }
+
+        // Vitals Management Tests
+        function testAddVitals() {
+            try {
+                const incidents = window.vitalwearDB.getIncidents();
+                if (incidents.length === 0) {
+                    showTestResult('vitals-test-results', '⚠️ No incidents to add vitals to. Create an incident first.', 'info');
+                    return;
+                }
+                
+                const testVitals = {
+                    incident_id: incidents[0].id,
+                    heart_rate: 72,
+                    bp_systolic: 120,
+                    bp_diastolic: 80,
+                    oxygen_level: 98,
+                    temperature: 98.6
+                };
+                
+                const result = window.vitalwearDB.addVital(testVitals);
+                
+                if (result && result.id) {
+                    showTestResult('vitals-test-results', 
+                        `✅ Vitals added successfully: ID=${result.id}, Incident ID=${result.incident_id}`, 
+                        'success');
+                    testResults.addVitals = true;
+                } else {
+                    showTestResult('vitals-test-results', '❌ Failed to add vitals', 'error');
+                    testResults.addVitals = false;
+                }
+            } catch (error) {
+                showTestResult('vitals-test-results', `❌ Error: ${error.message}`, 'error');
+                testResults.addVitals = false;
+            }
+            
+            updateLocalStorageStatus();
+        }
+
+        function testGetVitals() {
+            try {
+                const vitals = window.vitalwearDB.getVitals();
+                
+                showTestResult('vitals-test-results', 
+                    `✅ Retrieved vitals: Count=${vitals.length}`, 
+                    'success');
+                testResults.getVitals = true;
+            } catch (error) {
+                showTestResult('vitals-test-results', `❌ Error: ${error.message}`, 'error');
+                testResults.getVitals = false;
+            }
+        }
+
+        function testGetVitalsByIncident() {
+            try {
+                const incidents = window.vitalwearDB.getIncidents();
+                if (incidents.length === 0) {
+                    showTestResult('vitals-test-results', '⚠️ No incidents to get vitals for. Create an incident first.', 'info');
+                    return;
+                }
+                
+                const vitals = window.vitalwearDB.getVitalsByIncident(incidents[0].id);
+                
+                showTestResult('vitals-test-results', 
+                    `✅ Retrieved vitals for incident ${incidents[0].id}: Count=${vitals.length}`, 
+                    'success');
+                testResults.getVitalsByIncident = true;
+            } catch (error) {
+                showTestResult('vitals-test-results', `❌ Error: ${error.message}`, 'error');
+                testResults.getVitalsByIncident = false;
+            }
+        }
+
+        // Activity Logging Tests
+        function testActivityLogging() {
+            try {
+                window.vitalwearDB.logActivity('Test User', 'responder', 'Test activity');
+                
+                showTestResult('activity-test-results', 
+                    `✅ Activity logged successfully`, 
+                    'success');
+                testResults.activityLogging = true;
+            } catch (error) {
+                showTestResult('activity-test-results', `❌ Error: ${error.message}`, 'error');
+                testResults.activityLogging = false;
+            }
+            
+            updateLocalStorageStatus();
+        }
+
+        function testGetActivities() {
+            try {
+                const activities = window.vitalwearDB.getRecentActivities(5);
+                
+                showTestResult('activity-test-results', 
+                    `✅ Retrieved activities: Count=${activities.length}`, 
+                    'success');
+                testResults.getActivities = true;
+            } catch (error) {
+                showTestResult('activity-test-results', `❌ Error: ${error.message}`, 'error');
+                testResults.getActivities = false;
+            }
+        }
+
+        function testGetStats() {
+            try {
+                const stats = window.vitalwearDB.getStats();
+                
+                showTestResult('activity-test-results', 
+                    `✅ Retrieved stats: Devices=${stats.totalDevices}, Users=${stats.totalUsers}, Incidents=${stats.activeIncidents + stats.completedIncidents}`, 
+                    'success');
+                testResults.getStats = true;
+            } catch (error) {
+                showTestResult('activity-test-results', `❌ Error: ${error.message}`, 'error');
+                testResults.getStats = false;
+            }
+        }
+
+        // Data Persistence Tests
+        function testDataPersistence() {
+            try {
+                // Save current data
+                const currentData = window.vitalwearDB.getData();
+                const dataString = JSON.stringify(currentData);
+                
+                // Clear and reinitialize
+                window.vitalwearDB.clearAllData();
+                
+                // Import data back
+                const success = window.vitalwearDB.importData(dataString);
+                
+                if (success) {
+                    showTestResult('persistence-test-results', 
+                        `✅ Data persistence test passed: ${dataString.length} characters saved and restored`, 
+                        'success');
+                    testResults.dataPersistence = true;
+                } else {
+                    showTestResult('persistence-test-results', '❌ Data persistence test failed', 'error');
+                    testResults.dataPersistence = false;
+                }
+            } catch (error) {
+                showTestResult('persistence-test-results', `❌ Error: ${error.message}`, 'error');
+                testResults.dataPersistence = false;
+            }
+            
+            updateLocalStorageStatus();
+        }
+
+        function testDataExport() {
+            try {
+                const exportData = window.vitalwearDB.exportData();
+                
+                if (exportData && exportData.length > 0) {
+                    showTestResult('persistence-test-results', 
+                        `✅ Data export successful: ${exportData.length} characters exported`, 
+                        'success');
+                    testResults.dataExport = true;
+                } else {
+                    showTestResult('persistence-test-results', '❌ Data export failed', 'error');
+                    testResults.dataExport = false;
+                }
+            } catch (error) {
+                showTestResult('persistence-test-results', `❌ Error: ${error.message}`, 'error');
+                testResults.dataExport = false;
+            }
+        }
+
+        function testDataClear() {
+            try {
+                // Save current data first
+                const currentData = window.vitalwearDB.getData();
+                
+                // Clear data
+                window.vitalwearDB.clearAllData();
+                
+                // Check if cleared
+                const clearedData = window.vitalwearDB.getData();
+                const hasInitialData = clearedData.users && clearedData.devices && clearedData.incidents;
+                
+                if (hasInitialData) {
+                    showTestResult('persistence-test-results', 
+                        `✅ Data cleared and reinitialized successfully`, 
+                        'success');
+                    testResults.dataClear = true;
+                    
+                    // Restore original data
+                    window.vitalwearDB.importData(JSON.stringify(currentData));
+                } else {
+                    showTestResult('persistence-test-results', '❌ Data clear failed', 'error');
+                    testResults.dataClear = false;
+                }
+            } catch (error) {
+                showTestResult('persistence-test-results', `❌ Error: ${error.message}`, 'error');
+                testResults.dataClear = false;
+            }
+            
+            updateLocalStorageStatus();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateLocalStorageStatus();
+            
+            // Update localStorage status every 2 seconds
+            setInterval(updateLocalStorageStatus, 2000);
+        });
+    </script>
+</body>
+</html>
