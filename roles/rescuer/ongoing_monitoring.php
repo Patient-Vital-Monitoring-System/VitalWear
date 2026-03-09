@@ -258,6 +258,52 @@ h2, h3, h4 {
     color: var(--health-green);
 }
 
+/* Soft UI Chart */
+.chart-container {
+    background: var(--surface);
+    padding: 24px;
+    border-radius: var(--radius-lg);
+    margin: 24px 0;
+    box-shadow: var(--shadow);
+    min-height: 380px;
+    border: 1px solid rgba(169, 183, 198, 0.2);
+}
+
+.chart-container canvas {
+    width: 100% !important;
+    height: 280px !important;
+}
+
+.chart-tabs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.chart-tab {
+    padding: 10px 20px;
+    background: var(--clinical-white);
+    border: 1px solid rgba(169, 183, 198, 0.3);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--deep-hospital-blue);
+    font-weight: 500;
+}
+
+.chart-tab:hover {
+    background: rgba(0, 182, 204, 0.1);
+    border-color: var(--medical-cyan);
+}
+
+.chart-tab.active {
+    background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%);
+    color: white;
+    border-color: transparent;
+    box-shadow: var(--shadow-sm);
+}
+
 /* Incident Card Styles */
 .incident-card {
     background: var(--surface);
@@ -433,10 +479,21 @@ h2, h3, h4 {
                 </div>
             </div>
             
+            <!-- Vitals Chart -->
+            <div class="chart-container">
+                <h4 style="margin-bottom: 15px;">📈 Vitals Trend</h4>
+                <div class="chart-tabs">
+                    <div class="chart-tab active" onclick="switchChart(<?php echo $incident['incident_id']; ?>, 'all', this)">All Vitals</div>
+                    <div class="chart-tab" onclick="switchChart(<?php echo $incident['incident_id']; ?>, 'heartRate', this)">Heart Rate</div>
+                    <div class="chart-tab" onclick="switchChart(<?php echo $incident['incident_id']; ?>, 'bloodPressure', this)">Blood Pressure</div>
+                    <div class="chart-tab" onclick="switchChart(<?php echo $incident['incident_id']; ?>, 'oxygen', this)">Oxygen Level</div>
+                </div>
+                <div style="border: 2px solid #e9ecef; border-radius: 8px; padding: 10px; background: #f8f9fa;">
+                    <canvas id="chart-<?php echo $incident['incident_id']; ?>" style="background: white;"></canvas>
+                </div>
+            </div>
+            
             <div class="incident-actions">
-                <a href="add_vitals.php?id=<?php echo $incident['incident_id']; ?>" class="btn-primary">
-                    <i class="fa fa-plus"></i> Add Vitals
-                </a>
                 <a href="case_vitals_history.php?id=<?php echo $incident['incident_id']; ?>" class="btn-secondary">
                     <i class="fa fa-chart-line"></i> View History
                 </a>
@@ -487,6 +544,145 @@ h2, h3, h4 {
     <span>Logout</span>
 </a>
 </nav>
+
+<script>
+let charts = {};
+let chartData = {};
+
+function initializeChart(incidentId) {
+    console.log('Initializing chart for incident:', incidentId);
+    
+    const canvas = document.getElementById('chart-' + incidentId);
+    if (!canvas) {
+        console.error('Canvas not found for incident:', incidentId);
+        return;
+    }
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Initialize data structure with sample data for testing
+    if (!chartData[incidentId]) {
+        chartData[incidentId] = {
+            labels: ['12:00:00', '12:00:05', '12:00:10'],
+            heartRate: [72, 75, 73],
+            bpSystolic: [120, 122, 118],
+            bpDiastolic: [80, 82, 78],
+            oxygenLevel: [98, 97, 99]
+        };
+    }
+    
+    try {
+        charts[incidentId] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartData[incidentId].labels,
+                datasets: [
+                    {
+                        label: 'Heart Rate',
+                        data: chartData[incidentId].heartRate,
+                        borderColor: '#0A85CC',
+                        backgroundColor: 'rgba(10, 133, 204, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Systolic BP',
+                        data: chartData[incidentId].bpSystolic,
+                        borderColor: '#00B6CC',
+                        backgroundColor: 'rgba(0, 182, 204, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Diastolic BP',
+                        data: chartData[incidentId].bpDiastolic,
+                        borderColor: '#2EDBB3',
+                        backgroundColor: 'rgba(46, 219, 179, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Oxygen Level',
+                        data: chartData[incidentId].oxygenLevel,
+                        borderColor: '#0A2A55',
+                        backgroundColor: 'rgba(10, 42, 85, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: 50,
+                        max: 180,
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                }
+            }
+        });
+        console.log('Chart successfully created for incident:', incidentId);
+    } catch (error) {
+        console.error('Error creating chart for incident:', incidentId, error);
+    }
+}
+
+function switchChart(incidentId, type, tabElement) {
+    // Update tab styles
+    const container = tabElement.parentElement;
+    const tabs = container.querySelectorAll('.chart-tab');
+    tabs.forEach(tab => tab.classList.remove('active'));
+    tabElement.classList.add('active');
+    
+    // Update chart datasets visibility
+    const chart = charts[incidentId];
+    if (!chart) return;
+    
+    chart.data.datasets.forEach((dataset, index) => {
+        switch(type) {
+            case 'heartRate':
+                dataset.hidden = index !== 0;
+                break;
+            case 'bloodPressure':
+                dataset.hidden = index !== 1 && index !== 2;
+                break;
+            case 'oxygen':
+                dataset.hidden = index !== 3;
+                break;
+            case 'all':
+            default:
+                dataset.hidden = false;
+                break;
+        }
+    });
+    
+    chart.update();
+}
+
+// Initialize charts when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    <?php if ($ongoing_incidents && $ongoing_incidents->num_rows > 0): ?>
+        <?php 
+        // Reset the result pointer to iterate again for chart initialization
+        $ongoing_incidents->data_seek(0);
+        while ($incident = $ongoing_incidents->fetch_assoc()): 
+        ?>
+            initializeChart(<?php echo $incident['incident_id']; ?>);
+        <?php endwhile; ?>
+    <?php endif; ?>
+});
+</script>
 
 </body>
 </html>
