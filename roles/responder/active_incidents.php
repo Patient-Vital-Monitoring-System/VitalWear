@@ -35,6 +35,7 @@ $incidents = $stmt->get_result();
 <title>Active Incidents - VitalWear</title>
 <link rel="stylesheet" href="../../assets/css/styles.css">
 <script src="https://kit.fontawesome.com/96e37b53f1.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 .vital-card {
     background: #f8f9fa;
@@ -99,6 +100,37 @@ $incidents = $stmt->get_result();
     margin: 10px 0;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     overflow: visible;
+}
+.chart-container {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin: 20px 0;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    min-height: 350px;
+    position: relative;
+}
+.chart-container canvas {
+    width: 100% !important;
+    height: 250px !important;
+}
+.chart-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+.chart-tab {
+    padding: 8px 16px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.chart-tab.active {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
 }
 </style>
 </head>
@@ -170,6 +202,20 @@ Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_
                 </div>
             </div>
         </div>
+        
+        <!-- Vitals Chart -->
+        <div class="chart-container">
+            <h4 style="margin-bottom: 15px;">📈 Vitals Trend</h4>
+            <div class="chart-tabs">
+                <div class="chart-tab active" onclick="switchChart(<?php echo $incident['incident_id']; ?>, 'all', this)">All Vitals</div>
+                <div class="chart-tab" onclick="switchChart(<?php echo $incident['incident_id']; ?>, 'heartRate', this)">Heart Rate</div>
+                <div class="chart-tab" onclick="switchChart(<?php echo $incident['incident_id']; ?>, 'bloodPressure', this)">Blood Pressure</div>
+                <div class="chart-tab" onclick="switchChart(<?php echo $incident['incident_id']; ?>, 'oxygen', this)">Oxygen Level</div>
+            </div>
+            <div style="border: 2px solid #e9ecef; border-radius: 8px; padding: 10px; background: #f8f9fa;">
+                <canvas id="chart-<?php echo $incident['incident_id']; ?>" style="background: white;"></canvas>
+            </div>
+        </div>
     </div>
     <?php endwhile; ?>
 <?php else: ?>
@@ -191,6 +237,8 @@ Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_
 
 <script>
 let monitoringIntervals = {};
+let charts = {};
+let chartData = {};
 
 function showMessage(text, type) {
     const msgDiv = document.getElementById('message');
@@ -225,6 +273,201 @@ function toggleMonitoring(incidentId) {
     }
 }
 
+function initializeChart(incidentId) {
+    console.log('Initializing chart for incident:', incidentId);
+    
+    const canvas = document.getElementById('chart-' + incidentId);
+    if (!canvas) {
+        console.error('Canvas not found for incident:', incidentId);
+        return;
+    }
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('Could not get context for incident:', incidentId);
+        return;
+    }
+    
+    // Initialize data structure with sample data for testing
+    if (!chartData[incidentId]) {
+        chartData[incidentId] = {
+            labels: ['12:00:00', '12:00:05', '12:00:10'],
+            heartRate: [72, 75, 73],
+            bpSystolic: [120, 122, 118],
+            bpDiastolic: [80, 82, 78],
+            oxygenLevel: [98, 97, 98]
+        };
+    }
+    
+    try {
+        charts[incidentId] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartData[incidentId].labels,
+                datasets: [
+                    {
+                        label: 'Heart Rate',
+                        data: chartData[incidentId].heartRate,
+                        borderColor: '#e74c3c',
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        tension: 0.4,
+                        yAxisID: 'y',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Systolic BP',
+                        data: chartData[incidentId].bpSystolic,
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        tension: 0.4,
+                        yAxisID: 'y1',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Diastolic BP',
+                        data: chartData[incidentId].bpDiastolic,
+                        borderColor: '#16a34a',
+                        backgroundColor: 'rgba(22, 163, 74, 0.1)',
+                        tension: 0.4,
+                        yAxisID: 'y1',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Oxygen Level',
+                        data: chartData[incidentId].oxygenLevel,
+                        borderColor: '#0ea5e9',
+                        backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                        tension: 0.4,
+                        yAxisID: 'y2',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Time'
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Heart Rate (bpm)'
+                        },
+                        min: 50,
+                        max: 120
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Blood Pressure (mmHg)'
+                        },
+                        min: 50,
+                        max: 180,
+                        grid: {
+                            drawOnChartArea: false,
+                        }
+                    }
+                }
+            }
+        });
+        console.log('Chart successfully created for incident:', incidentId);
+    } catch (error) {
+        console.error('Error creating chart for incident:', incidentId, error);
+    }
+}
+
+function switchChart(incidentId, type, tabElement) {
+    // Update tab styles
+    const container = tabElement.parentElement;
+    const tabs = container.querySelectorAll('.chart-tab');
+    tabs.forEach(tab => tab.classList.remove('active'));
+    tabElement.classList.add('active');
+    
+    // Update chart datasets visibility
+    const chart = charts[incidentId];
+    if (!chart) return;
+    
+    chart.data.datasets.forEach((dataset, index) => {
+        switch(type) {
+            case 'heartRate':
+                dataset.hidden = index !== 0;
+                break;
+            case 'bloodPressure':
+                dataset.hidden = index !== 1 && index !== 2;
+                break;
+            case 'oxygen':
+                dataset.hidden = index !== 3;
+                break;
+            default: // all
+                dataset.hidden = false;
+        }
+    });
+    
+    chart.update();
+}
+
+function updateChart(incidentId, heartRate, bpSystolic, bpDiastolic, oxygenLevel) {
+    if (!chartData[incidentId]) {
+        chartData[incidentId] = {
+            labels: [],
+            heartRate: [],
+            bpSystolic: [],
+            bpDiastolic: [],
+            oxygenLevel: []
+        };
+    }
+    
+    const time = new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', second: '2-digit'});
+    
+    // Add new data
+    chartData[incidentId].labels.push(time);
+    chartData[incidentId].heartRate.push(heartRate);
+    chartData[incidentId].bpSystolic.push(bpSystolic);
+    chartData[incidentId].bpDiastolic.push(bpDiastolic);
+    chartData[incidentId].oxygenLevel.push(oxygenLevel);
+    
+    // Keep only last 20 data points
+    if (chartData[incidentId].labels.length > 20) {
+        chartData[incidentId].labels.shift();
+        chartData[incidentId].heartRate.shift();
+        chartData[incidentId].bpSystolic.shift();
+        chartData[incidentId].bpDiastolic.shift();
+        chartData[incidentId].oxygenLevel.shift();
+    }
+    
+    // Update chart
+    if (charts[incidentId]) {
+        charts[incidentId].data.labels = chartData[incidentId].labels;
+        charts[incidentId].data.datasets[0].data = chartData[incidentId].heartRate;
+        charts[incidentId].data.datasets[1].data = chartData[incidentId].bpSystolic;
+        charts[incidentId].data.datasets[2].data = chartData[incidentId].bpDiastolic;
+        charts[incidentId].data.datasets[3].data = chartData[incidentId].oxygenLevel;
+        charts[incidentId].update('none'); // Update without animation for smooth real-time updates
+    }
+}
+
 function recordVitals(incidentId) {
     // Generate realistic vital values
     const heartRate = Math.floor(Math.random() * (100 - 60 + 1)) + 60;
@@ -246,6 +489,9 @@ function recordVitals(incidentId) {
             document.getElementById('bp-' + incidentId).textContent = bpSystolic + '/' + bpDiastolic;
             document.getElementById('o2-' + incidentId).textContent = oxygenLevel + '%';
             document.getElementById('time-' + incidentId).textContent = new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'});
+            
+            // Update chart
+            updateChart(incidentId, heartRate, bpSystolic, bpDiastolic, oxygenLevel);
         } else {
             showMessage('Failed to record vitals: ' + data.message, 'error');
         }
@@ -254,6 +500,42 @@ function recordVitals(incidentId) {
         showMessage('Error: ' + error, 'error');
     });
 }
+
+// Initialize charts and buttons on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, checking Chart.js...');
+    
+    // Check if Chart.js is loaded
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded!');
+        return;
+    } else {
+        console.log('Chart.js is loaded successfully');
+    }
+    
+    <?php if($incidents->num_rows > 0): ?>
+        <?php 
+        $incidents->data_seek(0);
+        while($inc = $incidents->fetch_assoc()): 
+        ?>
+        console.log('Setting up incident <?php echo $inc['incident_id']; ?>');
+        
+        // Initialize button
+        const btn<?php echo $inc['incident_id']; ?> = document.getElementById('btn-<?php echo $inc['incident_id']; ?>');
+        if (btn<?php echo $inc['incident_id']; ?>) {
+            btn<?php echo $inc['incident_id']; ?>.innerHTML = '<i class="fa fa-play"></i> Start Live Monitoring';
+            btn<?php echo $inc['incident_id']; ?>.style.background = '#3b82f6';
+        }
+        
+        // Initialize chart after a small delay to ensure DOM is ready
+        setTimeout(() => {
+            initializeChart(<?php echo $inc['incident_id']; ?>);
+        }, 100);
+        <?php endwhile; ?>
+    <?php else: ?>
+        console.log('No incidents found');
+    <?php endif; ?>
+});
 </script>
 
 </body>
