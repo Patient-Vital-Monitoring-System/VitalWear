@@ -82,8 +82,7 @@ while ($row = $stats_result->fetch_assoc()) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Device List - VitalWear</title>
-    <link rel="stylesheet" href="../../../assets/css/styles.css">
-    <script src="https://kit.fontawesome.com/96e37b53f1.js"></script>
+        <script src="https://kit.fontawesome.com/96e37b53f1.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* VitalWear Management Color Palette */
@@ -123,6 +122,7 @@ while ($row = $stats_result->fetch_assoc()) {
             box-shadow: var(--shadow);
             z-index: 1000;
             overflow-y: auto;
+            transition: transform 0.3s ease;
         }
 
         .sidebar-logo {
@@ -157,6 +157,11 @@ while ($row = $stats_result->fetch_assoc()) {
             background: rgba(27, 63, 114, 0.1);
             color: var(--authority-blue);
             transform: translateX(4px);
+        }
+
+        #sidebar a.active {
+            background: rgba(27, 63, 114, 0.15);
+            color: var(--authority-blue);
         }
 
         /* Soft UI Header */
@@ -600,10 +605,10 @@ while ($row = $stats_result->fetch_assoc()) {
         <a href="manage_responders.php"><i class="fa fa-user-md"></i> Manage Responders</a>
         <a href="manage_rescuers.php"><i class="fa fa-user-shield"></i> Manage Rescuers</a>
         <a href="register_device.php"><i class="fa fa-plus-circle"></i> Register Device</a>
-        <a href="device_list.php"><i class="fa fa-box"></i> Device List</a>
+        <a href="device_list.php" class="active"><i class="fa fa-box"></i> Device List</a>
         <a href="assign_device.php"><i class="fa fa-exchange-alt"></i> Assign Device</a>
         <a href="verify_return.php"><i class="fa fa-check-double"></i> Verify Return</a>
-        <a href="reports/device_assignment_history.php"><i class="fa fa-chart-bar"></i> Reports</a>
+        <a href="reports/index.php"><i class="fa fa-chart-bar"></i> Reports</a>
         <a href="../../../api/auth/logout.php" class="btn btn-secondary">Logout</a>
     </nav>
 

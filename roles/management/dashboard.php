@@ -58,8 +58,7 @@ if ($result) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Management Dashboard - VitalWear</title>
-    <link rel="stylesheet" href="../../../assets/css/styles.css">
-    <script src="https://kit.fontawesome.com/96e37b53f1.js"></script>
+        <script src="https://kit.fontawesome.com/96e37b53f1.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* VitalWear Management Color Palette */
@@ -133,6 +132,11 @@ if ($result) {
             background: rgba(27, 63, 114, 0.1);
             color: var(--authority-blue);
             transform: translateX(4px);
+        }
+
+        #sidebar a.active {
+            background: rgba(27, 63, 114, 0.15);
+            color: var(--authority-blue);
         }
 
         /* Soft UI Header */
@@ -645,13 +649,14 @@ if ($result) {
         <div class="sidebar-logo">
             <img src="../../../assets/logo.png" alt="VitalWear Logo">
         </div>
-        <a href="dashboard.php"><i class="fa fa-gauge"></i> Dashboard</a>
+        <a href="dashboard.php" class="active"><i class="fa fa-gauge"></i> Dashboard</a>
         <a href="manage_responders.php"><i class="fa fa-user-md"></i> Manage Responders</a>
         <a href="manage_rescuers.php"><i class="fa fa-user-shield"></i> Manage Rescuers</a>
         <a href="register_device.php"><i class="fa fa-plus-circle"></i> Register Device</a>
         <a href="device_list.php"><i class="fa fa-box"></i> Device List</a>
         <a href="assign_device.php"><i class="fa fa-exchange-alt"></i> Assign Device</a>
         <a href="verify_return.php"><i class="fa fa-check-double"></i> Verify Return</a>
+        <a href="reports/reportdashboard.php"><i class="fa fa-chart-bar"></i> Reports</a>
         <a href="../../../api/auth/logout.php" class="btn btn-secondary">Logout</a>
     </nav>
 
