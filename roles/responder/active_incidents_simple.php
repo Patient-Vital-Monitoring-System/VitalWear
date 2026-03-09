@@ -60,11 +60,12 @@ $incidents = $stmt->get_result();
     cursor: pointer;
 }
 .incident-card {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    margin: 10px 0;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    background: var(--surface);
+    padding: 24px;
+    border-radius: var(--radius-lg);
+    margin: 16px 0;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(169, 183, 198, 0.2);
 }
 </style>
 </head>
@@ -87,8 +88,8 @@ $incidents = $stmt->get_result();
 <a href="../../api/auth/logout.php"><i class="fa fa-sign-out"></i> Logout</a>
 </nav>
 
-<main class="container">
-<h2 style="color:#dd4c56;">🚨 Active Incidents</h2>
+<main class="container" style="display:block;overflow-y:auto;width:100%;padding:20px;">
+<h2 style="color: var(--deep-hospital-blue); margin-bottom: 24px; font-weight: 700; font-size: 1.75rem;">🚨 Active Incidents</h2>
 
 <div id="message" style="display:none;padding:10px;border-radius:5px;margin:10px 0;"></div>
 

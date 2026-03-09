@@ -137,6 +137,63 @@ h2, h3, h4 {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
 }
+
+/* Dashboard Cards */
+.dashboard-card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(169, 183, 198, 0.2);
+    padding: 24px;
+}
+
+/* Quick Action Buttons */
+.btn-quick-action {
+    background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%);
+    color: white;
+    border: none;
+    padding: 14px 28px;
+    border-radius: var(--radius-lg);
+    font-weight: 600;
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-quick-action:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-ongoing {
+    background: rgba(245, 158, 11, 0.15);
+    color: #d97706;
+}
+
+.status-transferred {
+    background: rgba(59, 130, 246, 0.15);
+    color: #2563eb;
+}
+
+.status-completed {
+    background: rgba(107, 114, 128, 0.15);
+    color: #4b5563;
+}
 </style>
 </head>
 <body>
@@ -167,44 +224,64 @@ h2, h3, h4 {
 <a href="../../api/auth/logout.php"><i class="fa fa-sign-out"></i> Logout</a>
 </nav>
 
-<main class="container" style="display:block;overflow-y:auto;width:100%;">
+<main class="container" style="display:block;overflow-y:auto;width:100%;padding:20px;">
 
-<h2 style="color:#dd4c56;margin-bottom:20px;">📋 Incident History</h2>
+<div style="max-width: 900px;">
+
+<h2 style="color: var(--deep-hospital-blue); margin-bottom: 20px; font-weight: 700; font-size: 1.5rem;">📋 Incident History</h2>
 
 <?php if($incidents->num_rows > 0): ?>
     <?php while($incident = $incidents->fetch_assoc()): 
-        $status_color = '';
+        $status_class = '';
         switch($incident['status']) {
-            case 'ongoing': $status_color = '#22c55e'; break;
-            case 'transferred': $status_color = '#3b82f6'; break;
-            case 'completed': $status_color = '#6b7280'; break;
-            default: $status_color = '#777';
+            case 'ongoing': $status_class = 'status-ongoing'; break;
+            case 'transferred': $status_class = 'status-transferred'; break;
+            case 'completed': $status_class = 'status-completed'; break;
+            default: $status_class = '';
         }
     ?>
-    <div style="background:white;padding:20px;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.1);width:100%;margin-bottom:15px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-            <div>
-                <p style="font-size:18px;font-weight:bold;">Incident #<?php echo $incident['incident_id']; ?></p>
-                <p style="color:#777;">Patient: <?php echo htmlspecialchars($incident['pat_name']); ?></p>
-                <p style="color:#777;font-size:14px;">Started: <?php echo date('M d, Y h:i A', strtotime($incident['start_time'])); ?></p>
+    <div class="dashboard-card" style="margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+            <div style="flex: 1; min-width: 200px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                    <div style="width: 40px; height: 40px; background: var(--clinical-white); border-radius: var(--radius); display: flex; align-items: center; justify-content: center;">
+                        <i class="fa fa-hashtag" style="color: var(--medical-cyan); font-size: 18px;"></i>
+                    </div>
+                    <div>
+                        <p style="font-size: 18px; font-weight: 700; color: var(--deep-hospital-blue); margin: 0;">Incident #<?php echo $incident['incident_id']; ?></p>
+                        <span class="status-badge <?php echo $status_class; ?>"><?php echo ucfirst($incident['status']); ?></span>
+                    </div>
+                </div>
+                <p style="color: var(--system-gray); font-size: 14px; margin: 6px 0;"><i class="fa fa-user" style="width: 20px; color: var(--medical-cyan);"></i> <strong>Patient:</strong> <?php echo htmlspecialchars($incident['pat_name']); ?></p>
+                <p style="color: var(--system-gray); font-size: 14px; margin: 6px 0;"><i class="fa fa-calendar" style="width: 20px; color: var(--medical-cyan);"></i> <strong>Started:</strong> <?php echo date('M d, Y h:i A', strtotime($incident['start_time'])); ?></p>
                 <?php if($incident['last_vital']): ?>
-                <p style="color:#777;font-size:14px;">Last Vitals: <?php echo date('M d, h:i A', strtotime($incident['last_vital'])); ?></p>
+                <p style="color: var(--system-gray); font-size: 14px; margin: 6px 0;"><i class="fa fa-heartbeat" style="width: 20px; color: var(--health-green);"></i> <strong>Last Vitals:</strong> <?php echo date('M d, h:i A', strtotime($incident['last_vital'])); ?></p>
                 <?php endif; ?>
             </div>
-            <div style="text-align:right;">
-                <p style="color:<?php echo $status_color; ?>;font-weight:bold;font-size:16px;"><?php echo ucfirst($incident['status']); ?></p>
+            <div style="text-align: right; min-width: 150px;">
                 <?php if($incident['end_time']): ?>
-                <p style="color:#777;font-size:12px;">Ended: <?php echo date('M d, h:i A', strtotime($incident['end_time'])); ?></p>
+                <p style="color: var(--system-gray); font-size: 13px; margin: 0;"><i class="fa fa-check-circle" style="color: var(--health-green);"></i> Ended</p>
+                <p style="color: var(--deep-hospital-blue); font-size: 14px; font-weight: 600; margin: 4px 0 0 0;"><?php echo date('M d, h:i A', strtotime($incident['end_time'])); ?></p>
+                <?php else: ?>
+                <p style="color: var(--system-gray); font-size: 13px; margin: 0;"><i class="fa fa-spinner fa-spin" style="color: var(--medical-cyan);"></i> In Progress</p>
                 <?php endif; ?>
             </div>
         </div>
     </div>
     <?php endwhile; ?>
 <?php else: ?>
-    <div style="background:white;padding:40px;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.1);width:100%;text-align:center;">
-        <p style="color:#777;font-size:18px;">No incident history</p>
+    <div class="dashboard-card" style="text-align: left; padding: 40px 20px; max-width: 400px; margin: 0 auto;">
+        <div style="width: 60px; height: 60px; background: var(--clinical-white); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+            <i class="fa fa-clipboard-list" style="font-size: 28px; color: var(--system-gray);"></i>
+        </div>
+        <p style="color: var(--system-gray); font-size: 16px; margin-bottom: 16px;">No incident history found</p>
+        <a href="create_incident.php" class="btn-quick-action" style="width: auto; display: inline-block; padding: 12px 24px; font-size: 14px;">
+            <i class="fa fa-plus"></i> Create First Incident
+        </a>
     </div>
 <?php endif; ?>
+
+</div>
 
 </main>
 
