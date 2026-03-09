@@ -224,32 +224,41 @@ h2, h3, h4 {
 <a href="../../api/auth/logout.php"><i class="fa fa-sign-out"></i> Logout</a>
 </nav>
 
-<main class="container" style="display:block;overflow-y:auto;width:100%;">
+<main class="container" style="display: flex; flex-direction: column; align-items: center; overflow-y: auto; width: 100%; padding: 20px;">
 
-<h2 style="color:#dd4c56;margin-bottom:20px;">➕ Create Incident</h2>
+<div style="width: 100%; max-width: 500px;">
+
+<h2 style="color: var(--deep-hospital-blue); margin-bottom: 24px; font-weight: 700; font-size: 1.75rem; text-align: center;">➕ Create Incident</h2>
 
 <?php if($message): ?>
-<div style="background:<?php echo $message_type === 'error' ? '#fee2e2' : '#dcfce7'; ?>;color:<?php echo $message_type === 'error' ? '#991b1b' : '#166534'; ?>;padding:15px;border-radius:10px;margin-bottom:20px;text-align:center;font-weight:600;">
+<div style="background: <?php echo $message_type === 'error' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(46, 219, 179, 0.15)'; ?>; color: <?php echo $message_type === 'error' ? '#dc2626' : 'var(--health-green)'; ?>; padding: 16px 24px; border-radius: var(--radius); margin-bottom: 24px; text-align: center; font-weight: 600; border: 1px solid <?php echo $message_type === 'error' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(46, 219, 179, 0.3)'; ?>; display: flex; align-items: center; justify-content: center; gap: 10px;">
+    <i class="fa <?php echo $message_type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'; ?>"></i>
     <?php echo $message; ?>
 </div>
 <?php endif; ?>
 
-<div style="background:white;padding:25px;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.1);width:100%;max-width:500px;">
+<div class="dashboard-card" style="width: 100%;">
     <form method="POST">
-        <div style="margin-bottom:20px;">
-            <label style="display:block;margin-bottom:8px;font-weight:600;color:#333;">Patient Name *</label>
-            <input type="text" name="pat_name" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
+        <div style="margin-bottom: 24px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--deep-hospital-blue); font-size: 14px;">
+                <i class="fa fa-user" style="color: var(--medical-cyan); margin-right: 8px;"></i>Patient Name *
+            </label>
+            <input type="text" name="pat_name" required style="width: 100%; padding: 14px; border: 2px solid rgba(169, 183, 198, 0.3); border-radius: var(--radius); font-size: 15px; transition: all 0.2s ease;" onfocus="this.style.borderColor='var(--medical-cyan)'; this.style.boxShadow='0 0 0 3px rgba(0, 182, 204, 0.1)';" onblur="this.style.borderColor='rgba(169, 183, 198, 0.3)'; this.style.boxShadow='none';">
         </div>
         
-        <div style="margin-bottom:20px;">
-            <label style="display:block;margin-bottom:8px;font-weight:600;color:#333;">Contact Number</label>
-            <input type="text" name="pat_contact" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
+        <div style="margin-bottom: 24px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--deep-hospital-blue); font-size: 14px;">
+                <i class="fa fa-phone" style="color: var(--medical-cyan); margin-right: 8px;"></i>Contact Number
+            </label>
+            <input type="text" name="pat_contact" style="width: 100%; padding: 14px; border: 2px solid rgba(169, 183, 198, 0.3); border-radius: var(--radius); font-size: 15px; transition: all 0.2s ease;" onfocus="this.style.borderColor='var(--medical-cyan)'; this.style.boxShadow='0 0 0 3px rgba(0, 182, 204, 0.1)';" onblur="this.style.borderColor='rgba(169, 183, 198, 0.3)'; this.style.boxShadow='none';">
         </div>
         
-        <button type="submit" style="width:100%;padding:14px;background:#dd4c56;color:white;border:none;border-radius:8px;font-weight:bold;font-size:16px;cursor:pointer;">
-            Create Incident & Record Vitals
+        <button type="submit" style="width: 100%; padding: 16px 24px; background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%); color: white; border: none; border-radius: var(--radius-lg); font-weight: 700; font-size: 16px; cursor: pointer; box-shadow: var(--shadow); transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px; text-transform: uppercase; letter-spacing: 0.5px;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow)'">
+            <i class="fa fa-plus-circle" style="font-size: 20px;"></i> Create Incident & Record Vitals
         </button>
     </form>
+</div>
+
 </div>
 
 </main>
