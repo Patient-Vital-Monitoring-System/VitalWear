@@ -1,27 +1,24 @@
 <?php
-require_once 'session_check.php';
 require_once '../../database/connection.php';
+session_start();
+
+if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'rescuer') {
+    header("Location: ../../login.html");
+    exit;
+}
 
 $rescuer_id = $_SESSION['user_id'];
 $conn = getDBConnection();
 
-// Get rescuer info
-$rescuer_query = "SELECT resc_name FROM rescuer WHERE resc_id = ?";
-$stmt = $conn->prepare($rescuer_query);
-$stmt->bind_param("i", $rescuer_id);
-$stmt->execute();
-$rescuer = $stmt->get_result()->fetch_assoc();
-
-// Get completed incidents with summary data
-$completed_query = "SELECT i.incident_id, i.start_time, i.end_time, p.pat_name, p.birthdate,
-                   r.resp_name, COUNT(v.vital_id) as total_vitals,
-                   MIN(v.recorded_at) as first_vital, MAX(v.recorded_at) as last_vital
+// Get completed incidents for this rescuer
+$completed_query = "SELECT i.incident_id, i.start_time, i.end_time, p.pat_name,
+                   r.resp_name, COUNT(v.vital_id) as vital_count
                    FROM incident i 
                    JOIN patient p ON i.pat_id = p.pat_id 
                    JOIN responder r ON i.resp_id = r.resp_id 
                    LEFT JOIN vitalstat v ON i.incident_id = v.incident_id
                    WHERE i.resc_id = ? AND i.status = 'completed' 
-                   GROUP BY i.incident_id, i.start_time, i.end_time, p.pat_name, p.birthdate, r.resp_name
+                   GROUP BY i.incident_id, i.start_time, i.end_time, p.pat_name, r.resp_name
                    ORDER BY i.end_time DESC";
 $stmt = $conn->prepare($completed_query);
 $stmt->bind_param("i", $rescuer_id);
@@ -35,291 +32,90 @@ $completed_incidents = $stmt->get_result();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Completed Cases - VitalWear</title>
-    <link rel="stylesheet" href="../../../assets/css/styles.css">
-    <style>
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .header {
-            background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            position: relative;
-        }
-        .back-btn {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(255,255,255,0.2);
-            color: white;
-            padding: 10px 20px;
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 5px;
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-        .back-btn:hover {
-            background: rgba(255,255,255,0.3);
-        }
-        .cases-grid {
-            display: grid;
-            gap: 20px;
-        }
-        .case-card {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            overflow: hidden;
-            transition: transform 0.3s ease;
-        }
-        .case-card:hover {
-            transform: translateY(-3px);
-        }
-        .case-header {
-            background: #f7fafc;
-            padding: 20px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        .case-title {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #2d3748;
-            margin-bottom: 10px;
-        }
-        .case-meta {
-            display: flex;
-            gap: 20px;
-            color: #718096;
-            font-size: 0.9em;
-            flex-wrap: wrap;
-        }
-        .case-body {
-            padding: 20px;
-        }
-        .case-summary {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        .summary-item {
-            text-align: center;
-            padding: 15px;
-            background: #f7fafc;
-            border-radius: 8px;
-        }
-        .summary-value {
-            font-size: 1.3em;
-            font-weight: bold;
-            color: #ed8936;
-        }
-        .summary-label {
-            font-size: 0.8em;
-            color: #718096;
-            margin-top: 5px;
-        }
-        .patient-info {
-            margin-bottom: 15px;
-        }
-        .info-label {
-            font-weight: 600;
-            color: #4a5568;
-            margin-bottom: 5px;
-        }
-        .info-value {
-            color: #2d3748;
-        }
-        .action-buttons {
-            padding: 20px;
-            background: #f7fafc;
-            border-top: 1px solid #e2e8f0;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-        }
-        .btn-primary {
-            background: #667eea;
-            color: white;
-        }
-        .btn-secondary {
-            background: #48bb78;
-            color: white;
-        }
-        .btn-warning {
-            background: #ed8936;
-            color: white;
-        }
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        .no-cases {
-            text-align: center;
-            padding: 60px 20px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .no-cases h3 {
-            color: #718096;
-            margin-bottom: 10px;
-        }
-        .duration {
-            color: #38a169;
-            font-weight: 600;
-        }
-        .stats-bar {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-            display: flex;
-            justify-content: space-around;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-        .stat-item {
-            text-align: center;
-        }
-        .stat-number {
-            font-size: 2em;
-            font-weight: bold;
-            color: #ed8936;
-        }
-        .stat-label {
-            color: #718096;
-            margin-top: 5px;
-        }
-    </style>
+    <link rel="stylesheet" href="../../assets/css/styles.css">
+    <script src="https://kit.fontawesome.com/96e37b53f1.js"></script>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <a href="dashboard.php" class="back-btn">← Back to Dashboard</a>
-            <h1>✅ Completed Cases</h1>
-            <p>View your completed incident cases and monitoring history</p>
-        </div>
 
-        <?php if ($completed_incidents->num_rows > 0): ?>
-            <?php
-            // Calculate statistics
-            $total_cases = $completed_incidents->num_rows;
-            $total_vitals = 0;
-            $total_duration = 0;
-            
-            $completed_incidents->data_seek(0); // Reset pointer
-            while ($case = $completed_incidents->fetch_assoc()) {
-                $total_vitals += $case['total_vitals'];
-                if ($case['start_time'] && $case['end_time']) {
-                    $duration = strtotime($case['end_time']) - strtotime($case['start_time']);
-                    $total_duration += $duration;
-                }
-            }
-            
-            $avg_duration = $total_cases > 0 ? $total_duration / $total_cases : 0;
-            $avg_vitals = $total_cases > 0 ? $total_vitals / $total_cases : 0;
-            ?>
+<header class="topbar">
+Rescuer: <?php echo isset($_SESSION['user_name']) ? $_SESSION['user_name'] : 'Emergency Response'; ?>
+</header>
 
-            <div class="stats-bar">
-                <div class="stat-item">
-                    <div class="stat-number"><?php echo $total_cases; ?></div>
-                    <div class="stat-label">Total Cases</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number"><?php echo number_format($avg_vitals, 1); ?></div>
-                    <div class="stat-label">Avg Vital Records</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number"><?php echo gmdate('H:i', $avg_duration); ?></div>
-                    <div class="stat-label">Avg Duration</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number"><?php echo $total_vitals; ?></div>
-                    <div class="stat-label">Total Vital Records</div>
-                </div>
-            </div>
+<nav id="sidebar">
+<a href="dashboard.php"><i class="fa fa-gauge"></i> Dashboard</a>
+<a href="transferred_incidents.php"><i class="fa fa-exclamation-circle"></i> Transferred Incidents</a>
+<a href="ongoing_monitoring.php"><i class="fa fa-heart-pulse"></i> Ongoing Monitoring</a>
+<a href="completed_cases.php"><i class="fa fa-check-circle"></i> Completed Cases</a>
+<a href="incident_records.php"><i class="fa fa-folder"></i> Incident Records</a>
+<a href="return_device.php"><i class="fa fa-undo"></i> Return Device</a>
+<a href="../../api/auth/logout.php"><i class="fa fa-sign-out"></i> Logout</a>
+</nav>
 
-            <div class="cases-grid">
-                <?php 
-                $completed_incidents->data_seek(0); // Reset pointer again
-                while ($case = $completed_incidents->fetch_assoc()): 
-                    $duration = '';
-                    if ($case['start_time'] && $case['end_time']) {
-                        $seconds = strtotime($case['end_time']) - strtotime($case['start_time']);
-                        $hours = floor($seconds / 3600);
-                        $minutes = floor(($seconds % 3600) / 60);
-                        $duration = $hours > 0 ? "{$hours}h {$minutes}m" : "{$minutes}m";
-                    }
-                ?>
-                    <div class="case-card">
-                        <div class="case-header">
-                            <div class="case-title">Incident #<?php echo $case['incident_id']; ?></div>
-                            <div class="case-meta">
-                                <span>👤 <?php echo htmlspecialchars($case['pat_name']); ?></span>
-                                <span>🚑 <?php echo htmlspecialchars($case['resp_name']); ?></span>
-                                <span class="duration">⏱️ <?php echo $duration; ?></span>
-                            </div>
-                        </div>
-                        
-                        <div class="case-body">
-                            <div class="patient-info">
-                                <div class="info-label">Patient Information</div>
-                                <div class="info-value">
-                                    <strong>Name:</strong> <?php echo htmlspecialchars($case['pat_name']); ?><br>
-                                    <strong>Age:</strong> <?php echo date('Y') - date('Y', strtotime($case['birthdate'])); ?> years
-                                </div>
-                            </div>
-                            
-                            <div class="case-summary">
-                                <div class="summary-item">
-                                    <div class="summary-value"><?php echo $case['total_vitals']; ?></div>
-                                    <div class="summary-label">Vital Records</div>
-                                </div>
-                                <div class="summary-item">
-                                    <div class="summary-value"><?php echo date('M j, Y', strtotime($case['start_time'])); ?></div>
-                                    <div class="summary-label">Start Date</div>
-                                </div>
-                                <div class="summary-item">
-                                    <div class="summary-value"><?php echo date('H:i', strtotime($case['start_time'])); ?></div>
-                                    <div class="summary-label">Start Time</div>
-                                </div>
-                                <div class="summary-item">
-                                    <div class="summary-value"><?php echo date('H:i', strtotime($case['end_time'])); ?></div>
-                                    <div class="summary-label">End Time</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="action-buttons">
-                            <a href="view_incident_details.php?id=<?php echo $case['incident_id']; ?>" class="btn btn-primary">📋 View Full Details</a>
-                            <a href="case_vitals_history.php?id=<?php echo $case['incident_id']; ?>" class="btn btn-secondary">📈 Vital History</a>
-                            <a href="generate_case_report.php?id=<?php echo $case['incident_id']; ?>" class="btn btn-warning">📄 Generate Report</a>
-                        </div>
+<main class="container" style="display:block;overflow-y:auto;">
+
+<h2 style="color:#dd4c56;margin-bottom:20px;">✅ Completed Cases</h2>
+
+<?php if ($completed_incidents->num_rows > 0): ?>
+    <div style="display:flex;flex-direction:column;gap:20px;">
+        <?php while ($incident = $completed_incidents->fetch_assoc()): ?>
+            <div style="background:white;padding:25px;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.1);width:100%;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                    <div>
+                        <h3 style="color:#dd4c56;font-size:20px;margin:0;">Incident #<?php echo $incident['incident_id']; ?></h3>
+                        <p style="color:#777;margin:5px 0;">Patient: <?php echo htmlspecialchars($incident['pat_name']); ?></p>
+                        <p style="color:#777;font-size:14px;">From: <?php echo htmlspecialchars($incident['resp_name']); ?></p>
+                        <p style="color:#777;font-size:14px;">Duration: <?php echo date('M j, Y H:i', strtotime($incident['start_time'])); ?> - <?php echo date('M j, Y H:i', strtotime($incident['end_time'])); ?></p>
                     </div>
-                <?php endwhile; ?>
+                    <div style="text-align:right;">
+                        <span style="display:inline-block;padding:8px 16px;background:#6b7280;color:white;border-radius:20px;font-size:14px;">Completed</span>
+                        <p style="color:#777;font-size:12px;margin-top:5px;"><?php echo $incident['vital_count']; ?> vitals recorded</p>
+                    </div>
+                </div>
+                
+                <div style="display:flex;gap:10px;">
+                    <a href="generate_case_report.php?id=<?php echo $incident['incident_id']; ?>" style="padding:10px 20px;background:#3b82f6;color:white;text-decoration:none;border-radius:8px;font-weight:bold;">
+                        <i class="fa fa-file-pdf"></i> Generate Report
+                    </a>
+                    <a href="case_vitals_history.php?id=<?php echo $incident['incident_id']; ?>" style="padding:10px 20px;background:#64748b;color:white;text-decoration:none;border-radius:8px;font-weight:bold;">
+                        <i class="fa fa-chart-line"></i> View History
+                    </a>
+                </div>
             </div>
-        <?php else: ?>
-            <div class="no-cases">
-                <h3>✅ No Completed Cases</h3>
-                <p>You haven't completed any cases yet. Start monitoring transferred incidents to build your case history.</p>
-                <a href="transferred_incidents.php" class="btn btn-primary" style="margin-top: 20px;">View Transferred Incidents</a>
-            </div>
-        <?php endif; ?>
+        <?php endwhile; ?>
     </div>
+<?php else: ?>
+    <div style="background:white;padding:40px;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.1);width:100%;text-align:center;">
+        <p style="color:#777;font-size:18px;margin-bottom:20px;">✅ No completed cases</p>
+        <p style="color:#999;">You haven't completed any cases yet.</p>
+        <a href="transferred_incidents.php" style="display:inline-block;padding:12px 24px;background:#dd4c56;color:white;text-decoration:none;border-radius:8px;font-weight:bold;margin-top:20px;">View Transferred Cases</a>
+    </div>
+<?php endif; ?>
+
+</main>
+
+<nav class="bottom-nav">
+<a href="dashboard.php" class="bottom-item">
+<i class="fa fa-gauge"></i>
+<span>Home</span>
+</a>
+
+<a href="transferred_incidents.php" class="bottom-item">
+<i class="fa fa-exclamation-circle"></i>
+<span>Transfer</span>
+</a>
+
+<a href="ongoing_monitoring.php" class="bottom-item">
+<i class="fa fa-heart-pulse"></i>
+<span>Monitor</span>
+</a>
+
+<a href="completed_cases.php" class="bottom-item">
+<i class="fa fa-check-circle"></i>
+<span>Complete</span>
+</a>
+
+<a href="../../api/auth/logout.php"><i class="fa fa-sign-out"></i></a>
+</nav>
+
 </body>
 </html>

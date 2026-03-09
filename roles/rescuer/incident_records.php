@@ -1,16 +1,14 @@
 <?php
-require_once 'session_check.php';
 require_once '../../database/connection.php';
+session_start();
+
+if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'rescuer') {
+    header("Location: ../../login.html");
+    exit;
+}
 
 $rescuer_id = $_SESSION['user_id'];
 $conn = getDBConnection();
-
-// Get rescuer info
-$rescuer_query = "SELECT resc_name FROM rescuer WHERE resc_id = ?";
-$stmt = $conn->prepare($rescuer_query);
-$stmt->bind_param("i", $rescuer_id);
-$stmt->execute();
-$rescuer = $stmt->get_result()->fetch_assoc();
 
 // Get filter parameters
 $status_filter = $_GET['status'] ?? 'all';
@@ -39,14 +37,13 @@ if ($status_filter !== 'all') {
 
 // Add date filters
 if (!empty($date_from)) {
-    $base_query .= " AND i.start_time >= ?";
-    $params[] = $date_from . ' 00:00:00';
+    $base_query .= " AND DATE(i.start_time) >= ?";
+    $params[] = $date_from;
     $types .= "s";
 }
-
 if (!empty($date_to)) {
-    $base_query .= " AND i.start_time <= ?";
-    $params[] = $date_to . ' 23:59:59';
+    $base_query .= " AND DATE(i.start_time) <= ?";
+    $params[] = $date_to;
     $types .= "s";
 }
 
@@ -58,13 +55,13 @@ $stmt->bind_param($types, ...$params);
 $stmt->execute();
 $incidents = $stmt->get_result();
 
-// Get overall statistics
+// Get statistics
 $stats_query = "SELECT 
-                COUNT(CASE WHEN status = 'transferred' THEN 1 END) as transferred,
-                COUNT(CASE WHEN status = 'ongoing' THEN 1 END) as ongoing,
-                COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed,
-                COUNT(*) as total
-                FROM incident WHERE resc_id = ?";
+                 COUNT(CASE WHEN status = 'transferred' THEN 1 END) as transferred,
+                 COUNT(CASE WHEN status = 'ongoing' THEN 1 END) as ongoing,
+                 COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed,
+                 COUNT(*) as total
+                 FROM incident WHERE resc_id = ?";
 $stmt = $conn->prepare($stats_query);
 $stmt->bind_param("i", $rescuer_id);
 $stmt->execute();
@@ -77,347 +74,146 @@ $stats = $stmt->get_result()->fetch_assoc();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Incident Records - VitalWear</title>
-    <link rel="stylesheet" href="../../../assets/css/styles.css">
-    <style>
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            position: relative;
-        }
-        .back-btn {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(255,255,255,0.2);
-            color: white;
-            padding: 10px 20px;
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 5px;
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-        .back-btn:hover {
-            background: rgba(255,255,255,0.3);
-        }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        .stat-number {
-            font-size: 2em;
-            font-weight: bold;
-            color: #667eea;
-        }
-        .stat-label {
-            color: #718096;
-            margin-top: 5px;
-        }
-        .filters-section {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-        }
-        .filter-form {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            align-items: end;
-        }
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
-        .form-group label {
-            font-weight: 600;
-            color: #4a5568;
-            margin-bottom: 5px;
-        }
-        .form-group select,
-        .form-group input {
-            padding: 10px;
-            border: 1px solid #cbd5e0;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-        .form-group select:focus,
-        .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        .filter-btn {
-            background: #667eea;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-        .filter-btn:hover {
-            background: #5a67d8;
-            transform: translateY(-2px);
-        }
-        .reset-btn {
-            background: #718096;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-            text-align: center;
-        }
-        .reset-btn:hover {
-            background: #4a5568;
-            transform: translateY(-2px);
-        }
-        .records-table {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        .table-wrapper {
-            overflow-x: auto;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        th {
-            background: #f7fafc;
-            font-weight: 600;
-            color: #4a5568;
-            position: sticky;
-            top: 0;
-        }
-        tr:hover {
-            background: #f7fafc;
-        }
-        .status-badge {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        .status-transferred {
-            background: #bee3f8;
-            color: #2c5282;
-        }
-        .status-ongoing {
-            background: #c6f6d5;
-            color: #22543d;
-        }
-        .status-completed {
-            background: #fed7d7;
-            color: #742a2a;
-        }
-        .action-btn {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            text-decoration: none;
-            display: inline-block;
-            margin-right: 5px;
-            transition: all 0.3s ease;
-        }
-        .view-btn {
-            background: #4299e1;
-            color: white;
-        }
-        .vitals-btn {
-            background: #48bb78;
-            color: white;
-        }
-        .report-btn {
-            background: #ed8936;
-            color: white;
-        }
-        .action-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        }
-        .no-records {
-            text-align: center;
-            padding: 60px 20px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .no-records h3 {
-            color: #718096;
-            margin-bottom: 10px;
-        }
-        .duration {
-            font-weight: 600;
-            color: #38a169;
-        }
-        .vital-count {
-            font-weight: 600;
-            color: #667eea;
-        }
-    </style>
+    <link rel="stylesheet" href="../../assets/css/styles.css">
+    <script src="https://kit.fontawesome.com/96e37b53f1.js"></script>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <a href="dashboard.php" class="back-btn">← Back to Dashboard</a>
-            <h1>📁 Incident Records</h1>
-            <p>View full monitoring history of all handled incidents</p>
-        </div>
 
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-number"><?php echo $stats['total']; ?></div>
-                <div class="stat-label">📋 Total Incidents</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number"><?php echo $stats['transferred']; ?></div>
-                <div class="stat-label">📥 Transferred</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number"><?php echo $stats['ongoing']; ?></div>
-                <div class="stat-label">❤️ Ongoing</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number"><?php echo $stats['completed']; ?></div>
-                <div class="stat-label">✅ Completed</div>
-            </div>
-        </div>
+<header class="topbar">
+Rescuer: <?php echo isset($_SESSION['user_name']) ? $_SESSION['user_name'] : 'Emergency Response'; ?>
+</header>
 
-        <div class="filters-section">
-            <h3>🔍 Filter Records</h3>
-            <form method="GET" class="filter-form">
-                <div class="form-group">
-                    <label for="status">Status</label>
-                    <select name="status" id="status">
-                        <option value="all" <?php echo $status_filter === 'all' ? 'selected' : ''; ?>>All Status</option>
-                        <option value="transferred" <?php echo $status_filter === 'transferred' ? 'selected' : ''; ?>>Transferred</option>
-                        <option value="ongoing" <?php echo $status_filter === 'ongoing' ? 'selected' : ''; ?>>Ongoing</option>
-                        <option value="completed" <?php echo $status_filter === 'completed' ? 'selected' : ''; ?>>Completed</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="date_from">Date From</label>
-                    <input type="date" name="date_from" id="date_from" value="<?php echo htmlspecialchars($date_from); ?>">
-                </div>
-                <div class="form-group">
-                    <label for="date_to">Date To</label>
-                    <input type="date" name="date_to" id="date_to" value="<?php echo htmlspecialchars($date_to); ?>">
-                </div>
-                <div class="form-group">
-                    <button type="submit" class="filter-btn">Apply Filters</button>
-                </div>
-                <div class="form-group">
-                    <a href="incident_records.php" class="reset-btn">Reset</a>
-                </div>
-            </form>
-        </div>
+<nav id="sidebar">
+<a href="dashboard.php"><i class="fa fa-gauge"></i> Dashboard</a>
+<a href="transferred_incidents.php"><i class="fa fa-exclamation-circle"></i> Transferred Incidents</a>
+<a href="ongoing_monitoring.php"><i class="fa fa-heart-pulse"></i> Ongoing Monitoring</a>
+<a href="completed_cases.php"><i class="fa fa-check-circle"></i> Completed Cases</a>
+<a href="incident_records.php"><i class="fa fa-folder"></i> Incident Records</a>
+<a href="return_device.php"><i class="fa fa-undo"></i> Return Device</a>
+<a href="../../api/auth/logout.php"><i class="fa fa-sign-out"></i> Logout</a>
+</nav>
 
-        <?php if ($incidents->num_rows > 0): ?>
-            <div class="records-table">
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Incident ID</th>
-                                <th>Patient</th>
-                                <th>Responder</th>
-                                <th>Status</th>
-                                <th>Start Time</th>
-                                <th>End Time</th>
-                                <th>Duration</th>
-                                <th>Vital Records</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php while ($incident = $incidents->fetch_assoc()): 
-                                $duration = '';
-                                if ($incident['start_time'] && $incident['end_time']) {
-                                    $seconds = strtotime($incident['end_time']) - strtotime($incident['start_time']);
-                                    $hours = floor($seconds / 3600);
-                                    $minutes = floor(($seconds % 3600) / 60);
-                                    $duration = $hours > 0 ? "{$hours}h {$minutes}m" : "{$minutes}m";
-                                } elseif ($incident['status'] === 'ongoing') {
-                                    $seconds = time() - strtotime($incident['start_time']);
-                                    $hours = floor($seconds / 3600);
-                                    $minutes = floor(($seconds % 3600) / 60);
-                                    $duration = $hours > 0 ? "{$hours}h {$minutes}m" : "{$minutes}m";
-                                }
-                            ?>
-                                <tr>
-                                    <td><strong>#<?php echo $incident['incident_id']; ?></strong></td>
-                                    <td>
-                                        <?php echo htmlspecialchars($incident['pat_name']); ?><br>
-                                        <small><?php echo date('Y') - date('Y', strtotime($incident['birthdate'])); ?> years</small>
-                                    </td>
-                                    <td><?php echo htmlspecialchars($incident['resp_name']); ?></td>
-                                    <td>
-                                        <span class="status-badge status-<?php echo $incident['status']; ?>">
-                                            <?php echo $incident['status']; ?>
-                                        </span>
-                                    </td>
-                                    <td><?php echo date('M j, Y H:i', strtotime($incident['start_time'])); ?></td>
-                                    <td>
-                                        <?php echo $incident['end_time'] ? date('M j, Y H:i', strtotime($incident['end_time'])) : '-'; ?>
-                                    </td>
-                                    <td class="duration"><?php echo $duration ?: '-'; ?></td>
-                                    <td class="vital-count"><?php echo $incident['vital_count']; ?></td>
-                                    <td>
-                                        <a href="view_incident_details.php?id=<?php echo $incident['incident_id']; ?>" class="action-btn view-btn">View</a>
-                                        <?php if ($incident['vital_count'] > 0): ?>
-                                            <a href="case_vitals_history.php?id=<?php echo $incident['incident_id']; ?>" class="action-btn vitals-btn">Vitals</a>
-                                        <?php endif; ?>
-                                        <?php if ($incident['status'] === 'completed'): ?>
-                                            <a href="generate_case_report.php?id=<?php echo $incident['incident_id']; ?>" class="action-btn report-btn">Report</a>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                            <?php endwhile; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        <?php else: ?>
-            <div class="no-records">
-                <h3>📁 No Incident Records Found</h3>
-                <p>No incident records match your current filters.</p>
-                <a href="incident_records.php" class="filter-btn" style="margin-top: 20px;">Clear Filters</a>
-            </div>
-        <?php endif; ?>
+<main class="container" style="display:block;overflow-y:auto;">
+
+<h2 style="color:#dd4c56;margin-bottom:20px;">📁 Incident Records</h2>
+
+<!-- Statistics Cards -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:15px;margin-bottom:20px;">
+    <div style="background:white;padding:15px;border-radius:10px;box-shadow:0 3px 10px rgba(0,0,0,0.1);text-align:center;">
+        <p style="font-size:24px;font-weight:bold;color:#3b82f6;"><?php echo $stats['total']; ?></p>
+        <p style="color:#777;font-size:12px;">Total Cases</p>
     </div>
+    <div style="background:white;padding:15px;border-radius:10px;box-shadow:0 3px 10px rgba(0,0,0,0.1);text-align:center;">
+        <p style="font-size:24px;font-weight:bold;color:#3b82f6;"><?php echo $stats['transferred']; ?></p>
+        <p style="color:#777;font-size:12px;">Transferred</p>
+    </div>
+    <div style="background:white;padding:15px;border-radius:10px;box-shadow:0 3px 10px rgba(0,0,0,0.1);text-align:center;">
+        <p style="font-size:24px;font-weight:bold;color:#22c55e;"><?php echo $stats['ongoing']; ?></p>
+        <p style="color:#777;font-size:12px;">Ongoing</p>
+    </div>
+    <div style="background:white;padding:15px;border-radius:10px;box-shadow:0 3px 10px rgba(0,0,0,0.1);text-align:center;">
+        <p style="font-size:24px;font-weight:bold;color:#f59e0b;"><?php echo $stats['completed']; ?></p>
+        <p style="color:#777;font-size:12px;">Completed</p>
+    </div>
+</div>
+
+<!-- Filters -->
+<div style="background:white;padding:20px;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.1);margin-bottom:20px;">
+    <form method="GET" style="display:flex;gap:15px;flex-wrap:wrap;align-items:end;">
+        <div>
+            <label style="display:block;margin-bottom:5px;font-weight:600;color:#333;">Status</label>
+            <select name="status" style="padding:8px;border:1px solid #ddd;border-radius:6px;">
+                <option value="all" <?php echo $status_filter === 'all' ? 'selected' : ''; ?>>All Status</option>
+                <option value="transferred" <?php echo $status_filter === 'transferred' ? 'selected' : ''; ?>>Transferred</option>
+                <option value="ongoing" <?php echo $status_filter === 'ongoing' ? 'selected' : ''; ?>>Ongoing</option>
+                <option value="completed" <?php echo $status_filter === 'completed' ? 'selected' : ''; ?>>Completed</option>
+            </select>
+        </div>
+        <div>
+            <label style="display:block;margin-bottom:5px;font-weight:600;color:#333;">From Date</label>
+            <input type="date" name="date_from" value="<?php echo htmlspecialchars($date_from); ?>" style="padding:8px;border:1px solid #ddd;border-radius:6px;">
+        </div>
+        <div>
+            <label style="display:block;margin-bottom:5px;font-weight:600;color:#333;">To Date</label>
+            <input type="date" name="date_to" value="<?php echo htmlspecialchars($date_to); ?>" style="padding:8px;border:1px solid #ddd;border-radius:6px;">
+        </div>
+        <button type="submit" style="padding:8px 16px;background:#dd4c56;color:white;border:none;border-radius:6px;font-weight:bold;cursor:pointer;">Filter</button>
+        <a href="incident_records.php" style="padding:8px 16px;background:#64748b;color:white;text-decoration:none;border-radius:6px;font-weight:bold;">Clear</a>
+    </form>
+</div>
+
+<!-- Incidents List -->
+<?php if ($incidents->num_rows > 0): ?>
+    <div style="display:flex;flex-direction:column;gap:15px;">
+        <?php while ($incident = $incidents->fetch_assoc()): ?>
+            <div style="background:white;padding:20px;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.1);">
+                <div style="display:flex;justify-content:space-between;align-items:start;">
+                    <div style="flex:1;">
+                        <h3 style="color:#dd4c56;margin:0 0 10px 0;">Incident #<?php echo $incident['incident_id']; ?></h3>
+                        <p style="color:#777;margin:5px 0;">Patient: <?php echo htmlspecialchars($incident['pat_name']); ?></p>
+                        <p style="color:#777;margin:5px 0;">From: <?php echo htmlspecialchars($incident['resp_name']); ?></p>
+                        <p style="color:#777;font-size:14px;margin:5px 0;">Started: <?php echo date('M j, Y H:i', strtotime($incident['start_time'])); ?></p>
+                        <?php if ($incident['end_time']): ?>
+                            <p style="color:#777;font-size:14px;margin:5px 0;">Ended: <?php echo date('M j, Y H:i', strtotime($incident['end_time'])); ?></p>
+                        <?php endif; ?>
+                        <p style="color:#777;font-size:12px;margin:5px 0;"><?php echo $incident['vital_count']; ?> vitals recorded</p>
+                    </div>
+                    <div style="text-align:right;">
+                        <?php
+                        $status_color = '#6b7280';
+                        switch($incident['status']) {
+                            case 'transferred': $status_color = '#3b82f6'; break;
+                            case 'ongoing': $status_color = '#22c55e'; break;
+                            case 'completed': $status_color = '#f59e0b'; break;
+                        }
+                        ?>
+                        <span style="display:inline-block;padding:6px 12px;background:<?php echo $status_color; ?>;color:white;border-radius:15px;font-size:12px;text-transform:uppercase;">
+                            <?php echo $incident['status']; ?>
+                        </span>
+                    </div>
+                </div>
+                
+                <div style="display:flex;gap:8px;margin-top:15px;">
+                    <a href="case_vitals_history.php?id=<?php echo $incident['incident_id']; ?>" style="padding:6px 12px;background:#64748b;color:white;text-decoration:none;border-radius:6px;font-size:12px;">View History</a>
+                    <?php if ($incident['status'] === 'completed'): ?>
+                        <a href="generate_case_report.php?id=<?php echo $incident['incident_id']; ?>" style="padding:6px 12px;background:#3b82f6;color:white;text-decoration:none;border-radius:6px;font-size:12px;">Generate Report</a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php endwhile; ?>
+    </div>
+<?php else: ?>
+    <div style="background:white;padding:40px;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.1);text-align:center;">
+        <p style="color:#777;font-size:18px;">📁 No incident records found</p>
+        <p style="color:#999;">No incidents match your current filters.</p>
+    </div>
+<?php endif; ?>
+
+</main>
+
+<nav class="bottom-nav">
+<a href="dashboard.php" class="bottom-item">
+<i class="fa fa-gauge"></i>
+<span>Home</span>
+</a>
+
+<a href="transferred_incidents.php" class="bottom-item">
+<i class="fa fa-exclamation-circle"></i>
+<span>Transfer</span>
+</a>
+
+<a href="ongoing_monitoring.php" class="bottom-item">
+<i class="fa fa-heart-pulse"></i>
+<span>Monitor</span>
+</a>
+
+<a href="completed_cases.php" class="bottom-item">
+<i class="fa fa-check-circle"></i>
+<span>Complete</span>
+</a>
+
+<a href="../../api/auth/logout.php"><i class="fa fa-sign-out"></i></a>
+</nav>
+
 </body>
 </html>

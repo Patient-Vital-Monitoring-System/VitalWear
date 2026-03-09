@@ -1,6 +1,11 @@
 <?php
-require_once 'session_check.php';
 require_once '../../database/connection.php';
+session_start();
+
+if (!isset($_SESSION['rescuer_id'])) {
+    header("Location: ../../login.html");
+    exit;
+}
 
 if (!isset($_GET['id'])) {
     header('Location: transferred_incidents.php');
