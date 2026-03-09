@@ -19,10 +19,6 @@
     {
       "src": "/static-roles/(.*)",
       "dest": "/static-roles/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/static-roles/$1"
     }
   ],
   "cleanUrls": true,
