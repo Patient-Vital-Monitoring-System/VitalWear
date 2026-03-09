@@ -5,8 +5,8 @@
 
 class ScreenDetector {
     constructor() {
-        this.minWidth = 1024; // Minimum width for management pages
-        this.minHeight = 768; // Minimum height for management pages
+        this.minWidth = 768; // Minimum width for management (tablet and above)
+        this.minHeight = 600; // Minimum height for management (tablet and above)
         this.isManagement = false;
         this.currentRole = null;
         
@@ -31,10 +31,51 @@ class ScreenDetector {
         
         console.log(`Screen size: ${width}x${height}, Management: ${this.isManagement}`);
         
-        if (width < this.minWidth || height < this.minHeight) {
+        // Check if it's a mobile device (small screen OR touch-only device)
+        const isMobileDevice = this.isMobileDevice();
+        const isSmallScreen = width < this.minWidth || height < this.minHeight;
+        
+        if ((isMobileDevice || isSmallScreen) && this.isManagement) {
             this.handleSmallScreen();
         } else {
             this.handleValidScreen();
+        }
+    }
+
+    isMobileDevice() {
+        // Check user agent for mobile indicators
+        const userAgent = navigator.userAgent.toLowerCase();
+        const mobileKeywords = [
+            'mobile', 'android', 'iphone', 'ipad', 'ipod', 
+            'blackberry', 'windows phone', 'opera mini'
+        ];
+        
+        const isMobileUA = mobileKeywords.some(keyword => userAgent.includes(keyword));
+        
+        // Check for touch capability (most mobile devices are touch-only)
+        const isTouchOnly = 'ontouchstart' in window && 
+                           navigator.maxTouchPoints > 0 && 
+                           !('msMaxTouchPoints' in window);
+        
+        // Check screen size (typical mobile dimensions)
+        const isSmallScreen = window.innerWidth < 768;
+        
+        return isMobileUA || (isTouchOnly && isSmallScreen);
+    }
+
+    getDeviceType() {
+        const width = window.innerWidth;
+        const userAgent = navigator.userAgent.toLowerCase();
+        
+        // Check for specific device types
+        if (userAgent.includes('ipad') || (width >= 768 && width < 1024)) {
+            return 'Tablet';
+        } else if (userAgent.includes('iphone') || width < 768) {
+            return 'Mobile Phone';
+        } else if (width >= 1024) {
+            return 'Desktop';
+        } else {
+            return 'Mobile Device';
         }
     }
 
@@ -80,14 +121,14 @@ class ScreenDetector {
                 font-family: 'Inter', sans-serif;
             ">
                 <div style="max-width: 500px;">
-                    <i class="fa fa-desktop" style="font-size: 64px; color: #ff6b6b; margin-bottom: 20px;"></i>
-                    <h2 style="color: #ff6b6b; margin-bottom: 16px; font-size: 24px;">Screen Size Too Small</h2>
+                    <i class="fa fa-mobile-alt" style="font-size: 64px; color: #ff6b6b; margin-bottom: 20px;"></i>
+                    <h2 style="color: #ff6b6b; margin-bottom: 16px; font-size: 24px;">Mobile Device Detected</h2>
                     <p style="margin-bottom: 16px; font-size: 16px; line-height: 1.5;">
-                        Management dashboard requires a larger screen for optimal functionality.
+                        Management dashboard is not optimized for mobile devices. Please use a tablet or desktop computer for the best experience.
                     </p>
                     <p style="margin-bottom: 24px; font-size: 14px; opacity: 0.8;">
-                        Minimum required: ${this.minWidth}px × ${this.minHeight}px<br>
-                        Current screen: ${window.innerWidth}px × ${window.innerHeight}px
+                        Recommended: Tablet (768px+) or Desktop<br>
+                        Current device: ${this.getDeviceType()} (${window.innerWidth}px × ${window.innerHeight}px)
                     </p>
                     <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
                         <button onclick="screenDetector.continueAnyway()" style="
@@ -176,8 +217,8 @@ class ScreenDetector {
                 font-size: 14px;
                 font-weight: 600;
             ">
-                <i class="fa fa-exclamation-triangle"></i>
-                Management dashboard not optimized for this screen size
+                <i class="fa fa-mobile-alt"></i>
+                Management dashboard not optimized for mobile devices
                 <button onclick="screenDetector.hideWarningBanner()" style="
                     background: transparent;
                     border: 1px solid white;
