@@ -104,7 +104,8 @@ foreach ($incidents as $incident) {
     if ($incident['end_time']) {
         $start = new DateTime($incident['start_time']);
         $end = new DateTime($incident['end_time']);
-        $durations[] = $start->diff($end)->hours;
+        $interval = $start->diff($end);
+        $durations[] = $interval->h + ($interval->days * 24);
     }
 }
 
@@ -874,22 +875,27 @@ foreach ($incidents as $incident) {
                                         <td>
                                             <div class="person-info">
                                                 <div class="person-avatar">
-                                                    <?php echo strtoupper(substr($incident['patient_name'], 0, 1)); ?>
+                                                    <?php echo strtoupper(substr($incident['pat_name'], 0, 1)); ?>
                                                 </div>
                                                 <div class="person-details">
-                                                    <div class="person-name"><?php echo htmlspecialchars($incident['patient_name']); ?></div>
-                                                    <div class="person-email">Age: <?php echo $incident['patient_age']; ?></div>
+                                                    <div class="person-name"><?php echo htmlspecialchars($incident['pat_name']); ?></div>
+                                                    <div class="person-email">Age: <?php 
+                                                        $birthdate = new DateTime($incident['birthdate']);
+                                                        $today = new DateTime();
+                                                        $age = $birthdate->diff($today)->y;
+                                                        echo $age; 
+                                                    ?></div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td>
                                             <div class="person-info">
                                                 <div class="person-avatar">
-                                                    <?php echo strtoupper(substr($incident['resp_name'], 0, 1)); ?>
+                                                    <?php echo strtoupper(substr($incident['responder_name'], 0, 1)); ?>
                                                 </div>
                                                 <div class="person-details">
-                                                    <div class="person-name"><?php echo htmlspecialchars($incident['resp_name']); ?></div>
-                                                    <div class="person-email"><?php echo htmlspecialchars($incident['resp_email']); ?></div>
+                                                    <div class="person-name"><?php echo htmlspecialchars($incident['responder_name']); ?></div>
+                                                    <div class="person-email"><?php echo htmlspecialchars($incident['responder_email']); ?></div>
                                                 </div>
                                             </div>
                                         </td>
