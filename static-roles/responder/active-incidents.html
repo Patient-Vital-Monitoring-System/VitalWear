@@ -328,6 +328,7 @@
             #sidebar {
                 transform: translateX(-100%);
                 transition: transform 0.3s ease;
+                width: 280px;
             }
             
             #sidebar.mobile-open {
@@ -337,16 +338,40 @@
             .topbar {
                 left: 0;
                 padding: 12px 16px;
+                height: auto;
+                min-height: 60px;
             }
             
-            .container {
-                margin-left: 0;
-                margin-top: 60px;
-                padding: 16px;
+            .topbar div:first-child {
+                font-size: 16px;
+            }
+            
+            .topbar div:last-child {
+                font-size: 14px;
+            }
+            
+            .dashboard-card {
+                padding: 16px 12px;
+                margin-bottom: 16px;
+            }
+            
+            .incidents-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
             }
             
             .incident-card {
-                padding: 20px 16px;
+                padding: 16px;
+            }
+            
+            .incident-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .incident-status {
+                align-self: flex-start;
             }
             
             .vital-card {
@@ -371,8 +396,20 @@
                 font-size: 12px;
             }
             
+            .btn {
+                width: 100%;
+                padding: 12px;
+                font-size: 14px;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
             .bottom-nav {
                 padding: 8px 12px;
+                height: 70px;
             }
             
             .bottom-nav .bottom-item {
@@ -386,6 +423,18 @@
         }
 
         @media (max-width: 480px) {
+            .container {
+                padding: 12px;
+            }
+            
+            .dashboard-card {
+                padding: 12px 8px;
+            }
+            
+            .incident-card {
+                padding: 12px 8px;
+            }
+            
             .vital-card {
                 padding: 12px 8px;
             }
@@ -396,6 +445,64 @@
             
             .chart-container {
                 min-height: 250px;
+                padding: 12px;
+            }
+            
+            .topbar {
+                padding: 10px 12px;
+            }
+            
+            .topbar div:first-child span {
+                font-size: 14px;
+            }
+            
+            .topbar div:last-child span {
+                font-size: 12px;
+            }
+            
+            .bottom-nav {
+                padding: 6px 4px;
+                height: 65px;
+            }
+            
+            .bottom-nav .bottom-item {
+                font-size: 10px;
+                padding: 6px 4px;
+            }
+            
+            .bottom-nav .bottom-item i {
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .container {
+                padding: 8px;
+            }
+            
+            .dashboard-card {
+                padding: 10px 6px;
+            }
+            
+            .incident-card {
+                padding: 10px 6px;
+            }
+            
+            .vital-value {
+                font-size: 14px;
+            }
+            
+            .topbar div:first-child i {
+                font-size: 20px;
+            }
+            
+            .topbar div:first-child span {
+                font-size: 12px;
+            }
+            
+            .mobile-menu-toggle {
+                padding: 8px;
+                font-size: 16px;
             }
         }
 
