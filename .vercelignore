@@ -1,0 +1,33 @@
+# Git files
+.git
+.gitignore
+
+# Node modules
+node_modules
+package-lock.json
+
+# Development files
+*.log
+.DS_Store
+Thumbs.db
+
+# PHP files (not needed for static deployment)
+roles/
+api/
+database/
+
+# Build artifacts
+dist/
+build/
+
+# IDE files
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Documentation (optional)
+*.md
+!VERCEL_DEPLOYMENT_GUIDE.md

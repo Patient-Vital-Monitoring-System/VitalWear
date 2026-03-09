@@ -616,9 +616,16 @@
     </main>
 
     <script src="../js/database.js"></script>
+    <script src="../js/screen-detection.js"></script>
     <script>
         // Initialize dashboard
         function initializeDashboard() {
+            // Check if screen is too small for management
+            if (window.screenDetector && window.screenDetector.disableForSmallScreens()) {
+                console.warn('Management dashboard disabled due to small screen');
+                return;
+            }
+            
             const user = getCurrentUser();
             document.getElementById('user-name').textContent = user.name;
             document.getElementById('welcome-user').textContent = user.name;

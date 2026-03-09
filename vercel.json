@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "name": "vitalwear",
+  "builds": [
+    {
+      "src": "static-roles/**/*",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "index.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/static-roles/(.*)",
+      "dest": "/static-roles/$1"
+    }
+  ],
+  "cleanUrls": true,
+  "trailingSlash": false
+}
