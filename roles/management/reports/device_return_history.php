@@ -756,10 +756,6 @@ if (!empty($durations)) {
                 <p>Track device returns and verification status</p>
             </div>
             <div class="header-actions">
-                <a href="index.php" class="btn btn-secondary">
-                    <i class="fa fa-arrow-left"></i>
-                    Back to Reports
-                </a>
                 <button class="btn btn-success" onclick="exportToCSV()">
                     <i class="fa fa-download"></i>
                     Export CSV
