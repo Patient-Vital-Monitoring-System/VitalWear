@@ -71,7 +71,10 @@ $incidents = $stmt->get_result();
 <body>
 
 <header class="topbar">
-Responder: <?php echo isset($_SESSION['user_name']) ? $_SESSION['user_name'] : 'Medical Monitoring'; ?>
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <i class="fa fa-heart-pulse" style="font-size: 24px; color: var(--medical-cyan);"></i>
+        <span style="font-size: 18px; font-weight: 700;">VitalWear</span>
+    </div>
 </header>
 
 <nav id="sidebar">

@@ -9,6 +9,13 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'responder') {
 
 $responder_id = $_SESSION['user_id'];
 
+// Get responder info
+$responder_query = "SELECT resp_name FROM responder WHERE resp_id = ?";
+$resp_stmt = $conn->prepare($responder_query);
+$resp_stmt->bind_param("i", $responder_id);
+$resp_stmt->execute();
+$responder_info = $resp_stmt->get_result()->fetch_assoc();
+
 // Get active incidents with latest vitals
 $stmt = $conn->prepare("
     SELECT i.incident_id, i.status, i.start_time, p.pat_name, p.pat_id,
@@ -37,110 +44,243 @@ $incidents = $stmt->get_result();
 <script src="https://kit.fontawesome.com/96e37b53f1.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-.vital-card {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
+/* VitalWear Branding Color Palette with Soft UI */
+:root {
+    --deep-hospital-blue: #0A2A55;
+    --medical-cyan: #00B6CC;
+    --trust-blue: #0A85CC;
+    --health-green: #2EDBB3;
+    --clinical-white: #F0F4F8;
+    --system-gray: #A9B7C6;
+    --surface: #ffffff;
+    --radius: 12px;
+    --radius-lg: 16px;
+    --shadow-sm: 0 2px 4px rgba(10, 42, 85, 0.06);
+    --shadow: 0 4px 12px rgba(10, 42, 85, 0.08);
+    --shadow-md: 0 8px 24px rgba(10, 42, 85, 0.12);
+}
+
+body {
+    background-color: var(--clinical-white);
+    color: var(--deep-hospital-blue);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Soft UI Sidebar */
+#sidebar {
+    background: var(--surface);
+    border-right: 1px solid rgba(169, 183, 198, 0.3);
+    box-shadow: var(--shadow);
+}
+
+.sidebar-logo {
+    padding: 24px 20px;
     text-align: center;
-    margin: 5px;
+    border-bottom: 1px solid rgba(169, 183, 198, 0.2);
+    background: linear-gradient(135deg, var(--deep-hospital-blue) 0%, var(--trust-blue) 100%);
+    margin: 12px;
+    border-radius: var(--radius);
 }
-.vital-value {
-    font-size: 18px;
-    font-weight: bold;
-    margin: 5px 0;
+
+.sidebar-logo img {
+    max-width: 140px;
+    height: auto;
+    filter: brightness(0) invert(1);
 }
-.btn-start {
-    background: #28a745;
-    color: white;
+
+#sidebar a {
+    color: var(--deep-hospital-blue);
+    margin: 6px 12px;
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    transition: all 0.2s ease;
     border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
-    transition: all 0.3s ease;
-    display: inline-block;
-    white-space: nowrap;
-    overflow: visible;
-    line-height: 1.4;
-    min-width: fit-content;
+    font-weight: 500;
 }
-.btn-start:hover {
-    background: #218838;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.4);
+
+#sidebar a:hover {
+    background: rgba(0, 182, 204, 0.1);
+    color: var(--medical-cyan);
+    transform: translateX(4px);
 }
-.btn-stop {
-    background: #dc3545;
+
+#sidebar a.active {
+    background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%);
     color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Soft UI Header */
+.topbar {
+    background: var(--surface);
+    color: var(--deep-hospital-blue);
+    border-bottom: 1px solid rgba(169, 183, 198, 0.2);
+    box-shadow: var(--shadow-sm);
+    padding: 16px 24px;
     font-weight: 600;
-    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
-    transition: all 0.3s ease;
-    display: inline-block;
-    white-space: nowrap;
-    overflow: visible;
-    line-height: 1.4;
-    min-width: fit-content;
 }
-.btn-stop:hover {
-    background: #c82333;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.4);
-}
+
+/* Soft UI Cards */
 .incident-card {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    margin: 10px 0;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    background: var(--surface);
+    padding: 24px;
+    border-radius: var(--radius-lg);
+    margin: 16px 0;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(169, 183, 198, 0.2);
     overflow: visible;
 }
-.chart-container {
-    background: white;
+
+.vital-card {
+    background: var(--clinical-white);
     padding: 20px;
-    border-radius: 10px;
-    margin: 20px 0;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    min-height: 350px;
-    position: relative;
+    border-radius: var(--radius);
+    text-align: center;
+    border: 1px solid rgba(169, 183, 198, 0.2);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
 }
+
+.vital-card:hover {
+    box-shadow: var(--shadow);
+    transform: translateY(-2px);
+}
+
+.vital-value {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 8px 0;
+    color: var(--deep-hospital-blue);
+}
+
+/* Soft UI Buttons */
+.btn-start {
+    background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%);
+    color: white;
+    border: none;
+    padding: 14px 28px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.btn-start:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-stop {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    border: none;
+    padding: 14px 28px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.btn-stop:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Soft UI Chart */
+.chart-container {
+    background: var(--surface);
+    padding: 24px;
+    border-radius: var(--radius-lg);
+    margin: 24px 0;
+    box-shadow: var(--shadow);
+    min-height: 380px;
+    border: 1px solid rgba(169, 183, 198, 0.2);
+}
+
 .chart-container canvas {
     width: 100% !important;
-    height: 250px !important;
+    height: 280px !important;
 }
+
 .chart-tabs {
     display: flex;
-    gap: 10px;
-    margin-bottom: 15px;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
 }
+
 .chart-tab {
-    padding: 8px 16px;
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 5px;
+    padding: 10px 20px;
+    background: var(--clinical-white);
+    border: 1px solid rgba(169, 183, 198, 0.3);
+    border-radius: var(--radius);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    color: var(--deep-hospital-blue);
+    font-weight: 500;
 }
+
+.chart-tab:hover {
+    background: rgba(0, 182, 204, 0.1);
+    border-color: var(--medical-cyan);
+}
+
 .chart-tab.active {
-    background: #007bff;
+    background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%);
     color: white;
-    border-color: #007bff;
+    border-color: transparent;
+    box-shadow: var(--shadow-sm);
+}
+
+h2, h3, h4 {
+    color: var(--deep-hospital-blue);
+    font-weight: 700;
+}
+
+h2 {
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
+}
+
+h3 {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+/* Message styling */
+#message {
+    border-radius: var(--radius);
+    font-weight: 500;
 }
 </style>
 </head>
 <body>
 
 <header class="topbar">
-Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_name'] : 'Medical Monitoring'; ?>
+    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <i class="fa fa-heart-pulse" style="font-size: 24px; color: var(--medical-cyan);"></i>
+            <span style="font-size: 18px; font-weight: 700;">VitalWear</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; color: var(--deep-hospital-blue); font-weight: 500;">
+            <i class="fa fa-user-circle" style="font-size: 20px; color: var(--medical-cyan);"></i>
+            <span><?php echo htmlspecialchars($responder_info['resp_name'] ?? 'Responder'); ?></span>
+        </div>
+    </div>
 </header>
 
 <nav id="sidebar">
+<div class="sidebar-logo">
+    <img src="../../assets/logo.png" alt="VitalWear Logo">
+</div>
 <a href="dashboard.php"><i class="fa fa-gauge"></i> Dashboard</a>
 <a href="device.php"><i class="fa fa-tablet"></i> My Device</a>
 <a href="active_incidents.php"><i class="fa fa-exclamation-circle"></i> Active Incidents</a>
@@ -308,8 +448,8 @@ function initializeChart(incidentId) {
                     {
                         label: 'Heart Rate',
                         data: chartData[incidentId].heartRate,
-                        borderColor: '#e74c3c',
-                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        borderColor: '#0A85CC',
+                        backgroundColor: 'rgba(10, 133, 204, 0.1)',
                         tension: 0.4,
                         yAxisID: 'y',
                         borderWidth: 2
@@ -317,8 +457,8 @@ function initializeChart(incidentId) {
                     {
                         label: 'Systolic BP',
                         data: chartData[incidentId].bpSystolic,
-                        borderColor: '#22c55e',
-                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        borderColor: '#00B6CC',
+                        backgroundColor: 'rgba(0, 182, 204, 0.1)',
                         tension: 0.4,
                         yAxisID: 'y1',
                         borderWidth: 2
@@ -326,8 +466,8 @@ function initializeChart(incidentId) {
                     {
                         label: 'Diastolic BP',
                         data: chartData[incidentId].bpDiastolic,
-                        borderColor: '#16a34a',
-                        backgroundColor: 'rgba(22, 163, 74, 0.1)',
+                        borderColor: '#2EDBB3',
+                        backgroundColor: 'rgba(46, 219, 179, 0.1)',
                         tension: 0.4,
                         yAxisID: 'y1',
                         borderWidth: 2
@@ -335,8 +475,8 @@ function initializeChart(incidentId) {
                     {
                         label: 'Oxygen Level',
                         data: chartData[incidentId].oxygenLevel,
-                        borderColor: '#0ea5e9',
-                        backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                        borderColor: '#0A2A55',
+                        backgroundColor: 'rgba(10, 42, 85, 0.1)',
                         tension: 0.4,
                         yAxisID: 'y2',
                         borderWidth: 2
@@ -540,4 +680,3 @@ document.addEventListener('DOMContentLoaded', function() {
 
 </body>
 </html>
-

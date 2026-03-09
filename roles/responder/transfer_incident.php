@@ -8,6 +8,14 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'responder') {
 }
 
 $responder_id = $_SESSION['user_id'];
+
+// Get responder info
+$responder_query = "SELECT resp_name FROM responder WHERE resp_id = ?";
+$resp_stmt = $conn->prepare($responder_query);
+$resp_stmt->bind_param("i", $responder_id);
+$resp_stmt->execute();
+$responder_info = $resp_stmt->get_result()->fetch_assoc();
+
 $message = "";
 $message_type = "";
 
@@ -55,14 +63,128 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <title>Transfer Incident - VitalWear</title>
 <link rel="stylesheet" href="../../assets/css/styles.css">
 <script src="https://kit.fontawesome.com/96e37b53f1.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* VitalWear Soft UI Design System */
+:root {
+    --deep-hospital-blue: #0A2A55;
+    --medical-cyan: #00B6CC;
+    --trust-blue: #0A85CC;
+    --health-green: #2EDBB3;
+    --clinical-white: #F0F4F8;
+    --system-gray: #A9B7C6;
+    --surface: #ffffff;
+    --radius: 12px;
+    --radius-lg: 16px;
+    --shadow-sm: 0 2px 4px rgba(10, 42, 85, 0.06);
+    --shadow: 0 4px 12px rgba(10, 42, 85, 0.08);
+    --shadow-md: 0 8px 24px rgba(10, 42, 85, 0.12);
+}
+
+body {
+    background-color: var(--clinical-white);
+    color: var(--deep-hospital-blue);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Soft UI Sidebar */
+#sidebar {
+    background: var(--surface);
+    border-right: 1px solid rgba(169, 183, 198, 0.3);
+    box-shadow: var(--shadow);
+}
+
+.sidebar-logo {
+    padding: 24px 20px;
+    text-align: center;
+    background: linear-gradient(135deg, var(--deep-hospital-blue) 0%, var(--trust-blue) 100%);
+    margin: 12px;
+    border-radius: var(--radius);
+}
+
+.sidebar-logo img {
+    max-width: 140px;
+    height: auto;
+    filter: brightness(0) invert(1);
+}
+
+#sidebar a {
+    color: var(--deep-hospital-blue);
+    margin: 6px 12px;
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    transition: all 0.2s ease;
+    border: none;
+    font-weight: 500;
+}
+
+#sidebar a:hover {
+    background: rgba(0, 182, 204, 0.1);
+    color: var(--medical-cyan);
+    transform: translateX(4px);
+}
+
+/* Soft UI Header */
+.topbar {
+    background: var(--surface);
+    color: var(--deep-hospital-blue);
+    border-bottom: 1px solid rgba(169, 183, 198, 0.2);
+    box-shadow: var(--shadow-sm);
+    padding: 16px 24px;
+    font-weight: 600;
+}
+
+h2, h3, h4 {
+    color: var(--deep-hospital-blue);
+    font-weight: 700;
+}
+
+/* Soft UI Cards */
+.card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(169, 183, 198, 0.2);
+}
+
+/* Soft UI Buttons */
+.btn-primary {
+    background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: var(--radius);
+    font-weight: 600;
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+</style>
 </head>
 <body>
 
 <header class="topbar">
-Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_name'] : 'Medical Monitoring'; ?>
+    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <i class="fa fa-heart-pulse" style="font-size: 24px; color: var(--medical-cyan);"></i>
+            <span style="font-size: 18px; font-weight: 700;">VitalWear</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; color: var(--deep-hospital-blue); font-weight: 500;">
+            <i class="fa fa-user-circle" style="font-size: 20px; color: var(--medical-cyan);"></i>
+            <span><?php echo htmlspecialchars($responder_info['resp_name'] ?? 'Responder'); ?></span>
+        </div>
+    </div>
 </header>
 
 <nav id="sidebar">
+<div class="sidebar-logo">
+    <img src="../../assets/logo.png" alt="VitalWear Logo">
+</div>
 <a href="dashboard.php"><i class="fa fa-gauge"></i> Dashboard</a>
 <a href="device.php"><i class="fa fa-tablet"></i> My Device</a>
 <a href="active_incidents.php"><i class="fa fa-exclamation-circle"></i> Active Incidents</a>
