@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS patient (
 -- Incident table
 CREATE TABLE IF NOT EXISTS incident (
     incident_id INT PRIMARY KEY AUTO_INCREMENT,
-    log_id INT NOT NULL,
+    log_id INT DEFAULT NULL,
     pat_id INT NOT NULL,
     resp_id INT NOT NULL,
     resc_id INT DEFAULT NULL,

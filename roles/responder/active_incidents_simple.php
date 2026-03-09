@@ -9,14 +9,9 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'responder') {
 
 $responder_id = $_SESSION['user_id'];
 
-// Get active incidents with latest vitals
+// Get active incidents
 $stmt = $conn->prepare("
     SELECT i.incident_id, i.status, i.start_time, p.pat_name, p.pat_id,
-           (SELECT v.heart_rate FROM vitalstat v WHERE v.incident_id = i.incident_id ORDER BY v.recorded_at DESC LIMIT 1) as heart_rate,
-           (SELECT v.bp_systolic FROM vitalstat v WHERE v.incident_id = i.incident_id ORDER BY v.recorded_at DESC LIMIT 1) as bp_systolic,
-           (SELECT v.bp_diastolic FROM vitalstat v WHERE v.incident_id = i.incident_id ORDER BY v.recorded_at DESC LIMIT 1) as bp_diastolic,
-           (SELECT v.oxygen_level FROM vitalstat v WHERE v.incident_id = i.incident_id ORDER BY v.recorded_at DESC LIMIT 1) as oxygen_level,
-           (SELECT v.recorded_at FROM vitalstat v WHERE v.incident_id = i.incident_id ORDER BY v.recorded_at DESC LIMIT 1) as last_vital_time,
            (SELECT COUNT(*) FROM vitalstat v WHERE v.incident_id = i.incident_id) as vital_count
     FROM incident i
     JOIN patient p ON i.pat_id = p.pat_id
@@ -52,45 +47,17 @@ $incidents = $stmt->get_result();
     background: #28a745;
     color: white;
     border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
+    padding: 10px 20px;
+    border-radius: 5px;
     cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
-    transition: all 0.3s ease;
-    display: inline-block;
-    white-space: nowrap;
-    overflow: visible;
-    line-height: 1.4;
-    min-width: fit-content;
-}
-.btn-start:hover {
-    background: #218838;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.4);
 }
 .btn-stop {
     background: #dc3545;
     color: white;
     border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
+    padding: 10px 20px;
+    border-radius: 5px;
     cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
-    transition: all 0.3s ease;
-    display: inline-block;
-    white-space: nowrap;
-    overflow: visible;
-    line-height: 1.4;
-    min-width: fit-content;
-}
-.btn-stop:hover {
-    background: #c82333;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.4);
 }
 .incident-card {
     background: white;
@@ -98,14 +65,13 @@ $incidents = $stmt->get_result();
     border-radius: 10px;
     margin: 10px 0;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    overflow: visible;
 }
 </style>
 </head>
 <body>
 
 <header class="topbar">
-Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_name'] : 'Medical Monitoring'; ?>
+Responder: <?php echo isset($_SESSION['user_name']) ? $_SESSION['user_name'] : 'Medical Monitoring'; ?>
 </header>
 
 <nav id="sidebar">
@@ -118,27 +84,26 @@ Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_
 <a href="../../api/auth/logout.php"><i class="fa fa-sign-out"></i> Logout</a>
 </nav>
 
-<main class="container" style="display:block;overflow-y:auto;width:100%;">
+<main class="container">
+<h2 style="color:#dd4c56;">🚨 Active Incidents</h2>
 
-<h2 style="color:#dd4c56;margin-bottom:20px;">🚨 Active Incidents</h2>
-
-<!-- AJAX Message Container -->
 <div id="message" style="display:none;padding:10px;border-radius:5px;margin:10px 0;"></div>
 
 <?php if($incidents->num_rows > 0): ?>
     <?php while($incident = $incidents->fetch_assoc()): ?>
     <div class="incident-card">
-        <div style="margin-bottom:15px;">
-            <h3>Incident #<?php echo $incident['incident_id']; ?></h3>
-            <p><strong>Patient:</strong> <?php echo htmlspecialchars($incident['pat_name']); ?></p>
-            <p><strong>Started:</strong> <?php echo date('M d, Y h:i A', strtotime($incident['start_time'])); ?></p>
-            <p><strong>Status:</strong> <span style="color:#f59e0b;"><?php echo ucfirst($incident['status']); ?></span></p>
-        </div>
-        
-        <div style="text-align:center;margin-bottom:20px;">
-            <button id="btn-<?php echo $incident['incident_id']; ?>" class="btn-start" onclick="toggleMonitoring(<?php echo $incident['incident_id']; ?>)" style="white-space:nowrap;overflow:visible;">
-                <i class="fa fa-play"></i> Start Live Monitoring
-            </button>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+            <div>
+                <h3>Incident #<?php echo $incident['incident_id']; ?></h3>
+                <p><strong>Patient:</strong> <?php echo htmlspecialchars($incident['pat_name']); ?></p>
+                <p><strong>Started:</strong> <?php echo date('M d, Y h:i A', strtotime($incident['start_time'])); ?></p>
+                <p><strong>Status:</strong> <span style="color:#f59e0b;"><?php echo ucfirst($incident['status']); ?></span></p>
+            </div>
+            <div>
+                <button id="btn-<?php echo $incident['incident_id']; ?>" class="btn-start" onclick="toggleMonitoring(<?php echo $incident['incident_id']; ?>)">
+                    <i class="fa fa-play"></i> Start Live Monitoring
+                </button>
+            </div>
         </div>
         
         <div id="vitals-<?php echo $incident['incident_id']; ?>">
@@ -146,48 +111,32 @@ Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
                 <div class="vital-card">
                     <div>Heart Rate</div>
-                    <div class="vital-value" id="hr-<?php echo $incident['incident_id']; ?>" style="color:#e74c3c;">
-                        <?php echo $incident['heart_rate'] > 0 ? $incident['heart_rate'] . ' bpm' : '-- bpm'; ?>
-                    </div>
+                    <div class="vital-value" id="hr-<?php echo $incident['incident_id']; ?>" style="color:#e74c3c;">-- bpm</div>
                 </div>
                 <div class="vital-card">
                     <div>Blood Pressure</div>
-                    <div class="vital-value" id="bp-<?php echo $incident['incident_id']; ?>" style="color:#22c55e;">
-                        <?php echo ($incident['bp_systolic'] > 0 ? $incident['bp_systolic'] : '--') . '/' . ($incident['bp_diastolic'] > 0 ? $incident['bp_diastolic'] : '--'); ?>
-                    </div>
+                    <div class="vital-value" id="bp-<?php echo $incident['incident_id']; ?>" style="color:#22c55e;">--/--</div>
                 </div>
                 <div class="vital-card">
                     <div>Oxygen Level</div>
-                    <div class="vital-value" id="o2-<?php echo $incident['incident_id']; ?>" style="color:#0ea5e9;">
-                        <?php echo $incident['oxygen_level'] > 0 ? $incident['oxygen_level'] . '%' : '--%'; ?>
-                    </div>
+                    <div class="vital-value" id="o2-<?php echo $incident['incident_id']; ?>" style="color:#0ea5e9;">--%</div>
                 </div>
                 <div class="vital-card">
                     <div>Last Update</div>
-                    <div class="vital-value" id="time-<?php echo $incident['incident_id']; ?>" style="color:#7c3aed;">
-                        <?php echo $incident['last_vital_time'] ? date('h:i A', strtotime($incident['last_vital_time'])) : '--:--'; ?>
-                    </div>
+                    <div class="vital-value" id="time-<?php echo $incident['incident_id']; ?>" style="color:#7c3aed;">--:--</div>
                 </div>
             </div>
         </div>
     </div>
     <?php endwhile; ?>
 <?php else: ?>
-    <div style="background:white;padding:40px;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.1);width:100%;text-align:center;">
+    <div style="background:white;padding:40px;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.1);text-align:center;">
         <p style="color:#777;font-size:18px;margin-bottom:15px;">No active incidents</p>
         <a href="create_incident.php" style="display:inline-block;padding:12px 24px;background:#dd4c56;color:white;text-decoration:none;border-radius:8px;font-weight:bold;">Create Incident</a>
     </div>
 <?php endif; ?>
 
 </main>
-
-<nav class="bottom-nav">
-<a href="dashboard.php" class="bottom-item"><i class="fa fa-gauge"></i><span>Home</span></a>
-<a href="device.php" class="bottom-item"><i class="fa fa-tablet"></i><span>Device</span></a>
-<a href="create_incident.php" class="bottom-item"><i class="fa fa-plus-circle"></i><span>Incident</span></a>
-<a href="incident_history.php" class="bottom-item"><i class="fa fa-history"></i><span>History</span></a>
-<a href="../../api/auth/logout.php"><i class="fa fa-sign-out"></i></a>
-</nav>
 
 <script>
 let monitoringIntervals = {};
@@ -258,4 +207,3 @@ function recordVitals(incidentId) {
 
 </body>
 </html>
-

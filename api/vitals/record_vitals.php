@@ -3,12 +3,12 @@ header('Content-Type: application/json');
 include("../../database/connection.php");
 session_start();
 
-if (!isset($_SESSION['responder_id'])) {
+if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'responder') {
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
 }
 
-$responder_id = $_SESSION['responder_id'];
+$responder_id = $_SESSION['user_id'];
 $incident_id = $_POST['incident_id'] ?? 0;
 $bp_systolic = $_POST['bp_systolic'] ?? 0;
 $bp_diastolic = $_POST['bp_diastolic'] ?? 0;
@@ -33,6 +33,9 @@ if ($check_stmt->get_result()->num_rows === 0) {
 $stmt = $conn->prepare("INSERT INTO vitalstat (incident_id, recorded_by, bp_systolic, bp_diastolic, heart_rate, oxygen_level) VALUES (?, 'responder', ?, ?, ?, ?)");
 $stmt->bind_param("iiiii", $incident_id, $bp_systolic, $bp_diastolic, $heart_rate, $oxygen_level);
 
+// Debug: Log the attempt
+error_log("Attempting to insert vitals - Incident: $incident_id, HR: $heart_rate, BP: $bp_systolic/$bp_diastolic, O2: $oxygen_level");
+
 if ($stmt->execute()) {
     // Get the newly inserted vital record
     $vital_id = $conn->insert_id;
@@ -47,6 +50,8 @@ if ($stmt->execute()) {
         'vital' => $vital
     ]);
 } else {
-    echo json_encode(['success' => false, 'message' => 'Failed to record vitals']);
+    $error = $stmt->error;
+    error_log("Failed to insert vitals: " . $error);
+    echo json_encode(['success' => false, 'message' => 'Failed to record vitals: ' . $error]);
 }
 

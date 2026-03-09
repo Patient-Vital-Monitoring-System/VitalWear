@@ -169,13 +169,6 @@ echo "<!-- Debug: Vitals count: " . count($vitals) . " -->";
     <p style="color:#777;font-size:14px;">Incident #<?php echo $incident_id; ?></p>
 </div>
 
-<!-- Auto-refresh indicator -->
-<div style="text-align:center;margin-bottom:15px;">
-    <span style="display:inline-flex;align-items:center;background:#dcfce7;color:#166534;padding:6px 12px;border-radius:20px;font-size:12px;">
-        <i class="fa fa-refresh fa-spin" style="margin-right:5px;"></i> Auto-refreshing every 10s
-    </span>
-    <span class="auto-badge">LIVE</span>
-</div>
 
 <!-- Latest Vital Display -->
 <?php if(count($vitals) > 0): ?>
@@ -289,12 +282,12 @@ echo "<!-- Debug: Total vitals found: " . count($vitals) . " -->";
 </nav>
 
 <script>
-// Auto-refresh page every 10 seconds if an incident is selected
-<?php if($incident_id > 0): ?>
-setInterval(function() {
-    location.reload();
-}, 10000);
-<?php endif; ?>
+// Auto-refresh disabled - page must be manually refreshed
+// <?php if($incident_id > 0): ?>
+// setInterval(function() {
+//     location.reload();
+// }, 10000);
+// <?php endif; ?>
 </script>
 
 </body>
