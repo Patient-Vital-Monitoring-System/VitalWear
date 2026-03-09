@@ -11,42 +11,57 @@ $rescuer_id = $_SESSION['user_id'];
 $conn = getDBConnection();
 
 // Get assigned device for this rescuer
-$device_query = "SELECT d.dev_serial, d.dev_status, dl.date_assigned
-                FROM device_log dl
-                JOIN device d ON dl.dev_id = d.dev_id
-                WHERE dl.resc_id = ? AND dl.date_returned IS NULL
-                ORDER BY dl.date_assigned DESC
-                LIMIT 1";
-$stmt = $conn->prepare($device_query);
-$stmt->bind_param("i", $rescuer_id);
-$stmt->execute();
-$assigned_device = $stmt->get_result()->fetch_assoc();
+$assigned_device = null;
+if ($conn && !$conn->connect_error) {
+    $device_query = "SELECT d.dev_serial, d.dev_status, dl.date_assigned
+                    FROM device_log dl
+                    JOIN device d ON dl.dev_id = d.dev_id
+                    WHERE dl.resc_id = ? AND dl.date_returned IS NULL
+                    ORDER BY dl.date_assigned DESC
+                    LIMIT 1";
+    $stmt = $conn->prepare($device_query);
+    if ($stmt) {
+        $stmt->bind_param("i", $rescuer_id);
+        $stmt->execute();
+        $assigned_device = $stmt->get_result()->fetch_assoc();
+    }
+}
 
 // Handle device return
 $message = "";
 $message_type = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['return_device'])) {
-    if ($assigned_device) {
+    if ($assigned_device && $conn && !$conn->connect_error) {
         // Update device log
         $update_query = "UPDATE device_log SET date_returned = NOW() WHERE resc_id = ? AND date_returned IS NULL";
         $stmt = $conn->prepare($update_query);
-        $stmt->bind_param("i", $rescuer_id);
-        
-        if ($stmt->execute()) {
-            // Update device status to available
-            $device_update = "UPDATE device SET dev_status = 'available' WHERE dev_serial = ?";
-            $stmt = $conn->prepare($device_update);
-            $stmt->bind_param("s", $assigned_device['dev_serial']);
-            $stmt->execute();
+        if ($stmt) {
+            $stmt->bind_param("i", $rescuer_id);
             
-            $message = "Device returned successfully!";
-            $message_type = "success";
-            $assigned_device = null; // Clear the assigned device
+            if ($stmt->execute()) {
+                // Update device status to available
+                $device_update = "UPDATE device SET dev_status = 'available' WHERE dev_serial = ?";
+                $stmt = $conn->prepare($device_update);
+                if ($stmt) {
+                    $stmt->bind_param("s", $assigned_device['dev_serial']);
+                    $stmt->execute();
+                }
+                
+                $message = "Device returned successfully!";
+                $message_type = "success";
+                $assigned_device = null; // Clear the assigned device
+            } else {
+                $message = "Error returning device. Please try again.";
+                $message_type = "error";
+            }
         } else {
-            $message = "Error returning device. Please try again.";
+            $message = "Error preparing device return. Please try again.";
             $message_type = "error";
         }
+    } else {
+        $message = "No device assigned or database connection error.";
+        $message_type = "error";
     }
 }
 ?>
