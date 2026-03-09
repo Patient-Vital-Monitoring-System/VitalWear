@@ -1,0 +1,76 @@
+{
+  "version": 2,
+  "name": "vitalwear",
+  "builds": [
+    {
+      "src": "index.php",
+      "use": "@vercel/php"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/index.php",
+      "dest": "/index.php"
+    },
+    {
+      "src": "/login.html",
+      "dest": "/login.html"
+    },
+    {
+      "src": "/roles",
+      "dest": "/roles"
+    },
+    {
+      "src": "/assets",
+      "dest": "/assets"
+    },
+    {
+      "src": "/api",
+      "dest": "/api"
+    },
+    {
+      "src": "/database",
+      "dest": "/database"
+    }
+  ],
+  "env": {
+    "VERCEL_ENV": "production"
+  },
+  "functions": {
+    "api/**/*.php": {
+      "runtime": "php@8.2",
+      "maxDuration": 10
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.php"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        },
+        {
+          "key": "Pragma",
+          "value": "no-cache"
+        }
+      ]
+    }
+  ],
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/**/*.php": {
+      "runtime": "php@8.2",
+      "maxDuration": 10
+    },
+    "api/users/**/*.js": {
+      "maxDuration": 30
+    }
+  }
+}
