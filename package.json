@@ -1,11 +1,134 @@
 {
-  "devDependencies": {
-    "electron": "^40.8.0"
-  },
   "name": "vitalwear-1",
   "version": "1.0.0",
-  "description": "",
+  "description": "VitalWear Patient Vital Monitoring System",
   "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "start:xampp": "electron main-xampp.js",
+    "start:server": "electron main-server.js",
+    "dev": "electron main-xampp.js",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux",
+    "dist": "electron-builder --publish=never",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "build": {
+    "appId": "com.vitalwear.desktop",
+    "productName": "VitalWear",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+      "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+      "!**/node_modules/*.d.ts",
+      "!**/node_modules/.bin",
+      "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
+      "!.editorconfig",
+      "!**/._*",
+      "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
+      "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
+      "!**/{appveyor.yml,.travis.yml,circle.yml}",
+      "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.healthcare"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "rpm",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.png",
+      "category": "Health"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "VitalWear"
+    },
+    "dmg": {
+      "title": "VitalWear Installer",
+      "icon": "assets/icon.icns",
+      "background": "assets/dmg-background.png",
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    }
+  },
+  "devDependencies": {
+    "builder": "^5.0.0",
+    "electron": "^40.8.0",
+    "electron-builder": "^24.13.3"
+  },
   "dependencies": {
     "boolean": "^3.2.0",
     "buffer-crc32": "^0.2.13",
@@ -66,19 +189,18 @@
     "wrappy": "^1.0.2",
     "yauzl": "^2.10.0"
   },
-  "scripts": {
-    "start": "electron .",
-    "start:xampp": "electron main-xampp.js",
-    "start:server": "electron main-server.js",
-    "dev": "electron main-xampp.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Patient-Vital-Monitoring-System/VitalWear.git"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "healthcare",
+    "patient-monitoring",
+    "vital-signs",
+    "electron",
+    "desktop"
+  ],
+  "author": "VitalWear Team",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
