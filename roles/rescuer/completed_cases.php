@@ -281,39 +281,81 @@ h2, h3, h4 {
 }
 
 .btn {
-    padding: 12px 20px;
+    padding: 14px 24px;
     border: none;
     border-radius: var(--radius);
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     text-decoration: none;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+    text-transform: none;
+    letter-spacing: 0.3px;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.btn:hover::before {
+    left: 100%;
+}
+
+.btn i {
+    font-size: 16px;
+    transition: transform 0.3s ease;
+}
+
+.btn:hover i {
+    transform: scale(1.1);
 }
 
 .btn-primary {
     background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%);
     color: white;
-    box-shadow: var(--shadow);
+    box-shadow: 0 4px 15px rgba(0, 182, 204, 0.3);
+    border: none;
 }
 
 .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 182, 204, 0.4);
+    background: linear-gradient(135deg, var(--trust-blue) 0%, var(--medical-cyan) 100%);
+}
+
+.btn-primary:active {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(0, 182, 204, 0.3);
 }
 
 .btn-secondary {
     background: linear-gradient(135deg, var(--health-green) 0%, #20c997 100%);
     color: white;
-    box-shadow: var(--shadow);
+    box-shadow: 0 4px 15px rgba(46, 219, 179, 0.3);
+    border: none;
 }
 
 .btn-secondary:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(46, 219, 179, 0.4);
+    background: linear-gradient(135deg, #20c997 0%, var(--health-green) 100%);
+}
+
+.btn-secondary:active {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(46, 219, 179, 0.3);
 }
 
 /* Welcome Banner */
