@@ -792,7 +792,7 @@ if (!empty($durations)) {
                     <div class="stat-icon purple">
                         <i class="fa fa-exclamation-triangle"></i>
                     </div>
-                    <div class="stat-value"><?php echo $pending_returns; ?></div>
+                    <div class="stat-value"><?php echo $pending_verification; ?></div>
                     <div class="stat-label">Pending Verification</div>
                 </div>
             </div>
