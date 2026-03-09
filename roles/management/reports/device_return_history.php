@@ -743,7 +743,7 @@ if (!empty($durations)) {
         <a href="../device_list.php"><i class="fa fa-box"></i> Device List</a>
         <a href="../assign_device.php"><i class="fa fa-exchange-alt"></i> Assign Device</a>
         <a href="../verify_return.php"><i class="fa fa-check-double"></i> Verify Return</a>
-        <a href="index.php" class="active"><i class="fa fa-chart-bar"></i> Reports</a>
+        <a href="reportdashboard.php" class="active"><i class="fa fa-chart-bar"></i> Reports</a>
         <a href="../../../api/auth/logout.php" class="btn btn-secondary">Logout</a>
     </nav>
 
