@@ -263,57 +263,80 @@ h2, h3, h4 {
 <main class="container" style="display:block;overflow-y:auto;">
 
 <?php if($message): ?>
-<div style="background:<?php echo $message_type === 'success' ? '#dcfce7' : '#fee2e2'; ?>;color:<?php echo $message_type === 'success' ? '#166534' : '#991b1b'; ?>;padding:15px;border-radius:10px;margin-bottom:20px;text-align:center;font-weight:600;">
+<div style="background: <?php echo $message_type === 'success' ? 'rgba(46, 219, 179, 0.15)' : 'rgba(239, 68, 68, 0.15)'; ?>; color: <?php echo $message_type === 'success' ? 'var(--health-green)' : '#dc2626'; ?>; padding: 16px 24px; border-radius: var(--radius); margin-bottom: 24px; text-align: center; font-weight: 600; border: 1px solid <?php echo $message_type === 'success' ? 'rgba(46, 219, 179, 0.3)' : 'rgba(239, 68, 68, 0.3)'; ?>; display: flex; align-items: center; justify-content: center; gap: 10px;">
+    <i class="fa <?php echo $message_type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'; ?>"></i>
     <?php echo $message; ?>
 </div>
 <?php endif; ?>
 
+<h2 style="color: var(--deep-hospital-blue); margin-bottom: 24px; font-weight: 700; font-size: 1.75rem;">📱 My Device</h2>
+
 <!-- Current Device Card -->
-<div style="background:white;padding:25px;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.1);width:100%;margin-bottom:20px;">
-    <h3 style="color:#dd4c56;margin-bottom:20px;">📱 My Device</h3>
+<div class="dashboard-card" style="text-align: center;">
     
     <?php if($assigned_device): ?>
-    <div style="text-align:center;padding:30px;">
-        <div style="width:80px;height:80px;background:#fef2f2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
-            <i class="fa fa-tablet" style="font-size:36px;color:#dd4c56;"></i>
+    <div style="padding: 20px;">
+        <div style="width: 100px; height: 100px; background: linear-gradient(135deg, rgba(0, 182, 204, 0.15) 0%, rgba(10, 133, 204, 0.15) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; box-shadow: var(--shadow-sm);">
+            <i class="fa fa-tablet" style="font-size: 48px; color: var(--medical-cyan);"></i>
         </div>
-        <p style="font-size:24px;font-weight:bold;"><?php echo htmlspecialchars($assigned_device['dev_serial']); ?></p>
-        <p style="color:#22c55e;font-weight:600;margin:10px 0;">Device Assigned</p>
-        <p style="color:#777;font-size:14px;">Assigned on: <?php echo date('M d, Y h:i A', strtotime($assigned_device['date_assigned'])); ?></p>
+        <p style="font-size: 28px; font-weight: 800; color: var(--deep-hospital-blue); margin-bottom: 12px;"><?php echo htmlspecialchars($assigned_device['dev_serial']); ?></p>
+        <span class="status-badge status-available" style="margin: 12px 0;">Device Assigned</span>
+        <p style="color: var(--system-gray); font-size: 14px; margin-top: 16px;">
+            <i class="fa fa-calendar"></i> Assigned on: <?php echo date('M d, Y h:i A', strtotime($assigned_device['date_assigned'])); ?>
+        </p>
+        
+        <form method="POST" style="margin-top: 24px;">
+            <button type="submit" name="return_device" class="btn-primary" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+                <i class="fa fa-undo"></i> Return Device
+            </button>
+        </form>
     </div>
     <?php else: ?>
-    <div style="text-align:center;padding:30px;">
-        <div style="width:80px;height:80px;background:#f1f5f9;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
-            <i class="fa fa-tablet" style="font-size:36px;color:#94a3b8;"></i>
+    <div style="padding: 20px;">
+        <div style="width: 100px; height: 100px; background: var(--clinical-white); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; border: 2px dashed var(--system-gray);">
+            <i class="fa fa-tablet" style="font-size: 48px; color: var(--system-gray);"></i>
         </div>
-        <p style="font-size:18px;color:#777;margin-bottom:10px;">No Device Assigned</p>
-        <p style="color:#999;font-size:14px;margin-bottom:20px;">Available devices: <?php echo $available_count; ?></p>
+        <p style="font-size: 20px; color: var(--deep-hospital-blue); font-weight: 600; margin-bottom: 8px;">No Device Assigned</p>
+        <p style="color: var(--system-gray); font-size: 14px; margin-bottom: 24px;">Available devices: <strong style="color: var(--medical-cyan);"><?php echo $available_count; ?></strong></p>
         
         <?php if($available_count > 0): ?>
         <form method="POST">
-            <button type="submit" name="request_device" style="padding:12px 30px;background:#22c55e;color:white;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:14px;">
+            <button type="submit" name="request_device" class="btn-quick-action" style="width: auto; padding: 14px 32px;">
                 <i class="fa fa-plus"></i> Request Device
             </button>
         </form>
         <?php else: ?>
-        <p style="color:#f59e0b;font-size:14px;">No devices available. Please try again later.</p>
+        <div style="background: rgba(245, 158, 11, 0.1); padding: 16px; border-radius: var(--radius); color: #d97706; font-size: 14px;">
+            <i class="fa fa-exclamation-triangle"></i> No devices available. Please try again later.
+        </div>
         <?php endif; ?>
     </div>
     <?php endif; ?>
 </div>
 
 <!-- Device Info Card -->
-<div style="background:white;padding:25px;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.1);width:100%;">
-    <h3 style="color:#dd4c56;margin-bottom:15px;">ℹ️ Device Information</h3>
-    <p style="color:#777;font-size:14px;line-height:1.6;">
+<div class="dashboard-card">
+    <h3>ℹ️ Device Information</h3>
+    <p style="color: var(--system-gray); font-size: 15px; line-height: 1.7; margin-bottom: 20px;">
         Your assigned device is used to record patient vital signs during incidents. 
         Make sure to keep the device charged and in good condition.
     </p>
-    <ul style="color:#777;font-size:14px;margin-top:15px;padding-left:20px;line-height:1.8;">
-        <li>Check battery level before each use</li>
-        <li>Return device when not in use</li>
-        <li>Report any issues immediately</li>
-    </ul>
+    <div style="background: var(--clinical-white); padding: 20px; border-radius: var(--radius); border-left: 4px solid var(--medical-cyan);">
+        <ul style="color: var(--deep-hospital-blue); font-size: 14px; list-style: none; line-height: 2;">
+            <li style="display: flex; align-items: center; gap: 10px;">
+                <i class="fa fa-check-circle" style="color: var(--health-green);"></i>
+                Check battery level before each use
+            </li>
+            <li style="display: flex; align-items: center; gap: 10px;">
+                <i class="fa fa-check-circle" style="color: var(--health-green);"></i>
+                Return device when not in use
+            </li>
+            <li style="display: flex; align-items: center; gap: 10px;">
+                <i class="fa fa-check-circle" style="color: var(--health-green);"></i>
+                Report any issues immediately
+            </li>
+        </ul>
+    </div>
 </div>
 
 </main>
