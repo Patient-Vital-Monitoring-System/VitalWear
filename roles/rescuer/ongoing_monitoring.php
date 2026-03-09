@@ -406,6 +406,26 @@ h2, h3, h4 {
     box-shadow: var(--shadow-md);
 }
 
+.btn-danger {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: var(--radius);
+    font-weight: 600;
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
 .vital-count {
     font-size: 12px;
     color: var(--system-gray);
@@ -494,6 +514,9 @@ h2, h3, h4 {
             </div>
             
             <div class="incident-actions">
+                <a href="#" class="btn-primary" onclick="startMonitoring(<?php echo $incident['incident_id']; ?>)">
+                    <i class="fa fa-play"></i> Start Monitoring
+                </a>
                 <a href="case_vitals_history.php?id=<?php echo $incident['incident_id']; ?>" class="btn-secondary">
                     <i class="fa fa-chart-line"></i> View History
                 </a>
@@ -668,6 +691,223 @@ function switchChart(incidentId, type, tabElement) {
     });
     
     chart.update();
+}
+
+function startMonitoring(incidentId) {
+    // Change button to stop monitoring
+    const button = event.target;
+    if (button.classList.contains('btn-primary')) {
+        button.innerHTML = '<i class="fa fa-stop"></i> Stop Monitoring';
+        button.classList.remove('btn-primary');
+        button.classList.add('btn-danger');
+        
+        // Start real-time updates (simulate with random data)
+        startRealTimeUpdates(incidentId);
+        
+        // Show notification
+        showNotification('Monitoring started for Incident #' + incidentId + ' - Saving vital signs to database', 'success');
+    } else {
+        button.innerHTML = '<i class="fa fa-play"></i> Start Monitoring';
+        button.classList.remove('btn-danger');
+        button.classList.add('btn-primary');
+        
+        // Stop real-time updates
+        stopRealTimeUpdates(incidentId);
+        
+        // Show notification
+        showNotification('Monitoring stopped for Incident #' + incidentId, 'info');
+    }
+}
+
+function showNotification(message, type) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 16px 24px;
+        border-radius: 12px;
+        color: white;
+        font-weight: 600;
+        z-index: 9999;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+    `;
+    
+    // Set background color based on type
+    switch(type) {
+        case 'success':
+            notification.style.background = 'linear-gradient(135deg, #27ae60 0%, #229954 100%)';
+            break;
+        case 'info':
+            notification.style.background = 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)';
+            break;
+        case 'error':
+            notification.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
+            break;
+        default:
+            notification.style.background = 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)';
+    }
+    
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+}
+
+let monitoringIntervals = {};
+
+function startRealTimeUpdates(incidentId) {
+    // Update chart every 2 seconds with simulated data
+    monitoringIntervals[incidentId] = setInterval(() => {
+        updateChartWithRandomData(incidentId);
+    }, 2000);
+}
+
+function stopRealTimeUpdates(incidentId) {
+    if (monitoringIntervals[incidentId]) {
+        clearInterval(monitoringIntervals[incidentId]);
+        delete monitoringIntervals[incidentId];
+    }
+}
+
+function updateChartWithRandomData(incidentId) {
+    if (!chartData[incidentId]) {
+        chartData[incidentId] = {
+            labels: [],
+            heartRate: [],
+            bpSystolic: [],
+            bpDiastolic: [],
+            oxygenLevel: []
+        };
+    }
+    
+    const time = new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', second: '2-digit'});
+    
+    // Generate realistic random vital signs
+    const heartRate = 65 + Math.floor(Math.random() * 25); // 65-90 bpm
+    const bpSystolic = 110 + Math.floor(Math.random() * 30); // 110-140 mmHg
+    const bpDiastolic = 70 + Math.floor(Math.random() * 20); // 70-90 mmHg
+    const oxygenLevel = 95 + Math.floor(Math.random() * 5); // 95-100%
+    
+    // Save to database via API
+    saveVitalsToDatabase(incidentId, heartRate, bpSystolic, bpDiastolic, oxygenLevel)
+        .then(response => {
+            if (response.success) {
+                console.log('✅ Vitals saved to database successfully');
+                // Update chart with saved data
+                updateChartData(incidentId, time, heartRate, bpSystolic, bpDiastolic, oxygenLevel);
+            } else {
+                console.error('❌ Failed to save vitals:', response.message);
+                // Show error notification
+                showNotification('Failed to save vitals: ' + response.message, 'error');
+                // Still update chart even if save fails, so user sees monitoring
+                updateChartData(incidentId, time, heartRate, bpSystolic, bpDiastolic, oxygenLevel);
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error saving vitals:', error);
+            // Show error notification
+            showNotification('Error saving vitals to database', 'error');
+            // Still update chart even if save fails
+            updateChartData(incidentId, time, heartRate, bpSystolic, bpDiastolic, oxygenLevel);
+        });
+}
+
+function saveVitalsToDatabase(incidentId, heartRate, bpSystolic, bpDiastolic, oxygenLevel) {
+    console.log('Saving vitals to database:', {
+        incidentId: incidentId,
+        heartRate: heartRate,
+        bpSystolic: bpSystolic,
+        bpDiastolic: bpDiastolic,
+        oxygenLevel: oxygenLevel
+    });
+    
+    // Use the original API with database
+    return fetch('api/save_vitals.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            incident_id: incidentId,
+            heart_rate: heartRate,
+            bp_systolic: bpSystolic,
+            bp_diastolic: bpDiastolic,
+            oxygen_level: oxygenLevel
+        })
+    })
+    .then(response => {
+        console.log('API response status:', response.status);
+        
+        // Check if response is actually JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            console.error('Non-JSON response, content-type:', contentType);
+            return response.text().then(text => {
+                console.error('Response text:', text);
+                throw new Error('Server returned non-JSON response: ' + text.substring(0, 200));
+            });
+        }
+        
+        return response.text().then(text => {
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                console.error('Failed to parse JSON:', text);
+                throw new Error('Invalid JSON response: ' + text.substring(0, 100));
+            }
+        });
+    })
+    .then(data => {
+        console.log('API response data:', data);
+        return data;
+    })
+    .catch(error => {
+        console.error('API call error:', error);
+        throw error;
+    });
+}
+
+function updateChartData(incidentId, time, heartRate, bpSystolic, bpDiastolic, oxygenLevel) {
+    // Add new data to chart
+    chartData[incidentId].labels.push(time);
+    chartData[incidentId].heartRate.push(heartRate);
+    chartData[incidentId].bpSystolic.push(bpSystolic);
+    chartData[incidentId].bpDiastolic.push(bpDiastolic);
+    chartData[incidentId].oxygenLevel.push(oxygenLevel);
+    
+    // Keep only last 20 data points
+    if (chartData[incidentId].labels.length > 20) {
+        chartData[incidentId].labels.shift();
+        chartData[incidentId].heartRate.shift();
+        chartData[incidentId].bpSystolic.shift();
+        chartData[incidentId].bpDiastolic.shift();
+        chartData[incidentId].oxygenLevel.shift();
+    }
+    
+    // Update chart
+    if (charts[incidentId]) {
+        charts[incidentId].data.labels = chartData[incidentId].labels;
+        charts[incidentId].data.datasets[0].data = chartData[incidentId].heartRate;
+        charts[incidentId].data.datasets[1].data = chartData[incidentId].bpSystolic;
+        charts[incidentId].data.datasets[2].data = chartData[incidentId].bpDiastolic;
+        charts[incidentId].data.datasets[3].data = chartData[incidentId].oxygenLevel;
+        charts[incidentId].update('none'); // Update without animation for smooth real-time updates
+    }
 }
 
 // Initialize charts when page loads
