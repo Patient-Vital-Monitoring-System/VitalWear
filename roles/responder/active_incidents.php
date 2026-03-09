@@ -292,7 +292,7 @@ h3 {
 
 <main class="container" style="display:block;overflow-y:auto;width:100%;">
 
-<h2 style="color:#dd4c56;margin-bottom:20px;">🚨 Active Incidents</h2>
+<h2 style="color: var(--deep-hospital-blue); margin-bottom: 24px; font-weight: 700; font-size: 1.75rem;">🚨 Active Incidents</h2>
 
 <!-- AJAX Message Container -->
 <div id="message" style="display:none;padding:10px;border-radius:5px;margin:10px 0;"></div>
@@ -300,11 +300,13 @@ h3 {
 <?php if($incidents->num_rows > 0): ?>
     <?php while($incident = $incidents->fetch_assoc()): ?>
     <div class="incident-card">
-        <div style="margin-bottom:15px;">
-            <h3>Incident #<?php echo $incident['incident_id']; ?></h3>
-            <p><strong>Patient:</strong> <?php echo htmlspecialchars($incident['pat_name']); ?></p>
-            <p><strong>Started:</strong> <?php echo date('M d, Y h:i A', strtotime($incident['start_time'])); ?></p>
-            <p><strong>Status:</strong> <span style="color:#f59e0b;"><?php echo ucfirst($incident['status']); ?></span></p>
+        <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid rgba(169, 183, 198, 0.2);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="margin: 0; font-size: 1.25rem;">Incident #<?php echo $incident['incident_id']; ?></h3>
+                <span class="status-badge status-ongoing"><?php echo ucfirst($incident['status']); ?></span>
+            </div>
+            <p style="color: var(--system-gray); font-size: 14px; margin: 4px 0;"><i class="fa fa-user" style="width: 20px; color: var(--medical-cyan);"></i> <strong>Patient:</strong> <?php echo htmlspecialchars($incident['pat_name']); ?></p>
+            <p style="color: var(--system-gray); font-size: 14px; margin: 4px 0;"><i class="fa fa-clock" style="width: 20px; color: var(--medical-cyan);"></i> <strong>Started:</strong> <?php echo date('M d, Y h:i A', strtotime($incident['start_time'])); ?></p>
         </div>
         
         <div style="text-align:center;margin-bottom:20px;">
@@ -314,29 +316,29 @@ h3 {
         </div>
         
         <div id="vitals-<?php echo $incident['incident_id']; ?>">
-            <h4>Vitals Monitor</h4>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+            <h4 style="color: var(--deep-hospital-blue); margin-bottom: 16px; font-size: 1.1rem;"><i class="fa fa-heartbeat" style="color: var(--medical-cyan);"></i> Vitals Monitor</h4>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
                 <div class="vital-card">
-                    <div>Heart Rate</div>
-                    <div class="vital-value" id="hr-<?php echo $incident['incident_id']; ?>" style="color:#e74c3c;">
-                        <?php echo $incident['heart_rate'] > 0 ? $incident['heart_rate'] . ' bpm' : '-- bpm'; ?>
+                    <div style="color: var(--system-gray); font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Heart Rate</div>
+                    <div class="vital-value" id="hr-<?php echo $incident['incident_id']; ?>" style="color: #0A85CC;">
+                        <?php echo $incident['heart_rate'] > 0 ? $incident['heart_rate'] : '--'; ?><span style="font-size: 14px; color: var(--system-gray);"> bpm</span>
                     </div>
                 </div>
                 <div class="vital-card">
-                    <div>Blood Pressure</div>
-                    <div class="vital-value" id="bp-<?php echo $incident['incident_id']; ?>" style="color:#22c55e;">
+                    <div style="color: var(--system-gray); font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Blood Pressure</div>
+                    <div class="vital-value" id="bp-<?php echo $incident['incident_id']; ?>" style="color: #00B6CC; font-size: 18px;">
                         <?php echo ($incident['bp_systolic'] > 0 ? $incident['bp_systolic'] : '--') . '/' . ($incident['bp_diastolic'] > 0 ? $incident['bp_diastolic'] : '--'); ?>
                     </div>
                 </div>
                 <div class="vital-card">
-                    <div>Oxygen Level</div>
-                    <div class="vital-value" id="o2-<?php echo $incident['incident_id']; ?>" style="color:#0ea5e9;">
-                        <?php echo $incident['oxygen_level'] > 0 ? $incident['oxygen_level'] . '%' : '--%'; ?>
+                    <div style="color: var(--system-gray); font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Oxygen Level</div>
+                    <div class="vital-value" id="o2-<?php echo $incident['incident_id']; ?>" style="color: #0A2A55;">
+                        <?php echo $incident['oxygen_level'] > 0 ? $incident['oxygen_level'] : '--'; ?><span style="font-size: 14px; color: var(--system-gray);">%</span>
                     </div>
                 </div>
                 <div class="vital-card">
-                    <div>Last Update</div>
-                    <div class="vital-value" id="time-<?php echo $incident['incident_id']; ?>" style="color:#7c3aed;">
+                    <div style="color: var(--system-gray); font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Last Update</div>
+                    <div class="vital-value" id="time-<?php echo $incident['incident_id']; ?>" style="color: #2EDBB3; font-size: 16px;">
                         <?php echo $incident['last_vital_time'] ? date('h:i A', strtotime($incident['last_vital_time'])) : '--:--'; ?>
                     </div>
                 </div>
@@ -359,9 +361,14 @@ h3 {
     </div>
     <?php endwhile; ?>
 <?php else: ?>
-    <div style="background:white;padding:40px;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.1);width:100%;text-align:center;">
-        <p style="color:#777;font-size:18px;margin-bottom:15px;">No active incidents</p>
-        <a href="create_incident.php" style="display:inline-block;padding:12px 24px;background:#dd4c56;color:white;text-decoration:none;border-radius:8px;font-weight:bold;">Create Incident</a>
+    <div class="dashboard-card" style="text-align: center; padding: 48px 24px;">
+        <div style="width: 80px; height: 80px; background: var(--clinical-white); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+            <i class="fa fa-clipboard-check" style="font-size: 36px; color: var(--system-gray);"></i>
+        </div>
+        <p style="color: var(--system-gray); font-size: 18px; margin-bottom: 20px;">No active incidents</p>
+        <a href="create_incident.php" class="btn-quick-action" style="width: auto; display: inline-block;">
+            <i class="fa fa-plus"></i> Create Incident
+        </a>
     </div>
 <?php endif; ?>
 
