@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transfer Incident - VitalWear</title>
+    <script src="https://kit.fontawesome.com/96e37b53f1.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* VitalWear Soft UI Design System */
+        :root {
+            --deep-hospital-blue: #0A2A55;
+            --medical-cyan: #00B6CC;
+            --trust-blue: #0A85CC;
+            --health-green: #2EDBB3;
+            --clinical-white: #F0F4F8;
+            --system-gray: #A9B7C6;
+            --surface: #ffffff;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --shadow-sm: 0 2px 4px rgba(10, 42, 85, 0.06);
+            --shadow: 0 4px 12px rgba(10, 42, 85, 0.08);
+            --shadow-md: 0 8px 24px rgba(10, 42, 85, 0.12);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--clinical-white);
+            color: var(--deep-hospital-blue);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        /* Soft UI Sidebar */
+        #sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 280px;
+            height: 100vh;
+            background: var(--surface);
+            border-right: 1px solid rgba(169, 183, 198, 0.3);
+            box-shadow: var(--shadow);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .sidebar-logo {
+            padding: 24px 20px;
+            text-align: center;
+            background: linear-gradient(135deg, var(--deep-hospital-blue) 0%, var(--trust-blue) 100%);
+            margin: 12px;
+            border-radius: var(--radius);
+        }
+
+        .sidebar-logo i {
+            font-size: 48px;
+            color: white;
+        }
+
+        #sidebar a {
+            color: var(--deep-hospital-blue);
+            margin: 6px 12px;
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            transition: all 0.2s ease;
+            border: none;
+            font-weight: 500;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #sidebar a:hover {
+            background: rgba(0, 182, 204, 0.1);
+            color: var(--medical-cyan);
+            transform: translateX(4px);
+        }
+
+        #sidebar a.active {
+            background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%);
+            color: white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Soft UI Header */
+        .topbar {
+            position: fixed;
+            top: 0;
+            left: 280px;
+            right: 0;
+            background: var(--surface);
+            color: var(--deep-hospital-blue);
+            border-bottom: 1px solid rgba(169, 183, 198, 0.2);
+            box-shadow: var(--shadow-sm);
+            padding: 16px 24px;
+            font-weight: 600;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        h2, h3, h4 {
+            color: var(--deep-hospital-blue);
+            font-weight: 700;
+        }
+
+        /* Soft UI Cards */
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(169, 183, 198, 0.2);
+            padding: 32px;
+        }
+
+        /* Soft UI Buttons */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: var(--radius);
+            font-weight: 600;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Custom Select Dropdown Styling */
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2300B6CC' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            background-size: 16px;
+            padding-right: 40px !important;
+            cursor: pointer;
+        }
+
+        select:hover {
+            border-color: var(--medical-cyan) !important;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--medical-cyan) !important;
+            box-shadow: 0 0 0 3px rgba(0, 182, 204, 0.15) !important;
+        }
+
+        select option {
+            padding: 12px;
+            font-size: 15px;
+            background: white;
+            color: var(--deep-hospital-blue);
+        }
+
+        select option:hover,
+        select option:focus,
+        select option:checked {
+            background: rgba(0, 182, 204, 0.1) !important;
+            color: var(--deep-hospital-blue) !important;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 32px;
+            margin-left: 280px;
+            margin-top: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-y: auto;
+            width: 100%;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--deep-hospital-blue);
+            font-size: 14px;
+        }
+
+        .form-group select {
+            width: 100%;
+            padding: 14px 40px 14px 14px;
+            border: 2px solid rgba(169, 183, 198, 0.3);
+            border-radius: var(--radius);
+            font-size: 15px;
+            background: white;
+        }
+
+        .btn-transfer {
+            width: 100%;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%);
+            color: white;
+            border: none;
+            border-radius: var(--radius-lg);
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-transfer:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .message {
+            padding: 16px 24px;
+            border-radius: var(--radius);
+            margin-bottom: 24px;
+            text-align: center;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .message.success {
+            background: rgba(46, 219, 179, 0.15);
+            color: var(--health-green);
+            border: 1px solid rgba(46, 219, 179, 0.3);
+        }
+
+        .message.error {
+            background: rgba(239, 68, 68, 0.15);
+            color: #dc2626;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            border-top: 1px solid rgba(169, 183, 198, 0.3);
+            box-shadow: 0 -4px 20px rgba(10, 42, 85, 0.08);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 998;
+        }
+
+        .bottom-nav .bottom-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 20px;
+            border-radius: var(--radius);
+            color: var(--system-gray);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 12px;
+        }
+
+        .bottom-nav .bottom-item i {
+            font-size: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .bottom-nav .bottom-item:hover {
+            color: var(--medical-cyan);
+            background: rgba(0, 182, 204, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .bottom-nav .bottom-item.active {
+            color: var(--medical-cyan);
+            background: rgba(0, 182, 204, 0.15);
+        }
+
+        .bottom-nav .bottom-item.active i {
+            transform: scale(1.1);
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+                margin-left: 0;
+                margin-top: 60px;
+            }
+            
+            #sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            
+            #sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            
+            .topbar {
+                left: 0;
+                padding: 12px 16px;
+            }
+            
+            .card {
+                padding: 24px 20px;
+            }
+            
+            .btn-transfer {
+                padding: 14px 20px;
+                font-size: 15px;
+            }
+            
+            .bottom-nav {
+                padding: 8px 12px;
+            }
+            
+            .bottom-nav .bottom-item {
+                padding: 8px 12px;
+                font-size: 11px;
+            }
+            
+            .bottom-nav .bottom-item i {
+                font-size: 18px;
+            }
+        }
+
+        /* Mobile menu toggle */
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 1001;
+            background: var(--medical-cyan);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            padding: 10px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
+        <i class="fa fa-bars"></i>
+    </button>
+
+    <header class="topbar">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <i class="fa fa-heart-pulse" style="font-size: 24px; color: var(--medical-cyan);"></i>
+            <span style="font-size: 18px; font-weight: 700;">VitalWear</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; color: var(--deep-hospital-blue); font-weight: 500;">
+            <i class="fa fa-user-circle" style="font-size: 20px; color: var(--medical-cyan);"></i>
+            <span id="user-name">Responder User</span>
+        </div>
+    </header>
+
+    <nav id="sidebar">
+        <div class="sidebar-logo">
+            <i class="fa fa-heart-pulse"></i>
+        </div>
+        <a href="dashboard.html"><i class="fa fa-gauge"></i> Dashboard</a>
+        <a href="device.html"><i class="fa fa-tablet"></i> My Device</a>
+        <a href="active-incidents.html"><i class="fa fa-exclamation-circle"></i> Active Incidents</a>
+        <a href="create-incident.html"><i class="fa fa-plus-circle"></i> Create Incident</a>
+        <a href="transfer-incident.html" class="active"><i class="fa fa-exchange"></i> Transfer to Rescuer</a>
+        <a href="incident-history.html"><i class="fa fa-history"></i> Incident History</a>
+        <a href="#" onclick="logout()"><i class="fa fa-sign-out"></i> Logout</a>
+    </nav>
+
+    <main class="container">
+        <div style="width: 100%; max-width: 500px;">
+            <h2 style="color: var(--deep-hospital-blue); margin-bottom: 24px; font-weight: 700; font-size: 1.75rem; text-align: center;">🔄 Transfer Incident</h2>
+
+            <div id="message" class="message" style="display: none;"></div>
+
+            <div class="card">
+                <form id="transfer-form">
+                    <div class="form-group">
+                        <label>
+                            <i class="fa fa-exclamation-circle" style="color: var(--medical-cyan); margin-right: 8px;"></i>Select Incident *
+                        </label>
+                        <select name="incident_id" required id="incident-select">
+                            <option value="">-- Select Incident --</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <i class="fa fa-user-md" style="color: var(--medical-cyan); margin-right: 8px;"></i>Transfer to Rescuer *
+                        </label>
+                        <select name="resc_id" required id="rescuer-select">
+                            <option value="">-- Select Rescuer --</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn-transfer">
+                        <i class="fa fa-exchange" style="font-size: 20px;"></i> Transfer Incident
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="bottom-item">
+            <i class="fa fa-gauge"></i>
+            <span>Home</span>
+        </a>
+        <a href="device.html" class="bottom-item">
+            <i class="fa fa-tablet"></i>
+            <span>Device</span>
+        </a>
+        <a href="create-incident.html" class="bottom-item">
+            <i class="fa fa-plus-circle"></i>
+            <span>Incident</span>
+        </a>
+        <a href="incident-history.html" class="bottom-item">
+            <i class="fa fa-history"></i>
+            <span>History</span>
+        </a>
+        <a href="#" onclick="logout()" class="bottom-item">
+            <i class="fa fa-sign-out"></i>
+        </a>
+    </nav>
+
+    <script src="../js/database.js"></script>
+    <script>
+        function getCurrentUser() {
+            const role = sessionStorage.getItem('current_role');
+            return window.vitalwearDB.getUsers(role)[0] || { name: 'Responder User', role: 'responder', id: 5 };
+        }
+
+        function checkAuth() {
+            const role = sessionStorage.getItem('current_role');
+            if (role !== 'responder') {
+                window.location.href = '../index.html';
+                return;
+            }
+        }
+
+        function logout() {
+            sessionStorage.clear();
+            window.location.href = '../index.html';
+        }
+
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('mobile-open');
+        }
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const menuToggle = document.querySelector('.mobile-menu-toggle');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(event.target) && 
+                !menuToggle.contains(event.target) &&
+                sidebar.classList.contains('mobile-open')) {
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.style.display = 'flex';
+            messageDiv.className = `message ${type}`;
+            messageDiv.innerHTML = `
+                <i class="fa ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+                ${text}
+            `;
+            
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function populateIncidents() {
+            const user = getCurrentUser();
+            const incidents = window.vitalwearDB.getIncidentsByUser(user.id, 'responder');
+            const ongoingIncidents = incidents.filter(i => i.status === 'ongoing');
+            const select = document.getElementById('incident-select');
+            
+            // Clear existing options
+            select.innerHTML = '<option value="">-- Select Incident --</option>';
+            
+            if (ongoingIncidents.length === 0) {
+                select.innerHTML = '<option value="">-- No Ongoing Incidents --</option>';
+                select.disabled = true;
+                return;
+            }
+            
+            ongoingIncidents.forEach(incident => {
+                const option = document.createElement('option');
+                option.value = incident.id;
+                option.textContent = `#${incident.id} - ${incident.patient_name}`;
+                select.appendChild(option);
+            });
+        }
+
+        function populateRescuers() {
+            const rescuers = window.vitalwearDB.getUsers().rescuer || [];
+            const select = document.getElementById('rescuer-select');
+            
+            // Clear existing options
+            select.innerHTML = '<option value="">-- Select Rescuer --</option>';
+            
+            if (rescuers.length === 0) {
+                select.innerHTML = '<option value="">-- No Available Rescuers --</option>';
+                select.disabled = true;
+                return;
+            }
+            
+            rescuers.forEach(rescuer => {
+                const option = document.createElement('option');
+                option.value = rescuer.id;
+                option.textContent = rescuer.name;
+                select.appendChild(option);
+            });
+        }
+
+        function transferIncident(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const incidentId = parseInt(formData.get('incident_id'));
+            const rescuerId = parseInt(formData.get('resc_id'));
+            
+            if (!incidentId || !rescuerId) {
+                showMessage('Please select both incident and rescuer', 'error');
+                return;
+            }
+            
+            // Get incident and rescuer details for success message
+            const incident = window.vitalwearDB.getIncidentById(incidentId);
+            const rescuer = window.vitalwearDB.getUserById(rescuerId, 'rescuer');
+            
+            // Update incident in database
+            const success = window.vitalwearDB.transferIncident(incidentId, rescuerId);
+            
+            if (success) {
+                showMessage(`Incident #${incidentId} for ${incident?.patient_name} transferred to ${rescuer?.name}!`, 'success');
+                
+                // Reset form
+                event.target.reset();
+                
+                // Repopulate incidents to reflect the transfer
+                populateIncidents();
+                
+                // Redirect after delay to show updated active incidents
+                setTimeout(() => {
+                    window.location.href = 'active-incidents.html';
+                }, 2000);
+            } else {
+                showMessage('Failed to transfer incident', 'error');
+            }
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            
+            const user = getCurrentUser();
+            document.getElementById('user-name').textContent = user.name;
+            
+            populateIncidents();
+            populateRescuers();
+            
+            // Setup form submission
+            document.getElementById('transfer-form').addEventListener('submit', transferIncident);
+        });
+    </script>
+</body>
+</html>
