@@ -102,44 +102,6 @@
         margin-bottom: 32px;
     }
 
-    .logo-container {
-        width: 80px;
-        height: 80px;
-        background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 20px;
-        box-shadow: var(--shadow-md);
-        position: relative;
-    }
-
-    .logo-container::after {
-        content: '';
-        position: absolute;
-        top: -2px;
-        left: -2px;
-        right: -2px;
-        bottom: -2px;
-        background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 50%, var(--deep-hospital-blue) 100%);
-        border-radius: 50%;
-        z-index: -1;
-        opacity: 0.3;
-        animation: pulse 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-        0%, 100% { transform: scale(1); opacity: 0.3; }
-        50% { transform: scale(1.05); opacity: 0.1; }
-    }
-
-    .logo-container img {
-        width: 50px;
-        height: 50px;
-        filter: brightness(0) invert(1);
-    }
-
     .login-logo h1 {
         color: var(--deep-hospital-blue);
         font-size: 32px;
@@ -307,9 +269,7 @@
   <div class="login-page">
     <div class="login-container">
       <div class="login-logo">
-        <div class="logo-container">
-          <img src="assets/logo.png" alt="VitalWear Logo">
-        </div>
+        <img src="assets/logo.png" alt="VitalWear Logo" style="width: 100px; height: 100px; margin-bottom: 24px;">
         <h1>VitalWear</h1>
         <p>Sign in to continue</p>
       </div>
