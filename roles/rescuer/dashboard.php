@@ -11,43 +11,68 @@ $rescuer_id = $_SESSION['user_id'];
 $conn = getDBConnection();
 
 // Get rescuer info
-$rescuer_query = "SELECT resc_name, resc_email FROM rescuer WHERE resc_id = ?";
-$stmt = $conn->prepare($rescuer_query);
-$stmt->bind_param("i", $rescuer_id);
-$stmt->execute();
-$rescuer = $stmt->get_result()->fetch_assoc();
+$rescuer = ['resc_name' => 'Rescuer'];
+if ($conn && !$conn->connect_error) {
+    $rescuer_query = "SELECT resc_name, resc_email FROM rescuer WHERE resc_id = ?";
+    $stmt = $conn->prepare($rescuer_query);
+    if ($stmt) {
+        $stmt->bind_param("i", $rescuer_id);
+        $stmt->execute();
+        $result = $stmt->get_result()->fetch_assoc();
+        if ($result) {
+            $rescuer = $result;
+        }
+    }
+}
 
 // Get incident counts
-$transferred_query = "SELECT COUNT(*) as count FROM incident WHERE resc_id = ? AND status = 'transferred'";
-$ongoing_query = "SELECT COUNT(*) as count FROM incident WHERE resc_id = ? AND status = 'ongoing'";
-$completed_query = "SELECT COUNT(*) as count FROM incident WHERE resc_id = ? AND status = 'completed'";
+$transferred_count = 0;
+$ongoing_count = 0;
+$completed_count = 0;
 
-$stmt = $conn->prepare($transferred_query);
-$stmt->bind_param("i", $rescuer_id);
-$stmt->execute();
-$transferred_count = $stmt->get_result()->fetch_assoc()['count'];
+if ($conn && !$conn->connect_error) {
+    $transferred_query = "SELECT COUNT(*) as count FROM incident WHERE resc_id = ? AND status = 'transferred'";
+    $stmt = $conn->prepare($transferred_query);
+    if ($stmt) {
+        $stmt->bind_param("i", $rescuer_id);
+        $stmt->execute();
+        $transferred_count = $stmt->get_result()->fetch_assoc()['count'];
+    }
 
-$stmt = $conn->prepare($ongoing_query);
-$stmt->bind_param("i", $rescuer_id);
-$stmt->execute();
-$ongoing_count = $stmt->get_result()->fetch_assoc()['count'];
+    $ongoing_query = "SELECT COUNT(*) as count FROM incident WHERE resc_id = ? AND status = 'ongoing'";
+    $stmt = $conn->prepare($ongoing_query);
+    if ($stmt) {
+        $stmt->bind_param("i", $rescuer_id);
+        $stmt->execute();
+        $ongoing_count = $stmt->get_result()->fetch_assoc()['count'];
+    }
 
-$stmt = $conn->prepare($completed_query);
-$stmt->bind_param("i", $rescuer_id);
-$stmt->execute();
-$completed_count = $stmt->get_result()->fetch_assoc()['count'];
+    $completed_query = "SELECT COUNT(*) as count FROM incident WHERE resc_id = ? AND status = 'completed'";
+    $stmt = $conn->prepare($completed_query);
+    if ($stmt) {
+        $stmt->bind_param("i", $rescuer_id);
+        $stmt->execute();
+        $completed_count = $stmt->get_result()->fetch_assoc()['count'];
+    }
 
-// Get recent transferred incidents
-$recent_transferred = "SELECT i.incident_id, i.start_time, p.pat_name, r.resp_name 
-                      FROM incident i 
-                      JOIN patient p ON i.pat_id = p.pat_id 
-                      JOIN responder r ON i.resp_id = r.resp_id 
-                      WHERE i.resc_id = ? AND i.status = 'transferred' 
-                      ORDER BY i.start_time DESC LIMIT 5";
-$stmt = $conn->prepare($recent_transferred);
-$stmt->bind_param("i", $rescuer_id);
-$stmt->execute();
-$transferred_incidents = $stmt->get_result();
+    // Get recent transferred incidents
+    $recent_transferred = "SELECT i.incident_id, i.start_time, p.pat_name, r.resp_name 
+                          FROM incident i 
+                          JOIN patient p ON i.pat_id = p.pat_id 
+                          JOIN responder r ON i.resp_id = r.resp_id 
+                          WHERE i.resc_id = ? AND i.status = 'transferred' 
+                          ORDER BY i.start_time DESC LIMIT 5";
+    $stmt = $conn->prepare($recent_transferred);
+    if ($stmt) {
+        $stmt->bind_param("i", $rescuer_id);
+        $stmt->execute();
+        $transferred_incidents = $stmt->get_result();
+    } else {
+        $transferred_incidents = false;
+    }
+} else {
+    $transferred_incidents = false;
+}
 ?>
 
 <!DOCTYPE html>
@@ -430,7 +455,7 @@ h2, h3, h4 {
 <!-- Recent Transferred Incidents -->
 <div class="dashboard-card">
     <h3>📥 Recent Transferred Incidents</h3>
-    <?php if ($transferred_incidents->num_rows > 0): ?>
+    <?php if ($transferred_incidents && $transferred_incidents->num_rows > 0): ?>
         <div style="display:flex;flex-direction:column;gap:12px;">
             <?php while ($incident = $transferred_incidents->fetch_assoc()): ?>
                 <div style="background:var(--clinical-white);padding:16px;border-radius:var(--radius);border-left:4px solid var(--medical-cyan);">
@@ -461,16 +486,24 @@ h2, h3, h4 {
 <div class="dashboard-card">
     <h3>📦 Assigned Device</h3>
     <?php
-    $device_query = "SELECT d.dev_serial, d.dev_status 
-                     FROM device_log dl
-                     JOIN device d ON dl.dev_id = d.dev_id
-                     WHERE dl.resc_id = ? AND dl.date_returned IS NULL
-                     ORDER BY dl.date_assigned DESC
-                     LIMIT 1";
-    $stmt = $conn->prepare($device_query);
-    $stmt->bind_param("i", $rescuer_id);
-    $stmt->execute();
-    $device = $stmt->get_result()->fetch_assoc();
+    if ($conn && !$conn->connect_error) {
+        $device_query = "SELECT d.dev_serial, d.dev_status 
+                         FROM device_log dl
+                         JOIN device d ON dl.dev_id = d.dev_id
+                         WHERE dl.resc_id = ? AND dl.date_returned IS NULL
+                         ORDER BY dl.date_assigned DESC
+                         LIMIT 1";
+        $stmt = $conn->prepare($device_query);
+        if ($stmt) {
+            $stmt->bind_param("i", $rescuer_id);
+            $stmt->execute();
+            $device = $stmt->get_result()->fetch_assoc();
+        } else {
+            $device = null;
+        }
+    } else {
+        $device = null;
+    }
     
     if($device):
     ?>
