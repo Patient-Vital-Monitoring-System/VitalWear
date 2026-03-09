@@ -85,97 +85,79 @@ if (!empty($device_data['utilization'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Device Performance Report - Admin</title>
-    <link rel="stylesheet" href="../../../assets/css/admin.css">
+    <link rel="stylesheet" href="../../../assets/css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://kit.fontawesome.com/96e37b53f1.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --authority-blue: #1B3F72;
+            --dashboard-light: #F4F7FC;
+            --pure-white: #FFFFFF;
+            --secondary-text: #7E91B3;
+            --interface-border: #D1E0F1;
+            --radius: 12px;
+            --shadow: 0 4px 12px rgba(27, 63, 114, 0.08);
+        }
+        body { background-color: var(--dashboard-light); color: var(--authority-blue); font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
+        #sidebar { position: fixed; left: 0; top: 0; width: 260px; height: 100vh; background: var(--pure-white); border-right: 1px solid var(--interface-border); box-shadow: var(--shadow); z-index: 1000; overflow-y: auto; }
+        .sidebar-logo { padding: 24px 20px; text-align: center; background: linear-gradient(135deg, var(--authority-blue) 0%, #2a5298 100%); margin: 12px; border-radius: var(--radius); }
+        .sidebar-logo img { max-width: 140px; height: auto; filter: brightness(0) invert(1); }
+        #sidebar a { color: var(--authority-blue); margin: 6px 12px; padding: 12px 16px; border-radius: var(--radius); transition: all 0.2s ease; border: none; font-weight: 500; text-decoration: none; display: flex; align-items: center; gap: 12px; }
+        #sidebar a:hover { background: rgba(27, 63, 114, 0.1); transform: translateX(4px); }
+        #sidebar a.active { background: rgba(27, 63, 114, 0.15); }
+        .topbar { position: fixed; top: 0; left: 260px; right: 0; background: var(--pure-white); border-bottom: 1px solid var(--interface-border); padding: 16px 24px; font-weight: 600; z-index: 999; display: flex; align-items: center; justify-content: space-between; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; margin-left: 260px; margin-top: 80px; }
+        .page-header { background: linear-gradient(135deg, var(--authority-blue) 0%, #2a5298 100%); color: white; padding: 30px 40px; border-radius: var(--radius); margin-bottom: 30px; box-shadow: var(--shadow); }
+        .page-header h1 { color: white; margin: 0 0 8px 0; font-size: 1.8rem; display: flex; align-items: center; gap: 12px; }
+        .page-header p { margin: 0; opacity: 0.9; color: white; }
+        .card { background: var(--pure-white); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--interface-border); margin-bottom: 24px; }
+        .card-header { padding: 16px 20px; border-bottom: 1px solid var(--interface-border); font-weight: 600; color: var(--authority-blue); }
+        .card-body { padding: 20px; }
+        .btn { padding: 10px 20px; border: none; border-radius: var(--radius); cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-primary { background: linear-gradient(135deg, var(--authority-blue) 0%, #2a5298 100%); color: white; }
+        .btn-secondary { background: var(--pure-white); color: var(--authority-blue); border: 1px solid var(--interface-border); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--interface-border); }
+        th { background: var(--dashboard-light); font-weight: 600; }
+        tr:hover { background: var(--dashboard-light); }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-success { background: rgba(44, 201, 144, 0.15); color: #2CC990; }
+        .badge-warning { background: rgba(255, 193, 7, 0.15); color: #d39e00; }
+        .badge-danger { background: rgba(220, 53, 69, 0.15); color: #DC3545; }
+    </style>
 </head>
 <body>
-    <div class="admin-layout">
-        <!-- Sidebar -->
-        <aside class="admin-sidebar">
-            <div class="sidebar-header">
-                <div class="sidebar-title">VitalWear Admin</div>
-                <div class="sidebar-subtitle">System Management</div>
-            </div>
-            
-            <nav class="nav-menu">
-                <div class="nav-group">
-                    <a href="../dashboard.php" class="nav-item">
-                        🏠 Dashboard
-                    </a>
-                </div>
-                
-                <div class="nav-group">
-                    <div class="nav-group-title">User Management</div>
-                    <div class="nav-group-items">
-                        <a href="../users.php" class="nav-item">
-                            👥 Staff Directory
-                        </a>
-                        <a href="view_management.php" class="nav-item">
-                            👨‍💼 Management
-                        </a>
-                        <a href="view_responders.php" class="nav-item">
-                            🚑 Responders
-                        </a>
-                        <a href="view_rescuers.php" class="nav-item">
-                            🆘 Rescuers
-                        </a>
-                        <a href="view_admins.php" class="nav-item">
-                            👨‍💻 Admins
-                        </a>
-                    </div>
-                </div>
-                
-                <div class="nav-group">
-                    <div class="nav-group-title">Reports</div>
-                    <div class="nav-group-items">
-                        <a href="../system_reports.php" class="nav-item">
-                            📊 System Reports
-                        </a>
-                        <a href="../vitals_analytics.php" class="nav-item">
-                            ❤️ Vital Analytics
-                        </a>
-                        <a href="../audit_log.php" class="nav-item">
-                            📋 Activity Log
-                        </a>
-                    </div>
-                </div>
-                
-                <div class="nav-group">
-                    <div class="nav-group-title">Monitoring</div>
-                    <div class="nav-group-items">
-                        <a href="../device_incidents.php" class="nav-item">
-                            📦 Device Overview
-                        </a>
-                        <a href="../vitals.php" class="nav-item">
-                            👤 User Activity
-                        </a>
-                    </div>
-                </div>
-            </nav>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="admin-main">
-            <!-- Top Navigation -->
-            <header class="navbar">
-                <div>
-                    <h1 class="navbar-brand">← Back to System Reports</h1>
-                </div>
-                <div class="navbar-actions">
-                    <span class="text-muted">Welcome, <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Admin'); ?></span>
-                    <a href="/VitalWear-1/api/auth/logout.php" class="btn btn-secondary">Logout</a>
-                </div>
-            </header>
-
-            <!-- Page Content -->
-            <div class="content">
-                <div class="content-header">
-                    <h1 class="content-title">📱 Device Performance</h1>
-                    <p class="content-subtitle">Device utilization and maintenance reports</p>
-                </div>
+    <header class="topbar">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <i class="fa fa-shield-alt" style="font-size: 24px; color: var(--authority-blue);"></i>
+            <span style="font-size: 18px; font-weight: 700;">VitalWear Admin</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <span style="color: var(--secondary-text);">Welcome, <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Admin'); ?></span>
+            <a href="/VitalWear-1/api/auth/logout.php" class="btn btn-secondary">Logout</a>
+        </div>
+    </header>
+    <nav id="sidebar">
+        <div class="sidebar-logo"><img src="../../../assets/logo.png" alt="VitalWear Logo"></div>
+        <a href="../dashboard.php"><i class="fa fa-gauge"></i> Dashboard</a>
+        <a href="../users.php"><i class="fa fa-users"></i> Staff Directory</a>
+        <a href="../system_reports.php"><i class="fa fa-chart-bar"></i> System Reports</a>
+        <a href="incident_analysis.php"><i class="fa fa-chart-line"></i> Incident Analysis</a>
+        <a href="device_performance.php" class="active"><i class="fa fa-mobile-alt"></i> Device Performance</a>
+        <a href="user_activity_report.php"><i class="fa fa-user-chart"></i> User Activity</a>
+        <a href="security_audit.php"><i class="fa fa-shield-alt"></i> Security Audit</a>
+        <a href="../vitals_analytics.php"><i class="fa fa-heartbeat"></i> Vital Analytics</a>
+        <a href="../audit_log.php"><i class="fa fa-clipboard-list"></i> Activity Log</a>
+        <a href="../../../api/auth/logout.php" class="btn btn-secondary" style="margin: 12px;">Logout</a>
+    </nav>
+    <main class="container">
+        <div class="page-header">
+            <h1><i class="fa fa-mobile-alt"></i> Device Performance</h1>
+            <p>Device utilization and maintenance reports</p>
+        </div>
 
                 <!-- Error Display -->
                 <?php if (!empty($error_message)): ?>

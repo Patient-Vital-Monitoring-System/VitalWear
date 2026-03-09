@@ -121,196 +121,601 @@ if (isset($_GET['device_id'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verify Device Return - VitalWear</title>
-    <link rel="stylesheet" href="../../../assets/css/styles.css">
+        <script src="https://kit.fontawesome.com/96e37b53f1.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* VitalWear Soft UI Design System */
+        :root {
+            --authority-blue: #1B3F72;
+            --dashboard-light: #F4F7FC;
+            --pure-white: #FFFFFF;
+            --secondary-text: #7E91B3;
+            --system-success: #2CC990;
+            --system-warning: #FFC107;
+            --system-error: #DC3545;
+            --interface-border: #D1E0F1;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --shadow-sm: 0 2px 4px rgba(27, 63, 114, 0.06);
+            --shadow: 0 4px 12px rgba(27, 63, 114, 0.08);
+            --shadow-md: 0 8px 24px rgba(27, 63, 114, 0.12);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--dashboard-light);
+            color: var(--authority-blue);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Soft UI Sidebar */
+        #sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            height: 100vh;
+            background: var(--pure-white);
+            border-right: 1px solid var(--interface-border);
+            box-shadow: var(--shadow);
+            z-index: 1000;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-logo {
+            padding: 24px 20px;
+            text-align: center;
+            background: linear-gradient(135deg, var(--authority-blue) 0%, #2a5298 100%);
+            margin: 12px;
+            border-radius: var(--radius);
+        }
+
+        .sidebar-logo img {
+            max-width: 140px;
+            height: auto;
+            filter: brightness(0) invert(1);
+        }
+
+        #sidebar a {
+            color: var(--authority-blue);
+            margin: 6px 12px;
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            transition: all 0.2s ease;
+            border: none;
+            font-weight: 500;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #sidebar a:hover {
+            background: rgba(27, 63, 114, 0.1);
+            color: var(--authority-blue);
+            transform: translateX(4px);
+        }
+
+        #sidebar a.active {
+            background: rgba(27, 63, 114, 0.15);
+            color: var(--authority-blue);
+        }
+
+        /* Soft UI Header */
+        .topbar {
+            position: fixed;
+            top: 0;
+            left: 260px;
+            right: 0;
+            background: var(--pure-white);
+            color: var(--authority-blue);
+            border-bottom: 1px solid var(--interface-border);
+            box-shadow: var(--shadow-sm);
+            padding: 16px 24px;
+            font-weight: 600;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Main Container */
+        .container {
+            margin-left: 260px;
+            margin-top: 80px;
+            padding: 24px;
+            min-height: calc(100vh - 80px);
+            transition: margin-left 0.3s ease;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--authority-blue);
+            font-weight: 700;
+            line-height: 1.3;
+        }
+
+        /* Page Header */
         .page-header {
-            background: #007bff;
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 30px;
+            background: linear-gradient(135deg, var(--authority-blue) 0%, #2a5298 100%);
+            color: var(--pure-white);
+            padding: 32px;
+            border-radius: var(--radius-lg);
+            margin-bottom: 32px;
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .page-header-content {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: relative;
+            z-index: 1;
         }
-        
+
+        .page-header h1 {
+            color: var(--pure-white);
+            margin: 0 0 8px 0;
+            font-size: 1.75rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .page-header p {
+            color: rgba(255,255,255,0.9);
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        .page-header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        /* Buttons */
         .btn {
-            padding: 10px 20px;
+            padding: 12px 24px;
             border: none;
-            border-radius: 5px;
+            border-radius: var(--radius);
             cursor: pointer;
             text-decoration: none;
-            display: inline-block;
-            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
-        
-        .btn-primary { background: #007bff; color: white; }
-        .btn-success { background: #28a745; color: white; }
-        .btn-warning { background: #ffc107; color: black; }
-        .btn-danger { background: #dc3545; color: white; }
-        .btn-secondary { background: #6c757d; color: white; }
-        
-        .btn:hover { opacity: 0.9; }
-        
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--system-success) 0%, #20c997 100%);
+            color: var(--pure-white);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--system-success) 0%, #20c997 100%);
+            color: var(--pure-white);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--system-warning) 0%, #e0a800 100%);
+            color: var(--pure-white);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--secondary-text) 0%, #6b7280 100%);
+            color: var(--pure-white);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Content Grid */
         .content-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 30px;
+            gap: 32px;
         }
         
+        /* Verification Container */
         .verification-container, .history-container {
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: var(--pure-white);
+            padding: 32px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--interface-border);
+            transition: all 0.3s ease;
         }
-        
+
+        .verification-container:hover, .history-container:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .verification-container h2, .history-container h2 {
+            margin: 0 0 24px 0;
+            color: var(--authority-blue);
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Alerts */
         .alert {
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
+            padding: 16px 20px;
+            border-radius: var(--radius);
+            margin-bottom: 24px;
+            border: 1px solid;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
-        
-        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .alert-danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        
+
+        .alert-success {
+            background: rgba(44, 201, 144, 0.15);
+            color: var(--system-success);
+            border-color: rgba(44, 201, 144, 0.3);
+        }
+
+        .alert-danger {
+            background: rgba(220, 53, 69, 0.15);
+            color: var(--system-error);
+            border-color: rgba(220, 53, 69, 0.3);
+        }
+
+        /* Device Preview */
         .device-preview {
-            background: #f8f9fa;
+            background: var(--dashboard-light);
             padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border-left: 4px solid #ffc107;
+            border-radius: var(--radius);
+            margin-bottom: 24px;
+            border-left: 4px solid var(--system-warning);
+            border: 1px solid var(--interface-border);
         }
-        
+
         .device-preview h4 {
-            margin: 0 0 15px 0;
-            color: #333;
-            font-size: 18px;
+            margin: 0 0 16px 0;
+            color: var(--authority-blue);
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        
+
         .device-preview p {
             margin: 8px 0;
             font-size: 14px;
-            color: #666;
+            color: var(--authority-blue);
+            font-weight: 500;
         }
-        
+
         .device-preview strong {
-            color: #333;
+            color: var(--authority-blue);
+            font-weight: 600;
         }
-        
-        .pending-list, .verified-list {
-            max-height: 400px;
-            overflow-y: auto;
+
+        /* Verification Form */
+        .verification-form {
+            background: rgba(255, 193, 7, 0.1);
+            padding: 24px;
+            border-radius: var(--radius);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            margin-bottom: 24px;
         }
-        
-        .return-item {
-            padding: 15px;
-            border: 1px solid #eee;
-            border-radius: 5px;
-            margin-bottom: 10px;
-            transition: background-color 0.2s;
+
+        .verification-form h4 {
+            margin: 0 0 16px 0;
+            color: var(--system-warning);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        
-        .return-item:hover {
-            background-color: #f8f9fa;
+
+        .warning-text {
+            color: var(--system-warning);
+            font-size: 14px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            line-height: 1.6;
         }
-        
-        .return-info h4 {
-            margin: 0 0 8px 0;
-            color: #333;
+
+        /* Duration Badge */
+        .duration {
+            background: rgba(27, 63, 114, 0.1);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: var(--authority-blue);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        
-        .return-info p {
-            margin: 4px 0;
-            font-size: 12px;
-            color: #666;
-        }
-        
+
+        /* Stats Grid */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
+            gap: 16px;
+            margin-bottom: 24px;
         }
-        
+
         .stat-card {
+            background: var(--dashboard-light);
+            padding: 20px;
+            border-radius: var(--radius);
             text-align: center;
-            padding: 15px;
-            border-radius: 5px;
-            background: #f8f9fa;
+            border: 1px solid var(--interface-border);
+            transition: all 0.3s ease;
         }
-        
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
         .stat-number {
-            font-size: 24px;
-            font-weight: bold;
-            color: #007bff;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--authority-blue);
+            margin-bottom: 8px;
         }
-        
+
         .stat-label {
             font-size: 12px;
-            color: #666;
+            color: var(--secondary-text);
             text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
         }
-        
-        .verification-form {
-            background: #fff3cd;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #ffeaa7;
+
+        /* Return Lists */
+        .pending-list, .verified-list {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 8px;
         }
-        
-        .verification-form h4 {
-            margin: 0 0 15px 0;
-            color: #856404;
+
+        .return-item {
+            padding: 16px;
+            border: 1px solid var(--interface-border);
+            border-radius: var(--radius);
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+            background: var(--pure-white);
         }
-        
-        .warning-text {
-            color: #856404;
-            font-size: 14px;
-            margin-bottom: 15px;
+
+        .return-item:hover {
+            background: var(--dashboard-light);
+            transform: translateX(4px);
+            box-shadow: var(--shadow-sm);
         }
-        
+
+        .return-info h4 {
+            margin: 0 0 12px 0;
+            color: var(--authority-blue);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .return-info p {
+            margin: 6px 0;
+            font-size: 12px;
+            color: var(--secondary-text);
+            font-weight: 500;
+        }
+
+        .return-info strong {
+            color: var(--authority-blue);
+            font-weight: 600;
+        }
+
+        /* Verified Badge */
+        .verified-badge {
+            background: rgba(44, 201, 144, 0.15);
+            color: var(--system-success);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid rgba(44, 201, 144, 0.3);
+        }
+
+        /* Actions */
         .actions {
             display: flex;
-            gap: 10px;
-            margin-top: 15px;
+            gap: 12px;
+            margin-top: 20px;
         }
-        
-        .duration {
-            background: #e3f2fd;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            color: #1565c0;
-            font-weight: bold;
+
+        /* Section Headers */
+        h3 {
+            margin: 24px 0 16px 0;
+            color: var(--authority-blue);
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        
-        .verified-badge {
-            background: #d4edda;
-            color: #155724;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: bold;
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            color: var(--secondary-text);
+            padding: 32px;
+            font-size: 14px;
+            font-weight: 500;
         }
-        
+
+        /* Responsive Design */
         @media (max-width: 768px) {
+            #sidebar {
+                transform: translateX(-100%);
+            }
+            
+            #sidebar.open {
+                transform: translateX(0);
+            }
+            
+            .topbar {
+                left: 0;
+            }
+            
+            .container {
+                margin-left: 0;
+                padding: 16px;
+            }
+            
             .content-grid {
                 grid-template-columns: 1fr;
+                gap: 24px;
             }
+            
+            .page-header-content {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+            
+            .page-header-actions {
+                width: 100%;
+            }
+            
+            .page-header-actions .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--dashboard-light);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--secondary-text);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--authority-blue);
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <header class="topbar">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <i class="fa fa-cogs" style="font-size: 24px; color: var(--authority-blue);"></i>
+            <span style="font-size: 18px; font-weight: 700;">VitalWear</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; color: var(--authority-blue); font-weight: 500;">
+            <i class="fa fa-user-circle" style="font-size: 20px; color: var(--authority-blue);"></i>
+            <span><?php echo htmlspecialchars($_SESSION['user_name']); ?></span>
+        </div>
+    </header>
+
+    <nav id="sidebar">
+        <div class="sidebar-logo">
+            <img src="../../../assets/logo.png" alt="VitalWear Logo">
+        </div>
+        <a href="dashboard.php"><i class="fa fa-gauge"></i> Dashboard</a>
+        <a href="manage_responders.php"><i class="fa fa-user-md"></i> Manage Responders</a>
+        <a href="manage_rescuers.php"><i class="fa fa-user-shield"></i> Manage Rescuers</a>
+        <a href="register_device.php"><i class="fa fa-plus-circle"></i> Register Device</a>
+        <a href="device_list.php"><i class="fa fa-box"></i> Device List</a>
+        <a href="assign_device.php"><i class="fa fa-exchange-alt"></i> Assign Device</a>
+        <a href="verify_return.php" class="active"><i class="fa fa-check-double"></i> Verify Return</a>
+        <a href="reports/reportdashboard.php"><i class="fa fa-chart-bar"></i> Reports</a>
+        <a href="/VitalWear-1/logout.php" class="btn btn-secondary">Logout</a>
+    </nav>
+
+    <main class="container">
         <header class="page-header">
-            <div>
-                <h1 style="margin: 0;">✅ Verify Device Return</h1>
-                <p style="margin: 5px 0 0 0; opacity: 0.9;">Check and verify returned devices from responders</p>
-            </div>
-            <div>
-                <a href="dashboard.php" class="btn btn-secondary">← Back to Dashboard</a>
-                <a href="device_list.php" class="btn btn-primary">View All Devices</a>
+            <div class="page-header-content">
+                <div>
+                    <h1><i class="fa fa-check-double"></i> Verify Device Return</h1>
+                    <p>Check and verify returned devices from responders</p>
+                </div>
+                <div class="page-header-actions">
+                    <a href="device_list.php" class="btn btn-primary">
+                        <i class="fa fa-box"></i> View All Devices
+                    </a>
+                </div>
             </div>
         </header>
 
@@ -322,17 +727,17 @@ if (isset($_GET['device_id'])) {
 
         <div class="content-grid">
             <div class="verification-container">
-                <h2>Device Return Verification</h2>
+                <h2><i class="fa fa-check-double"></i> Device Return Verification</h2>
                 
                 <?php if ($selected_device): ?>
                     <div class="device-preview">
-                        <h4>Device to Verify</h4>
-                        <p><strong>Serial Number:</strong> <?php echo htmlspecialchars($selected_device['dev_serial']); ?></p>
-                        <p><strong>Assigned to:</strong> <?php echo htmlspecialchars($selected_device['resp_name']); ?></p>
-                        <p><strong>Email:</strong> <?php echo htmlspecialchars($selected_device['resp_email']); ?></p>
-                        <p><strong>Assigned by:</strong> <?php echo htmlspecialchars($selected_device['mgmt_name']); ?></p>
-                        <p><strong>Assignment Date:</strong> <?php echo date('M j, Y H:i', strtotime($selected_device['date_assigned'])); ?></p>
-                        <p><strong>Duration:</strong> 
+                        <h4><i class="fa fa-box"></i> Device to Verify</h4>
+                        <p><strong><i class="fa fa-barcode"></i> Serial Number:</strong> <?php echo htmlspecialchars($selected_device['dev_serial']); ?></p>
+                        <p><strong><i class="fa fa-user-md"></i> Assigned to:</strong> <?php echo htmlspecialchars($selected_device['resp_name']); ?></p>
+                        <p><strong><i class="fa fa-envelope"></i> Email:</strong> <?php echo htmlspecialchars($selected_device['resp_email']); ?></p>
+                        <p><strong><i class="fa fa-user"></i> Assigned by:</strong> <?php echo htmlspecialchars($selected_device['mgmt_name']); ?></p>
+                        <p><strong><i class="fa fa-calendar"></i> Assignment Date:</strong> <?php echo date('M j, Y H:i', strtotime($selected_device['date_assigned'])); ?></p>
+                        <p><strong><i class="fa fa-clock"></i> Duration:</strong> 
                             <span class="duration">
                                 <?php 
                                 $assigned = new DateTime($selected_device['date_assigned']);
@@ -345,7 +750,7 @@ if (isset($_GET['device_id'])) {
                     </div>
                     
                     <div class="verification-form">
-                        <h4>Verification Required</h4>
+                        <h4><i class="fa fa-exclamation-triangle"></i> Verification Required</h4>
                         <p class="warning-text">
                             Please confirm that the device has been physically returned and is in good working condition before verifying.
                         </p>
@@ -357,28 +762,34 @@ if (isset($_GET['device_id'])) {
                             
                             <div class="actions">
                                 <button type="submit" class="btn btn-success" onclick="return confirm('Are you sure you want to verify this device return?')">
-                                    ✅ Confirm Return Verification
+                                    <i class="fa fa-check-circle"></i> Confirm Return Verification
                                 </button>
-                                <a href="verify_return.php" class="btn btn-secondary">Cancel</a>
+                                <a href="verify_return.php" class="btn btn-secondary">
+                                    <i class="fa fa-times"></i> Cancel
+                                </a>
                             </div>
                         </form>
                     </div>
                 <?php else: ?>
-                    <div style="text-align: center; padding: 40px; color: #666;">
+                    <div class="empty-state">
+                        <i class="fa fa-hand-pointer" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
                         <p>Select a device from the list to verify its return.</p>
                     </div>
                 <?php endif; ?>
                 
                 <?php if (empty($pending_returns)): ?>
-                    <div style="text-align: center; padding: 40px; color: #666; margin-top: 20px;">
+                    <div class="empty-state">
+                        <i class="fa fa-check-circle" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
                         <p>No devices pending return verification.</p>
-                        <a href="assign_device.php" class="btn btn-primary">Assign Devices</a>
+                        <a href="assign_device.php" class="btn btn-primary">
+                            <i class="fa fa-exchange-alt"></i> Assign Devices
+                        </a>
                     </div>
                 <?php endif; ?>
             </div>
 
             <div class="history-container">
-                <h2>Return History</h2>
+                <h2><i class="fa fa-history"></i> Return History</h2>
                 
                 <?php
                 // Calculate statistics
@@ -402,19 +813,22 @@ if (isset($_GET['device_id'])) {
                     </div>
                 </div>
                 
-                <h3 style="margin: 20px 0 10px 0; color: #333;">Pending Verification</h3>
+                <h3><i class="fa fa-hourglass-half"></i> Pending Verification</h3>
                 <div class="pending-list">
                     <?php if (empty($pending_returns)): ?>
-                        <p style="text-align: center; color: #666; padding: 20px;">No pending returns.</p>
+                        <div class="empty-state">
+                            <i class="fa fa-check-circle" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
+                            <p>No pending returns.</p>
+                        </div>
                     <?php else: ?>
                         <?php foreach ($pending_returns as $return): ?>
                             <div class="return-item">
                                 <div class="return-info">
-                                    <h4><?php echo htmlspecialchars($return['dev_serial']); ?></h4>
-                                    <p><strong>From:</strong> <?php echo htmlspecialchars($return['resp_name']); ?></p>
-                                    <p><strong>Email:</strong> <?php echo htmlspecialchars($return['resp_email']); ?></p>
-                                    <p><strong>Assigned:</strong> <?php echo date('M j, Y H:i', strtotime($return['date_assigned'])); ?></p>
-                                    <p><strong>Duration:</strong> 
+                                    <h4><i class="fa fa-box"></i> <?php echo htmlspecialchars($return['dev_serial']); ?></h4>
+                                    <p><strong><i class="fa fa-user-md"></i> From:</strong> <?php echo htmlspecialchars($return['resp_name']); ?></p>
+                                    <p><strong><i class="fa fa-envelope"></i> Email:</strong> <?php echo htmlspecialchars($return['resp_email']); ?></p>
+                                    <p><strong><i class="fa fa-calendar"></i> Assigned:</strong> <?php echo date('M j, Y H:i', strtotime($return['date_assigned'])); ?></p>
+                                    <p><strong><i class="fa fa-clock"></i> Duration:</strong> 
                                         <?php 
                                         $assigned = new DateTime($return['date_assigned']);
                                         $now = new DateTime();
@@ -424,25 +838,33 @@ if (isset($_GET['device_id'])) {
                                     </p>
                                 </div>
                                 <div class="actions">
-                                    <a href="?device_id=<?php echo $return['dev_id']; ?>" class="btn btn-warning">Verify Return</a>
+                                    <a href="?device_id=<?php echo $return['dev_id']; ?>" class="btn btn-warning">
+                                        <i class="fa fa-check"></i> Verify Return
+                                    </a>
                                 </div>
                             </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </div>
                 
-                <h3 style="margin: 20px 0 10px 0; color: #333;">Recently Verified</h3>
+                <h3><i class="fa fa-check-circle"></i> Recently Verified</h3>
                 <div class="verified-list">
                     <?php if (empty($verified_returns)): ?>
-                        <p style="text-align: center; color: #666; padding: 20px;">No verified returns yet.</p>
+                        <div class="empty-state">
+                            <i class="fa fa-history" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
+                            <p>No verified returns yet.</p>
+                        </div>
                     <?php else: ?>
                         <?php foreach ($verified_returns as $return): ?>
                             <div class="return-item">
                                 <div class="return-info">
-                                    <h4><?php echo htmlspecialchars($return['dev_serial']); ?> <span class="verified-badge">VERIFIED</span></h4>
-                                    <p><strong>From:</strong> <?php echo htmlspecialchars($return['resp_name']); ?></p>
-                                    <p><strong>Returned:</strong> <?php echo date('M j, Y H:i', strtotime($return['date_returned'])); ?></p>
-                                    <p><strong>Duration:</strong> 
+                                    <h4>
+                                        <i class="fa fa-box"></i> <?php echo htmlspecialchars($return['dev_serial']); ?> 
+                                        <span class="verified-badge">VERIFIED</span>
+                                    </h4>
+                                    <p><strong><i class="fa fa-user-md"></i> From:</strong> <?php echo htmlspecialchars($return['resp_name']); ?></p>
+                                    <p><strong><i class="fa fa-calendar-check"></i> Returned:</strong> <?php echo date('M j, Y H:i', strtotime($return['date_returned'])); ?></p>
+                                    <p><strong><i class="fa fa-clock"></i> Duration:</strong> 
                                         <?php 
                                         $assigned = new DateTime($return['date_assigned']);
                                         $returned = new DateTime($return['date_returned']);
@@ -457,6 +879,6 @@ if (isset($_GET['device_id'])) {
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 </body>
 </html>
