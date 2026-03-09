@@ -12,6 +12,12 @@ $conn = getDBConnection();
 $message = '';
 $alert_type = '';
 
+// Handle success message from redirect
+if (isset($_GET['success']) && $_GET['success'] == '1') {
+    $message = "Operation completed successfully!";
+    $alert_type = "success";
+}
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
@@ -32,6 +38,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt_log = $conn->prepare("INSERT INTO activity_log (user_name, user_role, action_type, module, description) VALUES (?, ?, 'add', 'responder', ?)");
                     $stmt_log->bind_param("sss", $_SESSION['user_name'], $_SESSION['user_role'], $log_desc);
                     $stmt_log->execute();
+                    
+                    // Redirect to clear form and close modal
+                    header("Location: manage_responders.php?success=1");
+                    exit();
                 } else {
                     $message = "Error adding responder: " . $conn->error;
                     $alert_type = "danger";
@@ -55,6 +65,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt_log = $conn->prepare("INSERT INTO activity_log (user_name, user_role, action_type, module, description) VALUES (?, ?, 'edit', 'responder', ?)");
                     $stmt_log->bind_param("sss", $_SESSION['user_name'], $_SESSION['user_role'], $log_desc);
                     $stmt_log->execute();
+                    
+                    // Redirect to clear form and close modal
+                    header("Location: manage_responders.php?success=1");
+                    exit();
                 } else {
                     $message = "Error updating responder: " . $conn->error;
                     $alert_type = "danger";
@@ -75,6 +89,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt_log = $conn->prepare("INSERT INTO activity_log (user_name, user_role, action_type, module, description) VALUES (?, ?, 'status_change', 'responder', ?)");
                     $stmt_log->bind_param("sss", $_SESSION['user_name'], $_SESSION['user_role'], $log_desc);
                     $stmt_log->execute();
+                    
+                    // Redirect to clear form state
+                    header("Location: manage_responders.php?success=1");
+                    exit();
                 } else {
                     $message = "Error updating status: " . $conn->error;
                     $alert_type = "danger";
