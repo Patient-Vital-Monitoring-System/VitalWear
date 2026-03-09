@@ -449,6 +449,7 @@
     </div>
 
     <script src="../js/database.js"></script>
+    <script src="../js/screen-detection.js"></script>
     <script>
         function getCurrentUser() {
             const role = sessionStorage.getItem('current_role');
@@ -673,6 +674,12 @@
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
+            // Check if screen is too small for management
+            if (window.screenDetector && window.screenDetector.disableForSmallScreens()) {
+                console.warn('Management users page disabled due to small screen');
+                return;
+            }
+            
             checkAuth();
             
             const user = getCurrentUser();
