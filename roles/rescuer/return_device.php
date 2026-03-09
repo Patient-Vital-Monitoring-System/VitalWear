@@ -68,72 +68,513 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['return_device'])) {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Return Device - VitalWear</title>
-    <link rel="stylesheet" href="../../assets/css/styles.css">
-    <script src="https://kit.fontawesome.com/96e37b53f1.js"></script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Return Device - VitalWear</title>
+
+<link rel="stylesheet" href="../../assets/css/styles.css">
+<script src="https://kit.fontawesome.com/96e37b53f1.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* VitalWear Soft UI Design System */
+:root {
+    --deep-hospital-blue: #0A2A55;
+    --medical-cyan: #00B6CC;
+    --trust-blue: #0A85CC;
+    --health-green: #2EDBB3;
+    --clinical-white: #F0F4F8;
+    --system-gray: #A9B7C6;
+    --surface: #ffffff;
+    --radius: 12px;
+    --radius-lg: 16px;
+    --shadow-sm: 0 2px 4px rgba(10, 42, 85, 0.06);
+    --shadow: 0 4px 12px rgba(10, 42, 85, 0.08);
+    --shadow-md: 0 8px 24px rgba(10, 42, 85, 0.12);
+}
+
+body {
+    background-color: var(--clinical-white);
+    color: var(--deep-hospital-blue);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Soft UI Sidebar */
+#sidebar {
+    background: var(--surface);
+    border-right: 1px solid rgba(169, 183, 198, 0.3);
+    box-shadow: var(--shadow);
+}
+
+.sidebar-logo {
+    padding: 24px 20px;
+    text-align: center;
+    background: linear-gradient(135deg, var(--deep-hospital-blue) 0%, var(--trust-blue) 100%);
+    margin: 12px;
+    border-radius: var(--radius);
+}
+
+.sidebar-logo img {
+    max-width: 140px;
+    height: auto;
+    filter: brightness(0) invert(1);
+}
+
+#sidebar a {
+    color: var(--deep-hospital-blue);
+    margin: 6px 12px;
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    transition: all 0.2s ease;
+    border: none;
+    font-weight: 500;
+}
+
+#sidebar a:hover {
+    background: rgba(0, 182, 204, 0.1);
+    color: var(--medical-cyan);
+    transform: translateX(4px);
+}
+
+/* Soft UI Header */
+.topbar {
+    background: var(--surface);
+    color: var(--deep-hospital-blue);
+    border-bottom: 1px solid rgba(169, 183, 198, 0.2);
+    box-shadow: var(--shadow-sm);
+    padding: 16px 24px;
+    font-weight: 600;
+}
+
+h2, h3, h4 {
+    color: var(--deep-hospital-blue);
+    font-weight: 700;
+}
+
+/* Modern Soft Edge Navigation */
+.bottom-nav {
+    background: var(--surface);
+    border-top: 1px solid rgba(169, 183, 198, 0.3);
+    box-shadow: 0 -4px 20px rgba(10, 42, 85, 0.08);
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.bottom-nav .bottom-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border-radius: var(--radius);
+    color: var(--system-gray);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    font-size: 12px;
+}
+
+.bottom-nav .bottom-item i {
+    font-size: 20px;
+    transition: all 0.3s ease;
+}
+
+.bottom-nav .bottom-item:hover {
+    color: var(--medical-cyan);
+    background: rgba(0, 182, 204, 0.1);
+    transform: translateY(-2px);
+}
+
+.bottom-nav .bottom-item.active {
+    color: var(--medical-cyan);
+    background: rgba(0, 182, 204, 0.15);
+}
+
+.bottom-nav .bottom-item.active i {
+    transform: scale(1.1);
+}
+
+/* Welcome Banner */
+.welcome-banner {
+    background: linear-gradient(135deg, var(--deep-hospital-blue) 0%, var(--trust-blue) 100%);
+    padding: 32px;
+    border-radius: var(--radius-lg);
+    margin-bottom: 30px;
+    color: white;
+    box-shadow: var(--shadow-md);
+    text-align: center;
+}
+
+/* Alert Messages */
+.alert {
+    padding: 16px 24px;
+    border-radius: var(--radius-lg);
+    margin-bottom: 24px;
+    text-align: center;
+    font-weight: 600;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(169, 183, 198, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.alert-success {
+    background: linear-gradient(135deg, rgba(46, 219, 179, 0.2) 0%, rgba(32, 201, 151, 0.2) 100%);
+    color: var(--health-green);
+    border-color: rgba(46, 219, 179, 0.3);
+}
+
+.alert-error {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.2) 100%);
+    color: #f59e0b;
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+/* Device Card */
+.device-card {
+    background: var(--surface);
+    padding: 40px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(169, 183, 198, 0.2);
+    text-align: center;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.device-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--medical-cyan) 0%, var(--trust-blue) 100%);
+}
+
+.device-icon {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, rgba(0, 182, 204, 0.1) 0%, rgba(10, 133, 204, 0.1) 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    border: 2px solid rgba(0, 182, 204, 0.2);
+}
+
+.device-icon i {
+    font-size: 48px;
+    color: var(--medical-cyan);
+}
+
+.device-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--deep-hospital-blue);
+    margin-bottom: 16px;
+}
+
+.device-serial {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--medical-cyan);
+    margin: 16px 0;
+    padding: 12px 20px;
+    background: var(--clinical-white);
+    border-radius: var(--radius);
+    border: 1px solid rgba(0, 182, 204, 0.2);
+    display: inline-block;
+}
+
+.device-info {
+    color: var(--system-gray);
+    margin: 8px 0;
+    font-size: 0.95rem;
+}
+
+.device-status {
+    display: inline-block;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, var(--health-green) 0%, #20c997 100%);
+    color: white;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 16px 0;
+}
+
+/* Buttons */
+.btn {
+    padding: 14px 32px;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+    text-transform: none;
+    letter-spacing: 0.3px;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.btn:hover::before {
+    left: 100%;
+}
+
+.btn i {
+    font-size: 18px;
+    transition: transform 0.3s ease;
+}
+
+.btn:hover i {
+    transform: scale(1.1);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 182, 204, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 182, 204, 0.4);
+    background: linear-gradient(135deg, var(--trust-blue) 0%, var(--medical-cyan) 100%);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(169, 183, 198, 0.2);
+}
+
+.empty-icon {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, rgba(46, 219, 179, 0.1) 0%, rgba(32, 201, 151, 0.1) 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    border: 2px solid rgba(46, 219, 179, 0.2);
+}
+
+.empty-icon i {
+    font-size: 48px;
+    color: var(--health-green);
+}
+
+.empty-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--deep-hospital-blue);
+    margin-bottom: 12px;
+}
+
+.empty-description {
+    color: var(--system-gray);
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+.empty-note {
+    color: var(--system-gray);
+    font-size: 0.85rem;
+    opacity: 0.8;
+    margin-top: 16px;
+}
+
+/* Form Styles */
+.return-form {
+    margin-top: 32px;
+}
+
+.return-form .btn {
+    min-width: 200px;
+}
+
+.device-note {
+    color: var(--system-gray);
+    font-size: 0.9rem;
+    margin-top: 24px;
+    padding: 16px;
+    background: var(--clinical-white);
+    border-radius: var(--radius);
+    border: 1px solid rgba(169, 183, 198, 0.2);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .device-card, .empty-state {
+        padding: 30px 20px;
+    }
+    
+    .device-icon, .empty-icon {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .device-icon i, .empty-icon i {
+        font-size: 36px;
+    }
+    
+    .device-serial {
+        font-size: 1.4rem;
+        padding: 10px 16px;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+        min-width: auto;
+    }
+}
+</style>
+
 </head>
+
 <body>
 
 <header class="topbar">
-Rescuer: <?php echo isset($_SESSION['user_name']) ? $_SESSION['user_name'] : 'Emergency Response'; ?>
+    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <i class="fa fa-undo" style="font-size: 24px; color: var(--medical-cyan);"></i>
+            <span style="font-size: 18px; font-weight: 700;">VitalWear</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; color: var(--deep-hospital-blue); font-weight: 500;">
+            <i class="fa fa-user-circle" style="font-size: 20px; color: var(--medical-cyan);"></i>
+            <span><?php echo isset($_SESSION['user_name']) ? $_SESSION['user_name'] : 'Rescuer'; ?></span>
+        </div>
+    </div>
 </header>
 
 <nav id="sidebar">
+<div class="sidebar-logo">
+    <img src="../../assets/logo.png" alt="VitalWear Logo">
+</div>
 <a href="dashboard.php"><i class="fa fa-gauge"></i> Dashboard</a>
 <a href="transferred_incidents.php"><i class="fa fa-exclamation-circle"></i> Transferred Incidents</a>
 <a href="ongoing_monitoring.php"><i class="fa fa-heart-pulse"></i> Ongoing Monitoring</a>
 <a href="completed_cases.php"><i class="fa fa-check-circle"></i> Completed Cases</a>
 <a href="incident_records.php"><i class="fa fa-folder"></i> Incident Records</a>
 <a href="return_device.php"><i class="fa fa-undo"></i> Return Device</a>
-<a href="../../api/auth/logout.php"><i class="fa fa-sign-out"></i> Logout</a>
+<a href="../../api/auth/logout.php" class="btn btn-secondary">Logout</a>
 </nav>
 
 <main class="container" style="display:block;overflow-y:auto;">
 
-<h2 style="color:#dd4c56;margin-bottom:20px;">🔁 Return Device</h2>
+<!-- Welcome Banner -->
+<div class="welcome-banner">
+    <div style="display: flex; align-items: center; justify-content: center; gap: 16px;">
+        <div style="width: 60px; height: 60px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+            🔁
+        </div>
+        <div>
+            <h1 style="color: white; margin: 0; font-size: 1.75rem; font-weight: 700;">Return Device</h1>
+            <p style="color: rgba(255,255,255,0.9); margin: 4px 0 0 0; font-size: 1rem;">Manage your assigned VitalWear device</p>
+        </div>
+    </div>
+</div>
 
 <?php if ($message): ?>
-    <div style="background:<?php echo $message_type === 'success' ? '#dcfce7' : '#fee2e2'; ?>;color:<?php echo $message_type === 'success' ? '#166534' : '#991b1b'; ?>;padding:15px;border-radius:10px;margin-bottom:20px;text-align:center;font-weight:600;">
+    <div class="alert alert-<?php echo $message_type === 'success' ? 'success' : 'error'; ?>">
+        <i class="fa fa-<?php echo $message_type === 'success' ? 'check-circle' : 'exclamation-triangle'; ?>"></i>
         <?php echo $message; ?>
     </div>
 <?php endif; ?>
 
-<div style="background:white;padding:30px;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.1);width:100%;">
+<div class="device-card">
     <?php if ($assigned_device): ?>
-        <div style="text-align:center;">
-            <div style="width:80px;height:80px;background:#fef2f2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
-                <i class="fa fa-tablet" style="font-size:36px;color:#dd4c56;"></i>
-            </div>
-            <h3 style="color:#333;margin-bottom:10px;">Assigned Device</h3>
-            <p style="font-size:20px;font-weight:bold;color:#dd4c56;margin:10px 0;"><?php echo htmlspecialchars($assigned_device['dev_serial']); ?></p>
-            <p style="color:#777;">Assigned on: <?php echo date('M j, Y H:i', strtotime($assigned_device['date_assigned'])); ?></p>
-            <p style="color:#22c55e;font-weight:600;margin:10px 0;">Status: <?php echo ucfirst($assigned_device['dev_status']); ?></p>
-            
-            <form method="POST" style="margin-top:30px;">
-                <button type="submit" name="return_device" style="padding:12px 30px;background:#ef4444;color:white;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:16px;">
-                    <i class="fa fa-undo"></i> Return Device
-                </button>
-            </form>
-            
-            <p style="color:#666;font-size:14px;margin-top:20px;">Returning this device will make it available for other rescuers.</p>
+        <div class="device-icon">
+            <i class="fa fa-tablet"></i>
+        </div>
+        
+        <h3 class="device-title">Assigned Device</h3>
+        
+        <div class="device-serial">
+            <?php echo htmlspecialchars($assigned_device['dev_serial']); ?>
+        </div>
+        
+        <div class="device-info">
+            <i class="fa fa-calendar"></i> Assigned on: <?php echo date('M j, Y H:i', strtotime($assigned_device['date_assigned'])); ?>
+        </div>
+        
+        <div class="device-status">
+            <i class="fa fa-check-circle"></i> <?php echo ucfirst($assigned_device['dev_status']); ?>
+        </div>
+        
+        <form method="POST" class="return-form">
+            <button type="submit" name="return_device" class="btn btn-danger">
+                <i class="fa fa-undo"></i> Return Device
+            </button>
+        </form>
+        
+        <div class="device-note">
+            <i class="fa fa-info-circle"></i> Returning this device will make it available for other rescuers to use.
         </div>
     <?php else: ?>
-        <div style="text-align:center;">
-            <div style="width:80px;height:80px;background:#f0fdf4;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
-                <i class="fa fa-check-circle" style="font-size:36px;color:#22c55e;"></i>
-            </div>
-            <h3 style="color:#333;margin-bottom:10px;">No Device Assigned</h3>
-            <p style="color:#777;">You currently don't have any device assigned to you.</p>
-            <p style="color:#999;font-size:14px;margin-top:10px;">Devices are automatically assigned when you accept transferred incidents.</p>
-            
-            <div style="margin-top:30px;">
-                <a href="dashboard.php" style="display:inline-block;padding:12px 24px;background:#dd4c56;color:white;text-decoration:none;border-radius:8px;font-weight:bold;">
-                    <i class="fa fa-arrow-left"></i> Back to Dashboard
-                </a>
-            </div>
+        <div class="empty-icon">
+            <i class="fa fa-check-circle"></i>
+        </div>
+        
+        <h3 class="empty-title">No Device Assigned</h3>
+        
+        <p class="empty-description">
+            You currently don't have any device assigned to you.
+        </p>
+        
+        <p class="empty-note">
+            Devices are automatically assigned when you accept transferred incidents.
+        </p>
+        
+        <div style="margin-top: 32px;">
+            <a href="dashboard.php" class="btn btn-primary">
+                <i class="fa fa-arrow-left"></i> Back to Dashboard
+            </a>
         </div>
     <?php endif; ?>
 </div>
@@ -142,26 +583,34 @@ Rescuer: <?php echo isset($_SESSION['user_name']) ? $_SESSION['user_name'] : 'Em
 
 <nav class="bottom-nav">
 <a href="dashboard.php" class="bottom-item">
-<i class="fa fa-gauge"></i>
-<span>Home</span>
+    <i class="fa fa-gauge"></i>
+    <span>Home</span>
 </a>
 
 <a href="transferred_incidents.php" class="bottom-item">
-<i class="fa fa-exclamation-circle"></i>
-<span>Transfer</span>
+    <i class="fa fa-exclamation-circle"></i>
+    <span>Transfer</span>
 </a>
 
 <a href="ongoing_monitoring.php" class="bottom-item">
-<i class="fa fa-heart-pulse"></i>
-<span>Monitor</span>
+    <i class="fa fa-heart-pulse"></i>
+    <span>Monitor</span>
 </a>
 
 <a href="completed_cases.php" class="bottom-item">
-<i class="fa fa-check-circle"></i>
-<span>Complete</span>
+    <i class="fa fa-check-circle"></i>
+    <span>Complete</span>
 </a>
 
-<a href="../../api/auth/logout.php"><i class="fa fa-sign-out"></i></a>
+<a href="return_device.php" class="bottom-item active">
+    <i class="fa fa-undo"></i>
+    <span>Device</span>
+</a>
+
+<a href="../../api/auth/logout.php" class="bottom-item">
+    <i class="fa fa-sign-out"></i>
+    <span>Logout</span>
+</a>
 </nav>
 
 </body>
