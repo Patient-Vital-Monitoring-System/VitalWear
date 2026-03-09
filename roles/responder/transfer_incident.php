@@ -164,6 +164,43 @@ h2, h3, h4 {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
 }
+
+/* Custom Select Dropdown Styling */
+select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2300B6CC' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 16px;
+    padding-right: 40px !important;
+    cursor: pointer;
+}
+
+select:hover {
+    border-color: var(--medical-cyan) !important;
+}
+
+select:focus {
+    outline: none;
+    border-color: var(--medical-cyan) !important;
+    box-shadow: 0 0 0 3px rgba(0, 182, 204, 0.15) !important;
+}
+
+select option {
+    padding: 12px;
+    font-size: 15px;
+    background: white;
+    color: var(--deep-hospital-blue);
+}
+
+select option:hover,
+select option:focus,
+select option:checked {
+    background: rgba(0, 182, 204, 0.1) !important;
+    color: var(--deep-hospital-blue) !important;
+}
 </style>
 </head>
 <body>
@@ -194,21 +231,26 @@ h2, h3, h4 {
 <a href="../../api/auth/logout.php"><i class="fa fa-sign-out"></i> Logout</a>
 </nav>
 
-<main class="container" style="display:block;overflow-y:auto;width:100%;">
+<main class="container" style="display: flex; flex-direction: column; align-items: center; overflow-y: auto; width: 100%; padding: 20px;">
 
-<h2 style="color:#dd4c56;margin-bottom:20px;">🔄 Transfer Incident</h2>
+<div style="width: 100%; max-width: 500px;">
+
+<h2 style="color: var(--deep-hospital-blue); margin-bottom: 24px; font-weight: 700; font-size: 1.75rem; text-align: center;">🔄 Transfer Incident</h2>
 
 <?php if($message): ?>
-<div style="background:<?php echo $message_type === 'success' ? '#dcfce7' : '#fee2e2'; ?>;color:<?php echo $message_type === 'success' ? '#166534' : '#991b1b'; ?>;padding:15px;border-radius:10px;margin-bottom:20px;text-align:center;font-weight:600;">
+<div style="background: <?php echo $message_type === 'success' ? 'rgba(46, 219, 179, 0.15)' : 'rgba(239, 68, 68, 0.15)'; ?>; color: <?php echo $message_type === 'success' ? 'var(--health-green)' : '#dc2626'; ?>; padding: 16px 24px; border-radius: var(--radius); margin-bottom: 24px; text-align: center; font-weight: 600; border: 1px solid <?php echo $message_type === 'success' ? 'rgba(46, 219, 179, 0.3)' : 'rgba(239, 68, 68, 0.3)'; ?>; display: flex; align-items: center; justify-content: center; gap: 10px;">
+    <i class="fa <?php echo $message_type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'; ?>"></i>
     <?php echo $message; ?>
 </div>
 <?php endif; ?>
 
-<div style="background:white;padding:25px;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.1);width:100%;max-width:500px;">
+<div class="dashboard-card" style="width: 100%;">
     <form method="POST">
-        <div style="margin-bottom:20px;">
-            <label style="display:block;margin-bottom:8px;font-weight:600;color:#333;">Select Incident *</label>
-            <select name="incident_id" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
+        <div style="margin-bottom: 24px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--deep-hospital-blue); font-size: 14px;">
+                <i class="fa fa-exclamation-circle" style="color: var(--medical-cyan); margin-right: 8px;"></i>Select Incident *
+            </label>
+            <select name="incident_id" required style="width: 100%; padding: 14px 40px 14px 14px; border: 2px solid rgba(169, 183, 198, 0.3); border-radius: var(--radius); font-size: 15px; background: white;">
                 <option value="">-- Select Incident --</option>
                 <?php while($inc = $incidents->fetch_assoc()): ?>
                 <option value="<?php echo $inc['incident_id']; ?>">
@@ -218,9 +260,11 @@ h2, h3, h4 {
             </select>
         </div>
         
-        <div style="margin-bottom:20px;">
-            <label style="display:block;margin-bottom:8px;font-weight:600;color:#333;">Transfer to Rescuer *</label>
-            <select name="resc_id" required style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
+        <div style="margin-bottom: 24px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--deep-hospital-blue); font-size: 14px;">
+                <i class="fa fa-user-md" style="color: var(--medical-cyan); margin-right: 8px;"></i>Transfer to Rescuer *
+            </label>
+            <select name="resc_id" required style="width: 100%; padding: 14px 40px 14px 14px; border: 2px solid rgba(169, 183, 198, 0.3); border-radius: var(--radius); font-size: 15px; background: white;">
                 <option value="">-- Select Rescuer --</option>
                 <?php while($rescuer = $rescuers->fetch_assoc()): ?>
                 <option value="<?php echo $rescuer['resc_id']; ?>">
@@ -230,10 +274,12 @@ h2, h3, h4 {
             </select>
         </div>
         
-        <button type="submit" style="width:100%;padding:14px;background:#dd4c56;color:white;border:none;border-radius:8px;font-weight:bold;font-size:16px;cursor:pointer;">
-            Transfer Incident
+        <button type="submit" style="width: 100%; padding: 16px 24px; background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%); color: white; border: none; border-radius: var(--radius-lg); font-weight: 700; font-size: 16px; cursor: pointer; box-shadow: var(--shadow); transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px; text-transform: uppercase; letter-spacing: 0.5px;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow)'">
+            <i class="fa fa-exchange" style="font-size: 20px;"></i> Transfer Incident
         </button>
     </form>
+</div>
+
 </div>
 
 </main>
