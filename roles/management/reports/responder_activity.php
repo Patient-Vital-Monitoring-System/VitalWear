@@ -849,8 +849,9 @@ $unique_responder_count = count($unique_responders);
                                                 'incident_created' => 'fa-ambulance',
                                                 'incident_updated' => 'fa-edit'
                                             ];
-                                            $icon = $activity_icons[$activity['activity_type']] ?? 'fa-cog';
-                                            echo '<span class="badge badge-info"><i class="fa ' . $icon . '"></i> ' . ucfirst(str_replace('_', ' ', $activity['activity_type'])) . '</span>';
+                                            $activity_type = $activity['activity_type'] ?? $activity['action_type'] ?? 'unknown';
+                                            $icon = $activity_icons[$activity_type] ?? 'fa-cog';
+                                            echo '<span class="badge badge-info"><i class="fa ' . $icon . '"></i> ' . ucfirst(str_replace('_', ' ', $activity_type)) . '</span>';
                                             ?>
                                         </td>
                                         <td>
@@ -869,8 +870,8 @@ $unique_responder_count = count($unique_responders);
                                             </div>
                                         </td>
                                         <td>
-                                            <?php if ($activity['additional_data']): ?>
-                                                <button class="btn btn-secondary" onclick="showDetails(<?php echo $activity['activity_id']; ?>)">
+                                            <?php if (!empty($activity['additional_data']) || !empty($activity['details'])): ?>
+                                                <button class="btn btn-secondary" onclick="showDetails(<?php echo $activity['activity_id'] ?? $activity['id'] ?? 0; ?>)">
                                                     <i class="fa fa-eye"></i>
                                                     View Details
                                                 </button>
