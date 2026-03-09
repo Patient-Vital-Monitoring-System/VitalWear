@@ -79,6 +79,14 @@ if ($result) {
     }
 }
 
+// Calculate date range statistics
+$date_from_obj = new DateTime($date_from);
+$date_to_obj = new DateTime($date_to);
+$interval = $date_from_obj->diff($date_to_obj);
+$date_range = [
+    'days' => $interval->days + 1
+];
+
 // Calculate statistics
 $total_activities = count($activities);
 $active_responders = 0;
