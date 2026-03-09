@@ -766,9 +766,6 @@ if ($result) {
                         <button type="submit" class="btn btn-success" style="flex: 1;">
                             <i class="fa fa-exchange-alt"></i> Assign Device
                         </button>
-                        <button type="reset" class="btn btn-secondary" style="flex: 1;">
-                            <i class="fa fa-times"></i> Clear Form
-                        </button>
                     </div>
                 </form>
                 
