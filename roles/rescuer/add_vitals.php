@@ -2,7 +2,7 @@
 require_once '../../database/connection.php';
 session_start();
 
-if (!isset($_SESSION['rescuer_id'])) {
+if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'rescuer') {
     header("Location: ../../login.html");
     exit;
 }

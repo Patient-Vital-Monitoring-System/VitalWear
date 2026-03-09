@@ -2,7 +2,7 @@
 require_once '../../database/connection.php';
 session_start();
 
-if (!isset($_SESSION['rescuer_id'])) {
+if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'rescuer') {
     header("Location: ../../login.html");
     exit;
 }
@@ -37,7 +37,7 @@ if ($stmt->execute()) {
     // Log activity
     $activity_query = "INSERT INTO activity_log (user_name, user_role, action_type, module, description) 
                        VALUES (?, 'rescuer', 'complete_incident', 'incident_monitoring', ?)";
-    $rescuer_name = $_SESSION['user_name'];
+    $rescuer_name = $_SESSION['user_name'] ?? 'Rescuer';
     $description = "Completed incident #$incident_id";
     $stmt = $conn->prepare($activity_query);
     $stmt->bind_param("ss", $rescuer_name, $description);
