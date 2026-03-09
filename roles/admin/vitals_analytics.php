@@ -885,15 +885,20 @@ $critical_count = count($vital_data['critical_vitals'] ?? []);
         </main>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         // Vital Trends Chart
         const vitalCtx = document.getElementById('vitalTrendsChart').getContext('2d');
-        new Chart(vitalCtx, {
-            type: 'line',
-            data: {
-                labels: <?php echo json_encode(array_map(function($date) { 
-                    return date('M j', strtotime($date)); 
-                }, array_column($vital_data['trends'] ?? [], 'date'))); ?>,
+        const vitalLabels = <?php echo json_encode(array_map(function($date) { 
+            return date('M j', strtotime($date)); 
+        }, array_column($vital_data['trends'] ?? [], 'date'))); ?>;
+        const vitalData = <?php echo json_encode($vital_data['trends'] ?? []); ?>;
+        
+        if (vitalLabels.length > 0 && vitalData.length > 0) {
+            new Chart(vitalCtx, {
+                type: 'line',
+                data: {
+                    labels: vitalLabels,
                 datasets: [{
                     label: 'Systolic BP',
                     data: <?php echo json_encode(array_map('round', array_column($vital_data['trends'] ?? [], 'avg_systolic'))); ?>,
@@ -941,6 +946,9 @@ $critical_count = count($vital_data['critical_vitals'] ?? []);
                 }
             }
         });
+        } else {
+            vitalCtx.canvas.parentNode.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-tertiary);">No vital trends data available for the selected period</div>';
+        }
 
         // Export Functions
         function exportToCSV() {

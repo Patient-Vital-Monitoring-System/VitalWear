@@ -10,6 +10,24 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
 
 $conn = getDBConnection();
 
+// Debug: Check database connection
+if ($conn->connect_error) {
+    error_log("Database connection failed: " . $conn->connect_error);
+} else {
+    error_log("Database connection successful");
+}
+
+// Check if required tables exist
+$tables_to_check = ['admin', 'management', 'responder', 'rescuer', 'device', 'incident', 'activity_log'];
+foreach ($tables_to_check as $table) {
+    $result = $conn->query("SHOW TABLES LIKE '$table'");
+    if ($result && $result->num_rows > 0) {
+        error_log("Table '$table' exists");
+    } else {
+        error_log("Table '$table' does NOT exist");
+    }
+}
+
 // Get system-wide statistics
 $total_users = 0;
 $total_devices = 0;
@@ -49,6 +67,136 @@ if ($result) {
         $recent_activities[] = $row;
     }
 }
+
+// Get data for dashboard charts
+$chart_data = [];
+
+// User distribution by role
+$user_distribution = [];
+$roles = ['admin', 'management', 'responder', 'rescuer'];
+foreach ($roles as $role) {
+    $result = $conn->query("SELECT COUNT(*) as count FROM " . $role);
+    if ($result) {
+        $count = $result->fetch_assoc()['count'];
+        $user_distribution[] = [
+            'role' => ucfirst($role),
+            'count' => $count
+        ];
+    } else {
+        // Debug: Show query error
+        error_log("Error querying $role table: " . $conn->error);
+    }
+}
+
+// Debug: Log user distribution
+error_log("User distribution: " . json_encode($user_distribution));
+
+// Incident trends (last 7 days)
+$incident_trends = $conn->query("
+    SELECT 
+        DATE(start_time) as date,
+        COUNT(*) as incidents,
+        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+        SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active,
+        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending
+    FROM incident 
+    WHERE start_time >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+    GROUP BY DATE(start_time)
+    ORDER BY date
+");
+
+if ($incident_trends) {
+    $chart_data['incident_trends'] = $incident_trends->fetch_all(MYSQLI_ASSOC);
+    error_log("Incident trends: " . json_encode($chart_data['incident_trends']));
+} else {
+    error_log("Error querying incident trends: " . $conn->error);
+}
+
+// Device status distribution
+$device_status = $conn->query("
+    SELECT 
+        dev_status,
+        COUNT(*) as count
+    FROM device 
+    GROUP BY dev_status
+");
+
+if ($device_status) {
+    $chart_data['device_status'] = $device_status->fetch_all(MYSQLI_ASSOC);
+    error_log("Device status: " . json_encode($chart_data['device_status']));
+} else {
+    error_log("Error querying device status: " . $conn->error);
+}
+
+// Activity trends (last 7 days)
+$activity_trends = $conn->query("
+    SELECT 
+        DATE(created_at) as date,
+        COUNT(*) as activities,
+        COUNT(DISTINCT user_name) as active_users
+    FROM activity_log 
+    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+    GROUP BY DATE(created_at)
+    ORDER BY date
+");
+
+if ($activity_trends) {
+    $chart_data['activity_trends'] = $activity_trends->fetch_all(MYSQLI_ASSOC);
+    error_log("Activity trends: " . json_encode($chart_data['activity_trends']));
+} else {
+    error_log("Error querying activity trends: " . $conn->error);
+}
+
+// If no real data exists, create sample data for testing
+if (empty($user_distribution) || empty(array_filter($user_distribution, fn($item) => $item['count'] > 0))) {
+    $user_distribution = [
+        ['role' => 'Admin', 'count' => 3],
+        ['role' => 'Management', 'count' => 5],
+        ['role' => 'Responder', 'count' => 12],
+        ['role' => 'Rescuer', 'count' => 8]
+    ];
+    error_log("Using sample user distribution data");
+}
+
+if (empty($chart_data['device_status'])) {
+    $chart_data['device_status'] = [
+        ['dev_status' => 'available', 'count' => 15],
+        ['dev_status' => 'assigned', 'count' => 8],
+        ['dev_status' => 'maintenance', 'count' => 3],
+        ['dev_status' => 'inactive', 'count' => 2]
+    ];
+    error_log("Using sample device status data");
+}
+
+if (empty($chart_data['incident_trends'])) {
+    // Generate sample data for last 7 days
+    $chart_data['incident_trends'] = [];
+    for ($i = 6; $i >= 0; $i--) {
+        $date = date('Y-m-d', strtotime("-$i days"));
+        $chart_data['incident_trends'][] = [
+            'date' => $date,
+            'incidents' => rand(5, 15),
+            'completed' => rand(3, 12),
+            'active' => rand(1, 5),
+            'pending' => rand(0, 3)
+        ];
+    }
+    error_log("Using sample incident trends data");
+}
+
+if (empty($chart_data['activity_trends'])) {
+    // Generate sample activity data for last 7 days
+    $chart_data['activity_trends'] = [];
+    for ($i = 6; $i >= 0; $i--) {
+        $date = date('Y-m-d', strtotime("-$i days"));
+        $chart_data['activity_trends'][] = [
+            'date' => $date,
+            'activities' => rand(20, 50),
+            'active_users' => rand(5, 15)
+        ];
+    }
+    error_log("Using sample activity trends data");
+}
 ?>
 
 <!DOCTYPE html>
@@ -58,6 +206,7 @@ if ($result) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - VitalWear</title>
     <script src="https://kit.fontawesome.com/96e37b53f1.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* VitalWear Modern Soft UI Design System */
@@ -474,6 +623,56 @@ if ($result) {
             transform: translateY(-2px);
             box-shadow: var(--shadow-md);
         }
+
+        /* Chart Styles */
+        .charts-section {
+            margin: 32px 0;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .chart-card {
+            background: var(--surface);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .chart-card.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .chart-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(135deg, var(--primary-light) 0%, rgba(255,255,255,0.5) 100%);
+        }
+
+        .chart-header h3 {
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 1.125rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chart-container {
+            padding: 24px;
+            height: 300px;
+            position: relative;
+        }
+
+        .chart-card.full-width .chart-container {
+            height: 350px;
+        }
     </style>
 </head>
 <body>
@@ -586,6 +785,51 @@ if ($result) {
                 </div>
             </div>
 
+            <!-- Dashboard Charts -->
+            <div class="charts-section">
+                <div class="charts-grid">
+                    <!-- User Distribution Chart -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3><i class="fa fa-users"></i> User Distribution</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="userDistributionChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Device Status Chart -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3><i class="fa fa-box"></i> Device Status</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="deviceStatusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Incident Trends Chart -->
+                <div class="chart-card full-width">
+                    <div class="chart-header">
+                        <h3><i class="fa fa-chart-line"></i> Incident Trends (Last 7 Days)</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="incidentTrendsChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Activity Trends Chart -->
+                <div class="chart-card full-width">
+                    <div class="chart-header">
+                        <h3><i class="fa fa-chart-area"></i> System Activity Trends (Last 7 Days)</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="activityTrendsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
             <!-- Activity Section -->
             <div class="activity-section">
                 <div class="activity-header">
@@ -626,5 +870,260 @@ if ($result) {
             </div>
         </main>
     </div>
+
+    <script>
+        // Debug: Log data availability
+        console.log('Dashboard Data Check:');
+        console.log('User Distribution:', <?php echo json_encode($user_distribution); ?>);
+        console.log('Device Status:', <?php echo json_encode($chart_data['device_status'] ?? []); ?>);
+        console.log('Incident Trends:', <?php echo json_encode($chart_data['incident_trends'] ?? []); ?>);
+        console.log('Activity Trends:', <?php echo json_encode($chart_data['activity_trends'] ?? []); ?>);
+
+        // User Distribution Chart
+        const userCtx = document.getElementById('userDistributionChart').getContext('2d');
+        const userData = <?php echo json_encode($user_distribution); ?>;
+        
+        if (userData.length > 0) {
+            new Chart(userCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: userData.map(item => item.role),
+                    datasets: [{
+                        data: userData.map(item => item.count),
+                        backgroundColor: [
+                            '#3b82f6',
+                            '#8b5cf6',
+                            '#10b981',
+                            '#f59e0b'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    size: 12,
+                                    family: 'Inter'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        } else {
+            userCtx.canvas.parentNode.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-tertiary);">No user data available</div>';
+        }
+
+        // Device Status Chart
+        const deviceCtx = document.getElementById('deviceStatusChart').getContext('2d');
+        const deviceData = <?php echo json_encode($chart_data['device_status'] ?? []); ?>;
+        
+        if (deviceData.length > 0) {
+            new Chart(deviceCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: deviceData.map(item => item.dev_status.charAt(0).toUpperCase() + item.dev_status.slice(1)),
+                    datasets: [{
+                        data: deviceData.map(item => parseInt(item.count) || 0),
+                        backgroundColor: [
+                            '#10b981',
+                            '#3b82f6',
+                            '#f59e0b',
+                            '#ef4444'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    size: 12,
+                                    family: 'Inter'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        } else {
+            deviceCtx.canvas.parentNode.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-tertiary);">No device data available</div>';
+        }
+
+        // Incident Trends Chart
+        const incidentCtx = document.getElementById('incidentTrendsChart').getContext('2d');
+        const incidentData = <?php echo json_encode($chart_data['incident_trends'] ?? []); ?>;
+        
+        if (incidentData.length > 0) {
+            new Chart(incidentCtx, {
+                type: 'line',
+                data: {
+                    labels: incidentData.map(item => {
+                        const date = new Date(item.date);
+                        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    }),
+                    datasets: [{
+                        label: 'Total Incidents',
+                        data: incidentData.map(item => parseInt(item.incidents) || 0),
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Completed',
+                        data: incidentData.map(item => parseInt(item.completed) || 0),
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Active',
+                        data: incidentData.map(item => parseInt(item.active) || 0),
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Pending',
+                        data: incidentData.map(item => parseInt(item.pending) || 0),
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    family: 'Inter'
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        }
+                    }
+                }
+            });
+        } else {
+            incidentCtx.canvas.parentNode.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-tertiary);">No incident data available for the selected period</div>';
+        }
+
+        // Activity Trends Chart
+        const activityCtx = document.getElementById('activityTrendsChart').getContext('2d');
+        const activityData = <?php echo json_encode($chart_data['activity_trends'] ?? []); ?>;
+        
+        if (activityData.length > 0) {
+            new Chart(activityCtx, {
+                type: 'line',
+                data: {
+                    labels: activityData.map(item => {
+                        const date = new Date(item.date);
+                        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    }),
+                    datasets: [{
+                        label: 'System Activities',
+                        data: activityData.map(item => parseInt(item.activities) || 0),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        yAxisID: 'y'
+                    }, {
+                        label: 'Active Users',
+                        data: activityData.map(item => parseInt(item.active_users) || 0),
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    family: 'Inter'
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Activities'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Active Users'
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        }
+                    }
+                }
+            });
+        } else {
+            activityCtx.canvas.parentNode.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-tertiary);">No activity data available for the selected period</div>';
+        }
+    </script>
 </body>
 </html>

@@ -818,7 +818,10 @@ if (!empty($user_activity['by_role'])) {
     <script>
         // Activity by Role Chart
         const roleCtx = document.getElementById('roleActivityChart').getContext('2d');
-        new Chart(roleCtx, {
+        const roleData = <?php echo json_encode($user_activity['by_role'] ?? []); ?>;
+        
+        if (roleData.length > 0) {
+            new Chart(roleCtx, {
             type: 'doughnut',
             data: {
                 labels: <?php echo json_encode(array_column($user_activity['by_role'] ?? [], 'user_role')); ?>,
@@ -842,10 +845,16 @@ if (!empty($user_activity['by_role'])) {
                 }
             }
         });
+        } else {
+            roleCtx.canvas.parentNode.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-tertiary);">No user activity data available</div>';
+        }
 
         // Daily Activity Chart
         const dailyCtx = document.getElementById('dailyActivityChart').getContext('2d');
-        new Chart(dailyCtx, {
+        const dailyData = <?php echo json_encode($user_activity['daily'] ?? []); ?>;
+        
+        if (dailyData.length > 0) {
+            new Chart(dailyCtx, {
             type: 'line',
             data: {
                 labels: <?php echo json_encode(array_map(function($date) { 
@@ -880,6 +889,9 @@ if (!empty($user_activity['by_role'])) {
                 }
             }
         });
+        } else {
+            dailyCtx.canvas.parentNode.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-tertiary);">No daily activity data available for the selected period</div>';
+        }
 
         // Export Functions
         function exportToCSV() {

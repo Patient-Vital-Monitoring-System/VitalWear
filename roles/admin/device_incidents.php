@@ -1064,10 +1064,17 @@ if ($utilization_trends) {
         </main>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         // Device Utilization Trends Chart
         const utilizationCtx = document.getElementById('utilizationTrendsChart').getContext('2d');
-        new Chart(utilizationCtx, {
+        const utilizationLabels = <?php echo json_encode(array_map(function($date) { 
+            return date('M j', strtotime($date)); 
+        }, array_column($trends_data ?? [], 'date'))); ?>;
+        const utilizationData = <?php echo json_encode($trends_data ?? []); ?>;
+        
+        if (utilizationLabels.length > 0 && utilizationData.length > 0) {
+            new Chart(utilizationCtx, {
             type: 'line',
             data: {
                 labels: <?php echo json_encode(array_map(function($date) { 
@@ -1102,6 +1109,9 @@ if ($utilization_trends) {
                 }
             }
         });
+        } else {
+            utilizationCtx.canvas.parentNode.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-tertiary);">No device utilization data available for the selected period</div>';
+        }
 
         // Device Status Distribution Chart
         const statusCtx = document.getElementById('deviceStatusChart').getContext('2d');
@@ -1111,7 +1121,7 @@ if ($utilization_trends) {
                 labels: ['Available', 'Assigned', 'Maintenance', 'Inactive'],
                 datasets: [{
                     data: [
-                        <?php echo $device_stats['total_devices']; ?>,
+                        <?php echo $device_stats['available_devices']; ?>,
                         <?php echo $device_stats['assigned_devices']; ?>,
                         <?php echo $device_stats['maintenance_devices']; ?>,
                         <?php echo $device_stats['inactive_devices']; ?>

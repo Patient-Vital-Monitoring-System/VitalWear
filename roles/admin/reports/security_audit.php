@@ -902,7 +902,10 @@ $security_score = $total_logins > 0 ? max(0, 100 - round(($failed_logins / $tota
     <script>
         // Login Trends Chart
         const loginCtx = document.getElementById('loginTrendsChart').getContext('2d');
-        new Chart(loginCtx, {
+        const loginData = <?php echo json_encode($security_data['login_attempts'] ?? []); ?>;
+        
+        if (loginData.length > 0) {
+            new Chart(loginCtx, {
             type: 'line',
             data: {
                 labels: <?php echo json_encode(array_map(function($date) { 
@@ -937,10 +940,16 @@ $security_score = $total_logins > 0 ? max(0, 100 - round(($failed_logins / $tota
                 }
             }
         });
+        } else {
+            loginCtx.canvas.parentNode.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-tertiary);">No login trend data available for the selected period</div>';
+        }
 
         // Access Patterns Chart
         const accessCtx = document.getElementById('accessPatternsChart').getContext('2d');
-        new Chart(accessCtx, {
+        const accessData = <?php echo json_encode($security_data['access_patterns'] ?? []); ?>;
+        
+        if (accessData.length > 0) {
+            new Chart(accessCtx, {
             type: 'bar',
             data: {
                 labels: <?php echo json_encode(array_map('ucfirst', array_column($security_data['access_patterns'] ?? [], 'user_role'))); ?>,
@@ -973,6 +982,9 @@ $security_score = $total_logins > 0 ? max(0, 100 - round(($failed_logins / $tota
                 }
             }
         });
+        } else {
+            accessCtx.canvas.parentNode.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-tertiary);">No access pattern data available</div>';
+        }
 
         // Export Functions
         function exportToCSV() {

@@ -1039,10 +1039,17 @@ try {
         </main>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         // Activity Trends Chart
         const trendsCtx = document.getElementById('activityTrendsChart').getContext('2d');
-        new Chart(trendsCtx, {
+        const activityLabels = <?php echo json_encode(array_map(function($date) { 
+            return date('M j', strtotime($date)); 
+        }, array_column($trends_data ?? [], 'date'))); ?>;
+        const activityData = <?php echo json_encode($trends_data ?? []); ?>;
+        
+        if (activityLabels.length > 0 && activityData.length > 0) {
+            new Chart(trendsCtx, {
             type: 'line',
             data: {
                 labels: <?php echo json_encode(array_map(function($date) { 
@@ -1083,6 +1090,9 @@ try {
                 }
             }
         });
+        } else {
+            trendsCtx.canvas.parentNode.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-tertiary);">No activity trends data available for the selected period</div>';
+        }
 
         // Export Functions
         function exportToCSV() {

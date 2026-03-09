@@ -827,7 +827,10 @@ if (!empty($device_data['utilization'])) {
     <script>
         // Device Status Chart
         const statusCtx = document.getElementById('deviceStatusChart').getContext('2d');
-        new Chart(statusCtx, {
+        const statusData = <?php echo json_encode($device_data['status'] ?? []); ?>;
+        
+        if (statusData.length > 0) {
+            new Chart(statusCtx, {
             type: 'doughnut',
             data: {
                 labels: <?php echo json_encode(array_map('ucfirst', array_column($device_data['status'] ?? [], 'dev_status'))); ?>,
@@ -851,10 +854,16 @@ if (!empty($device_data['utilization'])) {
                 }
             }
         });
+        } else {
+            statusCtx.canvas.parentNode.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-tertiary);">No device status data available</div>';
+        }
 
         // Device Utilization Chart
         const utilizationCtx = document.getElementById('utilizationChart').getContext('2d');
-        new Chart(utilizationCtx, {
+        const utilizationData = <?php echo json_encode($device_data['utilization'] ?? []); ?>;
+        
+        if (utilizationData.length > 0) {
+            new Chart(utilizationCtx, {
             type: 'bar',
             data: {
                 labels: <?php echo json_encode(array_slice(array_column($device_data['utilization'] ?? [], 'dev_serial'), 0, 10)); ?>,
@@ -885,6 +894,9 @@ if (!empty($device_data['utilization'])) {
                 }
             }
         });
+        } else {
+            utilizationCtx.canvas.parentNode.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-tertiary);">No device utilization data available</div>';
+        }
 
         // Export Functions
         function exportToCSV() {
