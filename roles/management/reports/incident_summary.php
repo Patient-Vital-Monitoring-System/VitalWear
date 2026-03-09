@@ -831,10 +831,6 @@ foreach ($incidents as $incident) {
                             <i class="fa fa-search"></i>
                             Apply Filters
                         </button>
-                        <a href="incident_summary.php" class="btn btn-secondary">
-                            <i class="fa fa-times"></i>
-                            Clear
-                        </a>
                     </div>
                 </form>
             </section>

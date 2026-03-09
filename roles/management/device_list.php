@@ -672,9 +672,6 @@ while ($row = $stats_result->fetch_assoc()) {
                     <button type="submit" class="btn btn-primary">
                         <i class="fa fa-filter"></i> Filter
                     </button>
-                    <a href="device_list.php" class="btn btn-secondary">
-                        <i class="fa fa-times"></i> Clear
-                    </a>
                 </div>
             </form>
         </div>

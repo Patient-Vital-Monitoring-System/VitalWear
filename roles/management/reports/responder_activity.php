@@ -782,10 +782,6 @@ $unique_responder_count = count($unique_responders);
                             <i class="fa fa-search"></i>
                             Apply Filters
                         </button>
-                        <a href="responder_activity.php" class="btn btn-secondary">
-                            <i class="fa fa-times"></i>
-                            Clear
-                        </a>
                     </div>
                 </form>
             </section>
