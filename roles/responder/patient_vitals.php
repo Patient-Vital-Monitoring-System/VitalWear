@@ -125,7 +125,10 @@ while ($row = $incidents_result->fetch_assoc()) {
 <body>
 
 <header class="topbar">
-Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_name'] : 'Medical Monitoring'; ?>
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <i class="fa fa-heart-pulse" style="font-size: 24px; color: var(--medical-cyan);"></i>
+        <span style="font-size: 18px; font-weight: 700;">VitalWear</span>
+    </div>
 </header>
 
 <nav id="sidebar">
@@ -141,12 +144,14 @@ Responder: <?php echo isset($_SESSION['responder_name']) ? $_SESSION['responder_
 
 <main class="container" style="display:block;overflow-y:auto;width:100%;">
 
-<h2 style="color:#dd4c56;margin-bottom:20px;">📊 View Patient Vitals</h2>
+<h2 style="color: var(--deep-hospital-blue); margin-bottom: 24px; font-weight: 700; font-size: 1.75rem;">📊 View Patient Vitals</h2>
 
 <!-- Incident Selector -->
-<div style="background:white;padding:20px;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.1);width:100%;margin-bottom:20px;">
-    <label style="display:block;margin-bottom:8px;font-weight:600;color:#333;">Select Incident</label>
-    <select id="incidentSelector" onchange="window.location.href='patient_vitals.php?incident_id='+this.value" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
+<div class="dashboard-card" style="margin-bottom: 20px;">
+    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--deep-hospital-blue); font-size: 14px;">
+        <i class="fa fa-list" style="color: var(--medical-cyan); margin-right: 8px;"></i>Select Incident
+    </label>
+    <select id="incidentSelector" onchange="window.location.href='patient_vitals.php?incident_id='+this.value" style="width: 100%; padding: 14px 40px 14px 14px; border: 2px solid rgba(169, 183, 198, 0.3); border-radius: var(--radius); font-size: 15px; background: white;">
         <option value="">-- Select Incident --</option>
         <?php foreach($incidents as $inc): ?>
         <option value="<?php echo $inc['incident_id']; ?>" <?php echo $incident_id == $inc['incident_id'] ? 'selected' : ''; ?>>
@@ -169,13 +174,6 @@ echo "<!-- Debug: Vitals count: " . count($vitals) . " -->";
     <p style="color:#777;font-size:14px;">Incident #<?php echo $incident_id; ?></p>
 </div>
 
-<!-- Auto-refresh indicator -->
-<div style="text-align:center;margin-bottom:15px;">
-    <span style="display:inline-flex;align-items:center;background:#dcfce7;color:#166534;padding:6px 12px;border-radius:20px;font-size:12px;">
-        <i class="fa fa-refresh fa-spin" style="margin-right:5px;"></i> Auto-refreshing every 10s
-    </span>
-    <span class="auto-badge">LIVE</span>
-</div>
 
 <!-- Latest Vital Display -->
 <?php if(count($vitals) > 0): ?>
@@ -289,12 +287,12 @@ echo "<!-- Debug: Total vitals found: " . count($vitals) . " -->";
 </nav>
 
 <script>
-// Auto-refresh page every 10 seconds if an incident is selected
-<?php if($incident_id > 0): ?>
-setInterval(function() {
-    location.reload();
-}, 10000);
-<?php endif; ?>
+// Auto-refresh disabled - page must be manually refreshed
+// <?php if($incident_id > 0): ?>
+// setInterval(function() {
+//     location.reload();
+// }, 10000);
+// <?php endif; ?>
 </script>
 
 </body>

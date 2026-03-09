@@ -1,34 +1,58 @@
 document.addEventListener('DOMContentLoaded', function() {
+  console.log('Login script loaded');
+  
   const loginForm = document.getElementById('loginForm');
   const loginBtn = document.getElementById('loginBtn');
   const errorMessage = document.getElementById('errorMessage');
   const successMessage = document.getElementById('successMessage');
 
-  // Check if already logged in
-  const userRole = sessionStorage.getItem('user_role');
-  if (sessionStorage.getItem('user_id')) {
-    // Redirect based on user role
-    switch(userRole) {
-      case 'admin':
-        window.location.href = '/VitalWear-1/roles/admin/dashboard.php';
-        break;
-      case 'management':
-        window.location.href = '/VitalWear-1/roles/management/dashboard.php';
-        break;
-      case 'responder':
-        window.location.href = '/VitalWear-1/roles/responder/dashboard.php';
-        break;
-      case 'rescuer':
-        window.location.href = '/VitalWear-1/roles/rescuer/dashboard.php';
-        break;
-      default:
-        window.location.href = '/VitalWear-1/roles/responder/dashboard.php';
+  console.log('Elements found:', {
+    loginForm: !!loginForm,
+    loginBtn: !!loginBtn,
+    errorMessage: !!errorMessage,
+    successMessage: !!successMessage
+  });
+
+  // Check if already logged in - but only if we're not already on login page
+  const currentPage = window.location.pathname;
+  const isLoginPage = currentPage.includes('login.html') || currentPage === '/VitalWear-1/' || currentPage.endsWith('/');
+  
+  if (!isLoginPage) {
+    const userRole = sessionStorage.getItem('user_role');
+    if (sessionStorage.getItem('user_id')) {
+      console.log('User already logged in, redirecting...');
+      // Redirect based on user role
+      switch(userRole) {
+        case 'admin':
+          window.location.href = '/VitalWear-1/roles/admin/dashboard.php';
+          break;
+        case 'management':
+          window.location.href = '/VitalWear-1/roles/management/dashboard.php';
+          break;
+        case 'responder':
+          window.location.href = '/VitalWear-1/roles/responder/dashboard.php';
+          break;
+        case 'rescuer':
+          window.location.href = '/VitalWear-1/roles/rescuer/dashboard.php';
+          break;
+        default:
+          window.location.href = '/VitalWear-1/roles/responder/dashboard.php';
+      }
+      return;
     }
-    return;
+  } else {
+    console.log('On login page, clearing any invalid session data');
+    // Clear any invalid session data when on login page
+    const userId = sessionStorage.getItem('user_id');
+    if (userId && !sessionStorage.getItem('user_role')) {
+      sessionStorage.clear();
+    }
   }
 
   loginForm.addEventListener('submit', async function(e) {
+    console.log('Form submitted');
     e.preventDefault();
+    console.log('Default prevented');
 
     // Clear previous messages
     errorMessage.style.display = 'none';

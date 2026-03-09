@@ -406,9 +406,9 @@ function simulateVitals(incidentId) {
     });
 }
 
-// Update vital display with LIVE indicator
+// Update vital display without LIVE indicator
 function updateVitalDisplay(incidentId, heartRate, bpSystolic, bpDiastolic, oxygenLevel, timeString) {
-    document.getElementById('currentHR').innerHTML = heartRate + ' bpm <span style="background:#dbeafe;color:#1e40af;padding:2px 6px;border-radius:4px;font-size:10px;margin-left:5px;">LIVE</span>';
+    document.getElementById('currentHR').innerHTML = heartRate + ' bpm';
     document.getElementById('currentBP').innerHTML = bpSystolic + '/' + bpDiastolic;
     document.getElementById('currentO2').innerHTML = oxygenLevel + '%';
     document.getElementById('lastVitalTime').innerHTML = timeString;
@@ -474,20 +474,20 @@ function toggleAutoInsert(incidentId) {
     }
 }
 
-// Auto-start simulation when page loads for specific incident
+// Do not auto-start simulation - user must manually start
 document.addEventListener('DOMContentLoaded', function() {
     <?php if ($specific_incident): ?>
         // Load initial vital data
         loadInitialVitals(<?php echo $specific_incident['incident_id']; ?>);
         
-        // Auto-start for the current incident
-        startSimulation(<?php echo $specific_incident['incident_id']; ?>);
+        // Auto-start disabled - simulation must be started manually
+        // startSimulation(<?php echo $specific_incident['incident_id']; ?>);
         
-        // Update button to show it's running
+        // Keep button in initial state
         var btn = document.getElementById('autoBtn<?php echo $specific_incident['incident_id']; ?>');
         if (btn) {
-            btn.innerHTML = '<i class="fa fa-stop"></i> Stop Live';
-            btn.style.background = '#ef4444';
+            btn.innerHTML = '<i class="fa fa-play"></i> Auto Start';
+            btn.style.background = '#3b82f6';
         }
     <?php endif; ?>
 });
@@ -500,7 +500,7 @@ function loadInitialVitals(incidentId) {
             if (data.status === 'success' && data.vitals && data.vitals.length > 0) {
                 // Update display with latest vital
                 const latest = data.vitals[0];
-                document.getElementById('currentHR').innerHTML = latest.heart_rate + ' bpm <span style="background:#dbeafe;color:#1e40af;padding:2px 6px;border-radius:4px;font-size:10px;margin-left:5px;">LIVE</span>';
+                document.getElementById('currentHR').innerHTML = latest.heart_rate + ' bpm';
                 document.getElementById('currentBP').innerHTML = latest.bp_systolic + '/' + latest.bp_diastolic;
                 document.getElementById('currentO2').innerHTML = latest.oxygen_level + '%';
                 document.getElementById('lastVitalTime').innerHTML = new Date(latest.recorded_at).toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit'});

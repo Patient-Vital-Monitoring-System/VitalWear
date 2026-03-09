@@ -10,6 +10,13 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'responder') {
 }
 
 $responder_id = $_SESSION['user_id'];
+
+// Get responder info
+$responder_query = "SELECT resp_name FROM responder WHERE resp_id = ?";
+$stmt = $conn->prepare($responder_query);
+$stmt->bind_param("i", $responder_id);
+$stmt->execute();
+$responder = $stmt->get_result()->fetch_assoc();
 ?>
 
 <!DOCTYPE html>
@@ -22,22 +29,299 @@ $responder_id = $_SESSION['user_id'];
 
 <link rel="stylesheet" href="../../assets/css/styles.css">
 <script src="https://kit.fontawesome.com/96e37b53f1.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* VitalWear Soft UI Design System */
+:root {
+    --deep-hospital-blue: #0A2A55;
+    --medical-cyan: #00B6CC;
+    --trust-blue: #0A85CC;
+    --health-green: #2EDBB3;
+    --clinical-white: #F0F4F8;
+    --system-gray: #A9B7C6;
+    --surface: #ffffff;
+    --radius: 12px;
+    --radius-lg: 16px;
+    --shadow-sm: 0 2px 4px rgba(10, 42, 85, 0.06);
+    --shadow: 0 4px 12px rgba(10, 42, 85, 0.08);
+    --shadow-md: 0 8px 24px rgba(10, 42, 85, 0.12);
+}
+
+body {
+    background-color: var(--clinical-white);
+    color: var(--deep-hospital-blue);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Soft UI Sidebar */
+#sidebar {
+    background: var(--surface);
+    border-right: 1px solid rgba(169, 183, 198, 0.3);
+    box-shadow: var(--shadow);
+}
+
+.sidebar-logo {
+    padding: 24px 20px;
+    text-align: center;
+    background: linear-gradient(135deg, var(--deep-hospital-blue) 0%, var(--trust-blue) 100%);
+    margin: 12px;
+    border-radius: var(--radius);
+}
+
+.sidebar-logo img {
+    max-width: 140px;
+    height: auto;
+    filter: brightness(0) invert(1);
+}
+
+#sidebar a {
+    color: var(--deep-hospital-blue);
+    margin: 6px 12px;
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    transition: all 0.2s ease;
+    border: none;
+    font-weight: 500;
+}
+
+#sidebar a:hover {
+    background: rgba(0, 182, 204, 0.1);
+    color: var(--medical-cyan);
+    transform: translateX(4px);
+}
+
+/* Soft UI Header */
+.topbar {
+    background: var(--surface);
+    color: var(--deep-hospital-blue);
+    border-bottom: 1px solid rgba(169, 183, 198, 0.2);
+    box-shadow: var(--shadow-sm);
+    padding: 16px 24px;
+    font-weight: 600;
+}
+
+h2, h3, h4 {
+    color: var(--deep-hospital-blue);
+    font-weight: 700;
+}
+
+/* Modern Soft Edge Navigation */
+.bottom-nav {
+    background: var(--surface);
+    border-top: 1px solid rgba(169, 183, 198, 0.3);
+    box-shadow: 0 -4px 20px rgba(10, 42, 85, 0.08);
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.bottom-nav .bottom-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border-radius: var(--radius);
+    color: var(--system-gray);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    font-size: 12px;
+}
+
+.bottom-nav .bottom-item i {
+    font-size: 20px;
+    transition: all 0.3s ease;
+}
+
+.bottom-nav .bottom-item:hover {
+    color: var(--medical-cyan);
+    background: rgba(0, 182, 204, 0.1);
+    transform: translateY(-2px);
+}
+
+.bottom-nav .bottom-item.active {
+    color: var(--medical-cyan);
+    background: rgba(0, 182, 204, 0.15);
+}
+
+.bottom-nav .bottom-item.active i {
+    transform: scale(1.1);
+}
+
+/* Modern Soft Edge Cards */
+.dashboard-card {
+    background: var(--surface);
+    padding: 24px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(169, 183, 198, 0.2);
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+.dashboard-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.dashboard-card h3 {
+    color: var(--deep-hospital-blue);
+    margin-bottom: 16px;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Modern Soft Edge Buttons */
+.btn-quick-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 16px 24px;
+    background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: var(--radius-lg);
+    font-weight: 600;
+    font-size: 16px;
+    box-shadow: var(--shadow);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-quick-action:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-link {
+    color: var(--medical-cyan);
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-link:hover {
+    color: var(--trust-blue);
+    transform: translateX(4px);
+}
+
+/* Vital Stats Display */
+.vital-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.vital-stat-label {
+    color: var(--system-gray);
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.vital-stat-value {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--deep-hospital-blue);
+}
+
+.vital-stat-unit {
+    font-size: 14px;
+    color: var(--system-gray);
+    font-weight: 500;
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.status-available {
+    background: rgba(46, 219, 179, 0.15);
+    color: var(--health-green);
+}
+
+.status-ongoing {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+/* Responsive Grid */
+.vitals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 20px;
+}
+
+
+/* Soft UI Cards */
+.card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(169, 183, 198, 0.2);
+}
+
+/* Soft UI Buttons */
+.btn-primary {
+    background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: var(--radius);
+    font-weight: 600;
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+</style>
 
 </head>
 
 <body>
 
 <header class="topbar">
-Responder: <?php echo isset($_SESSION['user_name']) ? $_SESSION['user_name'] : 'Medical Monitoring'; ?>
+    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <i class="fa fa-heart-pulse" style="font-size: 24px; color: var(--medical-cyan);"></i>
+            <span style="font-size: 18px; font-weight: 700;">VitalWear</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; color: var(--deep-hospital-blue); font-weight: 500;">
+            <i class="fa fa-user-circle" style="font-size: 20px; color: var(--medical-cyan);"></i>
+            <span><?php echo htmlspecialchars($responder['resp_name'] ?? 'Responder'); ?></span>
+        </div>
+    </div>
 </header>
 
 <nav id="sidebar">
-
+<div class="sidebar-logo">
+    <img src="../../assets/logo.png" alt="VitalWear Logo">
+</div>
 <a href="dashboard.php"><i class="fa fa-gauge"></i> Dashboard</a>
 <a href="device.php"><i class="fa fa-tablet"></i> My Device</a>
 <a href="active_incidents.php"><i class="fa fa-exclamation-circle"></i> Active Incidents</a>
 <a href="create_incident.php"><i class="fa fa-plus-circle"></i> Create Incident</a>
-<a href="patient_vitals.php"><i class="fa fa-line-chart"></i> View Vitals</a>
 <a href="transfer_incident.php"><i class="fa fa-exchange"></i> Transfer to Rescuer</a>
 <a href="incident_history.php"><i class="fa fa-history"></i> Incident History</a>
 <a href="/VitalWear-1/api/auth/logout.php" class="btn btn-secondary">Logout</a>
@@ -47,16 +331,29 @@ Responder: <?php echo isset($_SESSION['user_name']) ? $_SESSION['user_name'] : '
 
 <main class="container" style="display:block;overflow-y:auto;">
 
+<!-- Welcome Banner -->
+<div style="background: linear-gradient(135deg, var(--deep-hospital-blue) 0%, var(--trust-blue) 100%); padding: 32px; border-radius: var(--radius-lg); margin-bottom: 24px; color: white; box-shadow: var(--shadow-md);">
+    <div style="display: flex; align-items: center; gap: 16px;">
+        <div style="width: 60px; height: 60px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+            👋
+        </div>
+        <div>
+            <h1 style="color: white; margin: 0; font-size: 1.75rem; font-weight: 700;">Welcome, <?php echo htmlspecialchars($responder['resp_name'] ?? 'Responder'); ?>!</h1>
+            <p style="color: rgba(255,255,255,0.9); margin: 4px 0 0 0; font-size: 1rem;">Ready to provide critical medical response</p>
+        </div>
+    </div>
+</div>
+
 <!-- Quick Create Incident Button -->
-<div style="margin-bottom:20px;width:100%;">
-    <a href="create_incident.php" style="display:inline-block;width:100%;padding:15px;background:#dd4c56;color:white;text-decoration:none;border-radius:15px;font-weight:bold;font-size:16px;text-align:center;box-shadow:0 5px 15px rgba(221,76,86,0.3);">
+<div style="margin-bottom:24px;width:100%;">
+    <a href="create_incident.php" class="btn-quick-action">
         <i class="fa fa-plus-circle"></i> Quick Create Incident
     </a>
 </div>
 
 <!-- Assigned Device Card -->
-<div style="background:white;padding:20px;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.1);width:100%;margin-bottom:20px;">
-    <h3 style="color:#dd4c56;margin-bottom:10px;">📦 Assigned Device</h3>
+<div class="dashboard-card">
+    <h3>📦 Assigned Device</h3>
     <?php
     $stmt = $conn->prepare("
         SELECT d.dev_serial, d.dev_status 
@@ -72,17 +369,19 @@ Responder: <?php echo isset($_SESSION['user_name']) ? $_SESSION['user_name'] : '
     
     if($device):
     ?>
-    <p style="font-size:18px;font-weight:bold;"><?php echo $device['dev_serial']; ?></p>
-    <p style="color:<?php echo $device['dev_status']=='available'?'#22c55e':'#f59e0b'; ?>;"><?php echo ucfirst($device['dev_status']); ?></p>
+    <p style="font-size:18px;font-weight:700;color:var(--deep-hospital-blue);"><?php echo $device['dev_serial']; ?></p>
+    <span class="status-badge <?php echo $device['dev_status']=='available'?'status-available':'status-ongoing'; ?>">
+        <?php echo ucfirst($device['dev_status']); ?>
+    </span>
     <?php else: ?>
-    <p style="color:#777;">No device assigned</p>
-    <a href="device.php" style="color:#dd4c56;">Request Device →</a>
+    <p style="color:var(--system-gray);">No device assigned</p>
+    <a href="device.php" class="btn-link">Request Device <i class="fa fa-arrow-right"></i></a>
     <?php endif; ?>
 </div>
 
 <!-- Active Incident Card -->
-<div style="background:white;padding:20px;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.1);width:100%;margin-bottom:20px;">
-    <h3 style="color:#dd4c56;margin-bottom:10px;">🚨 Active Incident</h3>
+<div class="dashboard-card">
+    <h3>🚨 Active Incident</h3>
     <?php
 $stmt = $conn->prepare("
         SELECT incident_id, pat_id, status, start_time FROM incident 
@@ -101,19 +400,18 @@ $stmt = $conn->prepare("
         $pat_stmt->execute();
         $patient = $pat_stmt->get_result()->fetch_assoc();
     ?>
-    <p style="font-size:18px;font-weight:bold;">Incident #<?php echo $incident['incident_id']; ?></p>
-    <p style="color:#777;">Patient: <?php echo htmlspecialchars($patient['pat_name'] ?? 'Unknown'); ?></p>
-    <p style="color:#f59e0b;font-weight:600;"><?php echo ucfirst($incident['status']); ?></p>
-    <a href="patient_vitals.php" style="color:#22c55e;">View Vitals →</a>
+    <p style="font-size:18px;font-weight:700;color:var(--deep-hospital-blue);">Incident #<?php echo $incident['incident_id']; ?></p>
+    <p style="color:var(--system-gray);margin-bottom:8px;">Patient: <?php echo htmlspecialchars($patient['pat_name'] ?? 'Unknown'); ?></p>
+    <span class="status-badge status-ongoing"><?php echo ucfirst($incident['status']); ?></span>
     <?php else: ?>
-    <p style="color:#777;">No active incidents</p>
-    <a href="create_incident.php" style="color:#dd4c56;">Create Incident →</a>
+    <p style="color:var(--system-gray);">No active incidents</p>
+    <a href="create_incident.php" class="btn-link">Create Incident <i class="fa fa-arrow-right"></i></a>
     <?php endif; ?>
 </div>
 
 <!-- Latest Vital Readings Card -->
-<div style="background:white;padding:20px;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.1);width:100%;">
-    <h3 style="color:#dd4c56;margin-bottom:15px;">❤️ Latest Vital Readings</h3>
+<div class="dashboard-card">
+    <h3>❤️ Latest Vital Readings</h3>
     <?php
     // Query to get latest vital readings for responder's active incidents
     $stmt = $conn->prepare("
@@ -138,44 +436,41 @@ $stmt = $conn->prepare("
     
     if($vitals):
     ?>
-    <div style="display:flex;gap:20px;flex-wrap:wrap;">
-        <div style="flex:1 1 100px;min-width:80px;">
-            <p style="color:#777;font-size:12px;">Heart Rate</p>
-            <p style="font-size:24px;font-weight:800;color:#e74c3c;">
-                <?php echo $vitals['heart_rate']; ?><span style="font-size:12px;color:#777;"> bpm</span>
-            </p>
+    <div class="vitals-grid">
+        <div class="vital-stat">
+            <span class="vital-stat-label">Heart Rate</span>
+            <span class="vital-stat-value" style="color:#0A85CC;">
+                <?php echo $vitals['heart_rate']; ?><span class="vital-stat-unit">bpm</span>
+            </span>
         </div>
         
-        <div style="flex:1 1 100px;min-width:80px;">
-            <p style="color:#777;font-size:12px;">Blood Pressure</p>
-            <p style="font-size:20px;font-weight:bold;color:#22c55e;">
+        <div class="vital-stat">
+            <span class="vital-stat-label">Blood Pressure</span>
+            <span class="vital-stat-value" style="color:#00B6CC;font-size:22px;">
                 <?php echo $vitals['bp_systolic']; ?>/<?php echo $vitals['bp_diastolic']; ?>
-                <span style="font-size:10px;color:#777;">mmHg</span>
-            </p>
+                <span class="vital-stat-unit">mmHg</span>
+            </span>
         </div>
         
-        <div style="flex:1 1 100px;min-width:80px;">
-            <p style="color:#777;font-size:12px;">SpO2</p>
-            <p style="font-size:24px;font-weight:800;color:#0ea5e9;">
-                <?php echo $vitals['oxygen_level']; ?><span style="font-size:12px;color:#777;">%</span>
-            </p>
+        <div class="vital-stat">
+            <span class="vital-stat-label">SpO2</span>
+            <span class="vital-stat-value" style="color:#0A2A55;">
+                <?php echo $vitals['oxygen_level']; ?><span class="vital-stat-unit">%</span>
+            </span>
         </div>
         
-        <div style="flex:1 1 100px;min-width:80px;text-align:right;">
-            <p style="color:#777;font-size:12px;">Recorded</p>
-            <p style="font-size:14px;"><?php echo date('M d, h:i A', strtotime($vitals['recorded_at'])); ?></p>
+        <div class="vital-stat" style="text-align:right;">
+            <span class="vital-stat-label">Recorded</span>
+            <span style="font-size:14px;color:var(--deep-hospital-blue);"><?php echo date('M d, h:i A', strtotime($vitals['recorded_at'])); ?></span>
         </div>
-    </div>
-    <div style="margin-top:15px;">
-        <a href="patient_vitals.php" style="color:#dd4c56;font-size:14px;">View Vitals →</a>
     </div>
     <?php else: ?>
-    <div style="text-align:center;padding:20px;color:#777;">
-        <p style="font-size:14px;margin-bottom:10px;">No vital readings available</p>
+    <div style="text-align:center;padding:24px;color:var(--system-gray);">
+        <p style="font-size:14px;margin-bottom:12px;">No vital readings available</p>
         <?php if($incident): ?>
-        <a href="patient_vitals.php" style="display:inline-block;padding:10px 20px;background:#dd4c56;color:white;text-decoration:none;border-radius:8px;font-weight:bold;">View Vitals</a>
+        <a href="active_incidents.php" class="btn-link">Go to Active Incidents <i class="fa fa-arrow-right"></i></a>
         <?php else: ?>
-        <p style="font-size:12px;color:#999;">Create an incident to record vitals.</p>
+        <p style="font-size:12px;">Create an incident to record vitals.</p>
         <?php endif; ?>
     </div>
     <?php endif; ?>
@@ -184,28 +479,30 @@ $stmt = $conn->prepare("
 </main>
 
 <nav class="bottom-nav">
-
-<a href="dashboard.php" class="bottom-item">
-<i class="fa fa-gauge"></i>
-<span>Home</span>
+<a href="dashboard.php" class="bottom-item active">
+    <i class="fa fa-gauge"></i>
+    <span>Home</span>
 </a>
 
-<a href="patient_vitals.php" class="bottom-item">
-<i class="fa fa-line-chart"></i>
-<span>Vitals</span>
+<a href="device.php" class="bottom-item">
+    <i class="fa fa-tablet"></i>
+    <span>Device</span>
+</a>
+
+<a href="active_incidents.php" class="bottom-item">
+    <i class="fa fa-exclamation-circle"></i>
+    <span>Incidents</span>
 </a>
 
 <a href="create_incident.php" class="bottom-item">
-<i class="fa fa-plus-circle"></i>
-<span>Incident</span>
+    <i class="fa fa-plus-circle"></i>
+    <span>Create</span>
 </a>
 
-<a href="incident_history.php" class="bottom-item">
-<i class="fa fa-history"></i>
-<span>History</span>
+<a href="../../api/auth/logout.php" class="bottom-item">
+    <i class="fa fa-sign-out"></i>
+    <span>Logout</span>
 </a>
-
-<a href="/VitalWear-1/api/auth/logout.php"><i class="fa fa-sign-out"></i></a>
 </nav>
 
 </body>

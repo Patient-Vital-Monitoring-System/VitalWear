@@ -16,7 +16,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit();
 }
 
-// Redirect to login page with correct path
-header("Location: /VitalWear-1/login.html");
-exit();
+// Redirect to login page with session clearing
 ?>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Logging out...</title>
+    <script>
+        // Clear all session storage
+        sessionStorage.clear();
+        // Clear local storage too
+        localStorage.clear();
+        // Redirect to login
+        window.location.href = '/VitalWear-1/login.html';
+    </script>
+</head>
+<body>
+    <p>Logging out...</p>
+</body>
+</html>

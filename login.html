@@ -5,109 +5,263 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VitalWear - Login</title>
   <link rel="stylesheet" href="assets/css/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/96e37b53f1.js"></script>
   <style>
-    /* Login Page Specific Styles */
+    /* VitalWear Soft UI Design System */
+    :root {
+        --deep-hospital-blue: #0A2A55;
+        --medical-cyan: #00B6CC;
+        --trust-blue: #0A85CC;
+        --health-green: #2EDBB3;
+        --clinical-white: #F0F4F8;
+        --system-gray: #A9B7C6;
+        --surface: #ffffff;
+        --radius: 12px;
+        --radius-lg: 16px;
+        --radius-xl: 24px;
+        --shadow-sm: 0 2px 4px rgba(10, 42, 85, 0.06);
+        --shadow: 0 4px 12px rgba(10, 42, 85, 0.08);
+        --shadow-md: 0 8px 24px rgba(10, 42, 85, 0.12);
+        --shadow-lg: 0 20px 60px rgba(10, 42, 85, 0.15);
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        background: linear-gradient(135deg, var(--clinical-white) 0%, #e8f4f8 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Background decoration */
+    body::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(0, 182, 204, 0.1) 0%, transparent 70%);
+        animation: float 20s ease-in-out infinite;
+    }
+
+    body::after {
+        content: '';
+        position: absolute;
+        bottom: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(10, 133, 204, 0.08) 0%, transparent 70%);
+        animation: float 25s ease-in-out infinite reverse;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        33% { transform: translate(30px, -30px) rotate(120deg); }
+        66% { transform: translate(-20px, 20px) rotate(240deg); }
+    }
+
     .login-page {
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 440px;
+        padding: 20px;
     }
 
     .login-container {
-      width: 100%;
-      max-width: 400px;
-      background: white;
-      padding: 40px 30px;
-      border-radius: 28px;
-      box-shadow: 0 25px 60px rgba(0,0,0,.20), 0 10px 25px rgba(0,0,0,.15), 0 2px 8px rgba(0,0,0,.08);
+        background: var(--surface);
+        padding: 48px 40px;
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-lg);
+        border: 1px solid rgba(169, 183, 198, 0.2);
+        backdrop-filter: blur(10px);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .login-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--medical-cyan) 0%, var(--trust-blue) 50%, var(--deep-hospital-blue) 100%);
     }
 
     .login-logo {
-      text-align: center;
-      margin-bottom: 30px;
+        text-align: center;
+        margin-bottom: 32px;
     }
 
     .login-logo h1 {
-      color: #dd4c56;
-      font-size: 28px;
-      font-weight: 800;
+        color: var(--deep-hospital-blue);
+        font-size: 32px;
+        font-weight: 800;
+        margin: 0 0 8px 0;
+        letter-spacing: -0.5px;
     }
 
     .login-logo p {
-      color: #777;
-      font-size: 14px;
-      margin-top: 5px;
+        color: var(--system-gray);
+        font-size: 15px;
+        margin: 0;
+        font-weight: 500;
     }
 
     .form-group {
-      margin-bottom: 20px;
+        margin-bottom: 24px;
     }
 
     .form-group label {
-      display: block;
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: #333;
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: var(--deep-hospital-blue);
+        font-size: 14px;
+    }
+
+    .input-wrapper {
+        position: relative;
+    }
+
+    .input-wrapper i {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--system-gray);
+        font-size: 18px;
+        transition: color 0.3s ease;
     }
 
     .form-group input {
-      width: 100%;
-      padding: 14px 16px;
-      border: 2px solid #e5e9f0;
-      border-radius: 12px;
-      font-size: 15px;
-      transition: 0.3s;
+        width: 100%;
+        padding: 16px 16px 16px 48px;
+        border: 2px solid rgba(169, 183, 198, 0.3);
+        border-radius: var(--radius);
+        font-size: 15px;
+        background: var(--clinical-white);
+        transition: all 0.3s ease;
+        font-family: 'Inter', sans-serif;
+        box-sizing: border-box;
     }
 
     .form-group input:focus {
-      outline: none;
-      border-color: #dd4c56;
+        outline: none;
+        border-color: var(--medical-cyan);
+        box-shadow: 0 0 0 3px rgba(0, 182, 204, 0.1);
+        background: white;
+    }
+
+    .input-wrapper:focus-within i {
+        color: var(--medical-cyan);
     }
 
     .login-btn {
-      width: 100%;
-      padding: 14px;
-      background: linear-gradient(90deg, #dd4c56, #c93c46);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: 0.3s;
+        width: 100%;
+        padding: 16px 24px;
+        background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%);
+        color: white;
+        border: none;
+        border-radius: var(--radius-lg);
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: var(--shadow);
+    }
+
+    .login-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s;
+    }
+
+    .login-btn:hover::before {
+        left: 100%;
     }
 
     .login-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(221, 76, 86, 0.3);
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .login-btn:active {
+        transform: translateY(-1px);
     }
 
     .login-btn:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-      transform: none;
+        background: linear-gradient(135deg, var(--system-gray) 0%, #8b95a7 100%);
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: var(--shadow-sm);
     }
 
     .error-message {
-      background: #fee2e2;
-      color: #991b1b;
-      padding: 12px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      text-align: center;
-      display: none;
+        background: rgba(239, 68, 68, 0.15);
+        color: #dc2626;
+        padding: 16px 20px;
+        border-radius: var(--radius);
+        margin-bottom: 24px;
+        text-align: center;
+        display: none;
+        font-weight: 500;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        animation: slideDown 0.3s ease;
     }
 
     .success-message {
-      background: #dcfce7;
-      color: #166534;
-      padding: 12px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      text-align: center;
-      display: none;
+        background: rgba(46, 219, 179, 0.15);
+        color: var(--health-green);
+        padding: 16px 20px;
+        border-radius: var(--radius);
+        margin-bottom: 24px;
+        text-align: center;
+        display: none;
+        font-weight: 500;
+        border: 1px solid rgba(46, 219, 179, 0.3);
+        animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 480px) {
+        .login-container {
+            padding: 40px 24px;
+            margin: 20px;
+        }
+        
+        .login-logo h1 {
+            font-size: 28px;
+        }
     }
   </style>
 </head>
@@ -115,6 +269,7 @@
   <div class="login-page">
     <div class="login-container">
       <div class="login-logo">
+        <img src="assets/logo.png" alt="VitalWear Logo" style="width: 100px; height: 100px; margin-bottom: 24px;">
         <h1>VitalWear</h1>
         <p>Sign in to continue</p>
       </div>
@@ -125,15 +280,23 @@
       <form id="loginForm">
         <div class="form-group">
           <label for="email">Email Address</label>
-          <input type="email" id="email" name="email" placeholder="Enter your email" required>
+          <div class="input-wrapper">
+            <i class="fa fa-envelope"></i>
+            <input type="email" id="email" name="email" placeholder="Enter your email" required>
+          </div>
         </div>
         
         <div class="form-group">
           <label for="password">Password</label>
-          <input type="password" id="password" name="password" placeholder="Enter your password" required>
+          <div class="input-wrapper">
+            <i class="fa fa-lock"></i>
+            <input type="password" id="password" name="password" placeholder="Enter your password" required>
+          </div>
         </div>
         
-        <button type="submit" class="login-btn" id="loginBtn">Sign In</button>
+        <button type="submit" class="login-btn" id="loginBtn">
+          <span>Sign In</span>
+        </button>
       </form>
     </div>
   </div>
