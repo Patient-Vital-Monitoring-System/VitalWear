@@ -723,9 +723,9 @@ $active_admins = $total_admins; // All admins are considered active
                         <h1><i class="fa fa-eye"></i> View Admin Accounts</h1>
                         <p>Manage all admin users in the system</p>
                     </div>
-                    <a href="create_admin.php" class="create-btn">
+                    <button onclick="openAddModal()" class="create-btn">
                         <i class="fa fa-plus"></i> Create Admin
-                    </a>
+                    </button>
                 </div>
             </div>
 
@@ -757,14 +757,14 @@ $active_admins = $total_admins; // All admins are considered active
             <div class="users-grid">
                 <?php if (!empty($admin_accounts)): ?>
                     <?php foreach ($admin_accounts as $account): ?>
-                        <div class="user-card">
+                        <div class="user-card" data-user-id="<?php echo htmlspecialchars($account['id']); ?>">
                             <div class="user-header">
                                 <div class="user-avatar">
                                     <?php echo strtoupper(substr(htmlspecialchars($account['name']), 0, 2)); ?>
                                 </div>
                                 <div class="user-info">
-                                    <h4><?php echo htmlspecialchars($account['name']); ?></h4>
-                                    <p><?php echo htmlspecialchars($account['email']); ?></p>
+                                    <h4 data-field="name"><?php echo htmlspecialchars($account['name']); ?></h4>
+                                    <p data-field="email"><?php echo htmlspecialchars($account['email']); ?></p>
                                 </div>
                             </div>
                             
@@ -791,12 +791,12 @@ $active_admins = $total_admins; // All admins are considered active
                             </div>
                             
                             <div class="action-buttons">
-                                <a href="update_admin.php?id=<?php echo htmlspecialchars($account['id']); ?>" class="update-btn">
+                                <button onclick="openUpdateModal(<?php echo htmlspecialchars(json_encode($account)); ?>)" class="update-btn">
                                     <i class="fa fa-edit"></i> Update
-                                </a>
-                                <a href="delete_admin.php?id=<?php echo htmlspecialchars($account['id']); ?>" class="delete-btn" onclick="return confirm('Are you sure you want to delete this admin account?')">
+                                </button>
+                                <button onclick="openDeleteModal(<?php echo htmlspecialchars($account['id']); ?>, '<?php echo htmlspecialchars($account['name']); ?>')" class="delete-btn">
                                     <i class="fa fa-trash"></i> Delete
-                                </a>
+                                </button>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -810,5 +810,694 @@ $active_admins = $total_admins; // All admins are considered active
             </div>
         </main>
     </div>
+
+    <!-- Modal Styles -->
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: #ffffff;
+            border-radius: var(--radius-xl);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: var(--radius);
+            transition: all var(--transition);
+        }
+
+        .modal-close:hover {
+            background: var(--gray-100);
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 24px;
+            background: #ffffff;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            font-size: 0.875rem;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            letter-spacing: 0.025em;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-cancel {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            color: var(--text-primary);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+
+        .btn-cancel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .btn-cancel:hover {
+            background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        }
+
+        .btn-cancel:hover::before {
+            left: 100%;
+        }
+
+        .btn-cancel:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-600) 100%);
+            color: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(30, 122, 184, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-submit::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .btn-submit:hover {
+            background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(30, 122, 184, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-submit:hover::before {
+            left: 100%;
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(30, 122, 184, 0.25);
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-delete::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .btn-delete:hover {
+            background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-delete:hover::before {
+            left: 100%;
+        }
+
+        .btn-delete:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            color: var(--text-primary);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #ffffff;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 2px 8px rgba(59, 130, 246, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .form-input:hover {
+            border-color: #d1d5db;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            font-size: 0.875rem;
+            display: block;
+        }
+
+        .btn-cancel {
+            background: var(--gray-200);
+            color: var(--text-primary);
+        }
+
+        .btn-cancel:hover {
+            background: var(--gray-300);
+        }
+
+        .btn-submit {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-submit:hover {
+            background: var(--primary-700);
+        }
+
+        .delete-modal .modal-content {
+            max-width: 400px;
+        }
+
+        .delete-warning {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .delete-warning i {
+            font-size: 3rem;
+            color: var(--error);
+            margin-bottom: 16px;
+        }
+
+        .delete-warning h3 {
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .delete-warning p {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .success-message {
+            background: var(--success-light);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .error-message {
+            background: var(--error-light);
+            color: var(--error);
+            border: 1px solid var(--error);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { 
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to { 
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+
+    <!-- Add Modal -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fa fa-plus"></i> Create Admin
+                </h3>
+                <button class="modal-close" onclick="closeModal('addModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="addMessage"></div>
+                <form id="addForm" action="create_admin.php" method="POST">
+                    <div class="form-group">
+                        <label class="form-label">Full Name *</label>
+                        <input type="text" name="name" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email Address *</label>
+                        <input type="email" name="email" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password *</label>
+                        <input type="password" name="password" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Confirm Password *</label>
+                        <input type="password" name="confirm_password" class="form-input" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-cancel" onclick="closeModal('addModal')">Cancel</button>
+                        <button type="submit" class="btn btn-submit">Create Admin</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Modal -->
+    <div id="updateModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fa fa-edit"></i> Update Admin
+                </h3>
+                <button class="modal-close" onclick="closeModal('updateModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="updateMessage"></div>
+                <form id="updateForm" onsubmit="handleUpdateSubmit(event, 'admin')">
+                    <input type="hidden" name="id" id="updateId">
+                    <div class="form-group">
+                        <label class="form-label">Full Name *</label>
+                        <input type="text" name="name" id="updateName" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email Address *</label>
+                        <input type="email" name="email" id="updateEmail" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">New Password</label>
+                        <input type="password" name="password" id="updatePassword" class="form-input" placeholder="Leave blank to keep current password">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Confirm New Password</label>
+                        <input type="password" name="confirm_password" id="updateConfirmPassword" class="form-input" placeholder="Confirm new password">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('updateModal')">
+                            <i class="fa fa-times"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa fa-save"></i> Update Admin
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div id="deleteModal" class="modal delete-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fa fa-trash"></i> Delete Admin
+                </h3>
+                <button class="modal-close" onclick="closeModal('deleteModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="delete-warning">
+                    <i class="fa fa-exclamation-triangle"></i>
+                    <h3>Delete Admin Account</h3>
+                    <p>Are you sure you want to delete <strong id="deleteName"></strong>? This action cannot be undone.</p>
+                    <div id="deleteMessage"></div>
+                    <form action="delete_admin.php" method="POST">
+                        <input type="hidden" name="id" id="deleteId">
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-cancel" onclick="closeModal('deleteModal')">Cancel</button>
+                            <button type="submit" class="btn btn-delete">Delete</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function handleUpdateSubmit(event, userType) {
+            event.preventDefault();
+            
+            const form = document.getElementById('updateForm');
+            const formData = new FormData(form);
+            const updateMessage = document.getElementById('updateMessage');
+            
+            // Debug: Log form data
+            console.log('Submitting update for:', userType);
+            console.log('Form data:', Object.fromEntries(formData));
+            
+            // Show loading message
+            updateMessage.innerHTML = '<div style="color: #3B82F6;"><i class="fa fa-spinner fa-spin"></i> Updating...</div>';
+            
+            // Send AJAX request
+            fetch(`api/update_${userType}.php`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                return response.text();
+            })
+            .then(text => {
+                console.log('Raw response:', text);
+                try {
+                    const data = JSON.parse(text);
+                    console.log('Parsed data:', data);
+                    
+                    if (data.success) {
+                        updateMessage.innerHTML = '<div style="color: #10B981;"><i class="fa fa-check-circle"></i> ' + data.message + '</div>';
+                        
+                        // Close modal after 2 seconds
+                        setTimeout(() => {
+                            closeModal('updateModal');
+                            // Refresh the page to show updated data
+                            location.reload();
+                        }, 2000);
+                    } else {
+                        updateMessage.innerHTML = '<div style="color: #EF4444;"><i class="fa fa-exclamation-circle"></i> ' + data.message + '</div>';
+                    }
+                } catch (e) {
+                    console.error('JSON parse error:', e);
+                    console.error('Response text that failed:', text);
+                    updateMessage.innerHTML = '<div style="color: #EF4444;"><i class="fa fa-exclamation-circle"></i> Server error. Please try again.</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                console.error('Error details:', error.message);
+                updateMessage.innerHTML = '<div style="color: #EF4444;"><i class="fa fa-exclamation-circle"></i> Network error. Please check connection.</div>';
+            });
+        }
+
+        let currentDeleteId = null;
+
+        function openAddModal() {
+            document.getElementById('addModal').classList.add('show');
+            document.getElementById('addForm').reset();
+            document.getElementById('addMessage').innerHTML = '';
+        }
+
+        function openUpdateModal(account) {
+            document.getElementById('updateModal').classList.add('show');
+            document.getElementById('updateId').value = account.id;
+            document.getElementById('updateName').value = account.name;
+            document.getElementById('updateEmail').value = account.email;
+            document.getElementById('updatePassword').value = '';
+            document.getElementById('updateConfirmPassword').value = '';
+            document.getElementById('updateMessage').innerHTML = '';
+        }
+
+        function openDeleteModal(id, name) {
+            document.getElementById('deleteId').value = id;
+            document.getElementById('deleteName').textContent = name;
+            document.getElementById('deleteModal').classList.add('show');
+            document.getElementById('deleteMessage').innerHTML = '';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+        }
+
+        function showMessage(containerId, message, type) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `
+                <div class="message ${type}-message">
+                    <i class="fa fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                    ${message}
+                </div>
+            `;
+        }
+
+        // Handle Add Form
+        document.getElementById('addForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            if (formData.get('password') !== formData.get('confirm_password')) {
+                showMessage('addMessage', 'Passwords do not match', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('api/create_admin_clean.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('addMessage', 'Admin created successfully!', 'success');
+                    setTimeout(() => {
+                        closeModal('addModal');
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showMessage('addMessage', result.message || 'Error creating admin', 'error');
+                }
+            } catch (error) {
+                console.error('Create error:', error);
+                showMessage('addMessage', 'Network error: ' + error.message + '. Please try again.', 'error');
+            }
+        });
+
+        // Handle Update Form
+        document.getElementById('updateForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            const password = formData.get('password');
+            const confirmPassword = formData.get('confirm_password');
+            
+            if (password && password !== confirmPassword) {
+                showMessage('updateMessage', 'Passwords do not match', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('api/update_admin.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('updateMessage', 'Admin updated successfully!', 'success');
+                    setTimeout(() => {
+                        closeModal('updateModal');
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showMessage('updateMessage', result.message || 'Error updating admin', 'error');
+                }
+            } catch (error) {
+                console.error('Update error:', error);
+                showMessage('updateMessage', 'Network error: ' + error.message + '. Please try again.', 'error');
+            }
+        });
+
+        // Handle Delete
+        async function confirmDelete() {
+            if (!currentDeleteId) return;
+
+            try {
+                const formData = new FormData();
+                formData.append('id', currentDeleteId);
+                
+                const response = await fetch('api/delete_admin.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage('deleteMessage', 'Admin deleted successfully!', 'success');
+                    setTimeout(() => {
+                        closeModal('deleteModal');
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showMessage('deleteMessage', result.message || 'Error deleting admin', 'error');
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                showMessage('deleteMessage', 'Network error: ' + error.message + '. Please try again.', 'error');
+            }
+        }
+
+        // Close modals when clicking outside
+        window.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.remove('show');
+            }
+        });
+
+        // Close modals with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal.show').forEach(modal => {
+                    modal.classList.remove('show');
+                });
+            }
+        });
+    </script>
 </body>
 </html>

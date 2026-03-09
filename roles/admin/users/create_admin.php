@@ -12,108 +12,57 @@ $conn = getDBConnection();
 $error_message = '';
 $success_message = '';
 
-// Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = trim($_POST['name'] ?? '');
-    $email = trim($_POST['email'] ?? '');
-    $password = $_POST['password'] ?? '';
-    $contact = trim($_POST['contact'] ?? '');
-    
-    // Validation
-    if (empty($name) || empty($email) || empty($password)) {
-        $error_message = "Name, email, and password are required fields.";
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error_message = "Please enter a valid email address.";
-    } elseif (strlen($password) < 8) {
-        $error_message = "Password must be at least 8 characters long.";
-    } else {
-        try {
-            // Check if email already exists
-            $check_stmt = $conn->prepare("SELECT admin_id FROM admin WHERE admin_email = ?");
-            $check_stmt->bind_param("s", $email);
-            $check_stmt->execute();
-            $check_result = $check_stmt->get_result();
-            
-            if ($check_result->num_rows > 0) {
-                $error_message = "An account with this email already exists.";
-            } else {
-                // Check database connection
-                if (!$conn) {
-                    $error_message = "Database connection failed. Please check your database configuration.";
-                } else {
-                    try {
-                        // Check if admin table exists
-                        $table_check = $conn->query("SHOW TABLES LIKE 'admin'");
-                        if ($table_check->num_rows == 0) {
-                            $error_message = "Admin table does not exist in the database.";
-                        } else {
-                            // Check table structure to see which columns exist
-                            $columns_result = $conn->query("SHOW COLUMNS FROM admin");
-                            $existing_columns = [];
-                            while ($row = $columns_result->fetch_assoc()) {
-                                $existing_columns[] = $row['Field'];
-                            }
-                            
-                            // Hash password
-                            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-                            
-                            // Build INSERT query dynamically based on existing columns
-                            $insert_columns = ['admin_name', 'admin_email', 'admin_password'];
-                            $insert_values = [$name, $email, $hashed_password];
-                            $insert_placeholders = ['?', '?', '?'];
-                            $bind_types = "sss";
-                            
-                            // Add contact field if it exists
-                            if (in_array('admin_contact', $existing_columns)) {
-                                $insert_columns[] = 'admin_contact';
-                                $insert_values[] = $contact;
-                                $insert_placeholders[] = '?';
-                                $bind_types .= "s";
-                            }
-                            
-                            // Add status field if it exists
-                            if (in_array('status', $existing_columns)) {
-                                $insert_columns[] = 'status';
-                                $insert_values[] = 'active';
-                                $insert_placeholders[] = '?';
-                                $bind_types .= "s";
-                            }
-                            
-                            // Add created_at field if it exists
-                            if (in_array('created_at', $existing_columns)) {
-                                $insert_columns[] = 'created_at';
-                                $insert_values[] = date('Y-m-d H:i:s');
-                                $insert_placeholders[] = '?';
-                                $bind_types .= "s";
-                            }
-                            
-                            // Build the final INSERT query
-                            $insert_query = "INSERT INTO admin (" . implode(', ', $insert_columns) . ") VALUES (" . implode(', ', $insert_placeholders) . ")";
-                            $insert_stmt = $conn->prepare($insert_query);
-                            
-                            if (!$insert_stmt) {
-                                $error_message = "Failed to prepare insert query: " . $conn->error . "<br><br>Available columns: " . implode(', ', $existing_columns);
-                            } else {
-                                // Bind parameters dynamically
-                                $insert_stmt->bind_param($bind_types, ...$insert_values);
-                                
-                                if ($insert_stmt->execute()) {
-                                    $success_message = "Admin account created successfully!";
-                                    // Clear form
-                                    $name = $email = $password = $contact = '';
-                                } else {
-                                    $error_message = "Error creating admin account: " . $insert_stmt->error;
-                                }
-                            }
-                        }
-                    } catch (Exception $e) {
-                        $error_message = "Database error: " . $e->getMessage();
-                    }
-                }
-            }
-        } catch (Exception $e) {
-            $error_message = "Error: " . $e->getMessage();
+    try {
+        // Validate input
+        $name = trim($_POST['name'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $contact = trim($_POST['contact'] ?? '');
+        $password = $_POST['password'] ?? '';
+        $confirm_password = $_POST['confirm_password'] ?? '';
+        
+        if (empty($name) || empty($email) || empty($password)) {
+            throw new Exception('All required fields must be filled');
         }
+        
+        if ($password !== $confirm_password) {
+            throw new Exception('Passwords do not match');
+        }
+        
+        if (strlen($password) < 6) {
+            throw new Exception('Password must be at least 6 characters long');
+        }
+        
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new Exception('Invalid email format');
+        }
+        
+        // Check if email already exists
+        $check_email = $conn->prepare("SELECT admin_id FROM admin WHERE admin_email = ?");
+        $check_email->bind_param("s", $email);
+        $check_email->execute();
+        if ($check_email->get_result()->num_rows > 0) {
+            throw new Exception('Email already exists');
+        }
+        
+        // Insert new admin
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $conn->prepare("
+            INSERT INTO admin (admin_name, admin_email, admin_contact, admin_password, status, created_at) 
+            VALUES (?, ?, ?, ?, 'active', NOW())
+        ");
+        $stmt->bind_param("ssss", $name, $email, $contact, $hashed_password);
+        
+        if ($stmt->execute()) {
+            $success_message = "Admin account created successfully!";
+            // Clear form
+            $_POST = [];
+        } else {
+            throw new Exception('Error creating admin account');
+        }
+        
+    } catch (Exception $e) {
+        $error_message = $e->getMessage();
     }
 }
 ?>
@@ -127,72 +76,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="https://kit.fontawesome.com/96e37b53f1.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* VitalWear Brand Kit & Soft Edge Design System */
+        /* VitalWear Modern Soft UI Design System */
         :root {
-            /* Brand Colors - VitalWear Identity */
-            --brand-primary: #0066CC;
-            --brand-secondary: #004499;
-            --brand-accent: #00AAFF;
-            --brand-success: #22C55E;
-            --brand-warning: #F59E0B;
-            --brand-danger: #EF4444;
-            --brand-info: #3B82F6;
+            /* Primary Colors - Modern Blue Palette */
+            --primary-50: #E8F4FD;
+            --primary-100: #D1E9FB;
+            --primary-200: #A9D9F5;
+            --primary-300: #7BC4F0;
+            --primary-400: #4DAEEA;
+            --primary-500: #2E96D5;
+            --primary-600: #1E7AB8;
+            --primary-700: #1A5F9A;
+            --primary-800: #1A4975;
+            --primary-900: #1A3A5C;
             
-            /* Extended Color Palette */
-            --primary-50: #F0F7FF;
-            --primary-100: #E0EEFF;
-            --primary-200: #C2DDFF;
-            --primary-300: #A3C9FF;
-            --primary-400: #85B5FF;
-            --primary-500: #66A0FF;
-            --primary-600: #0066CC;
-            --primary-700: #004499;
-            --primary-800: #003366;
-            --primary-900: #002244;
-            
-            /* Neutral Palette - Soft & Modern */
-            --neutral-50: #FAFBFC;
-            --neutral-100: #F1F5F9;
-            --neutral-200: #E2E8F0;
-            --neutral-300: #CBD5E1;
-            --neutral-400: #94A3B8;
-            --neutral-500: #64748B;
-            --neutral-600: #475569;
-            --neutral-700: #334155;
-            --neutral-800: #1E293B;
-            --neutral-900: #0F172A;
+            /* Neutral Colors */
+            --gray-50: #F9FAFB;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+            --gray-300: #D1D5DB;
+            --gray-400: #9CA3AF;
+            --gray-500: #6B7280;
+            --gray-600: #4B5563;
+            --gray-700: #374151;
+            --gray-800: #1F2937;
+            --gray-900: #111827;
             
             /* Semantic Colors */
-            --success: #22C55E;
-            --success-light: #F0FDF4;
-            --success-bg: #DCFCE7;
+            --success: #10B981;
+            --success-light: #D1FAE5;
             --warning: #F59E0B;
-            --warning-light: #FFFBEB;
-            --warning-bg: #FEF3C7;
+            --warning-light: #FEF3C7;
             --error: #EF4444;
-            --error-light: #FEF2F2;
-            --error-bg: #FEE2E2;
+            --error-light: #FEE2E2;
             --info: #3B82F6;
-            --info-light: #EFF6FF;
-            --info-bg: #DBEAFE;
+            --info-light: #DBEAFE;
             
             /* Core Design Tokens */
-            --primary: var(--brand-primary);
-            --secondary: var(--brand-secondary);
-            --accent: var(--brand-accent);
-            --background: var(--neutral-50);
-            --surface: #FFFFFF;
-            --surface-elevated: #FAFBFC;
-            --surface-overlay: rgba(255, 255, 255, 0.95);
-            --text-primary: var(--neutral-900);
-            --text-secondary: var(--neutral-600);
-            --text-tertiary: var(--neutral-500);
-            --text-inverse: #FFFFFF;
-            --border: var(--neutral-200);
-            --border-hover: var(--neutral-300);
-            --border-focus: var(--brand-primary);
+            --primary: var(--primary-600);
+            --primary-light: var(--primary-100);
+            --background: var(--gray-50);
+            --surface: #ffffff;
+            --text-primary: var(--gray-900);
+            --text-secondary: var(--gray-600);
+            --text-tertiary: var(--gray-500);
+            --border: var(--gray-200);
+            --border-hover: var(--gray-300);
             
-            /* Soft Edge Radius System */
+            /* Soft UI Radius System */
             --radius-xs: 4px;
             --radius-sm: 6px;
             --radius: 8px;
@@ -200,30 +131,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             --radius-lg: 16px;
             --radius-xl: 20px;
             --radius-2xl: 24px;
-            --radius-3xl: 32px;
             --radius-full: 9999px;
             
-            /* Soft Shadow System */
+            /* Modern Shadow System */
             --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
             --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
             --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
             --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            --shadow-soft: 0 2px 20px rgba(0, 102, 204, 0.1);
-            --shadow-soft-lg: 0 4px 30px rgba(0, 102, 204, 0.15);
             
             /* Transitions */
             --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
             --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
             --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
-            --transition-bounce: 400ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            
-            /* Brand Gradients */
-            --gradient-primary: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
-            --gradient-soft: linear-gradient(135deg, rgba(0, 102, 204, 0.1) 0%, rgba(0, 68, 153, 0.05) 100%);
-            --gradient-success: linear-gradient(135deg, var(--success) 0%, #16A34A 100%);
-            --gradient-danger: linear-gradient(135deg, var(--error) 0%, #DC2626 100%);
         }
 
         body {
@@ -235,204 +156,283 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            min-height: 100vh;
-            position: relative;
         }
 
-        body::before {
-            content: '';
+        /* Modern Soft UI Sidebar */
+        .admin-sidebar {
             position: fixed;
+            left: 0;
+            top: 0;
+            width: 280px;
+            height: 100vh;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+            overflow-y: auto;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .sidebar-header {
+            padding: 32px 24px 24px;
+            text-align: center;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-700) 100%);
+            margin: 16px;
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sidebar-header::before {
+            content: '';
+            position: absolute;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: 
-                radial-gradient(circle at 20% 80%, rgba(239, 68, 68, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(220, 38, 38, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 40% 40%, rgba(239, 68, 68, 0.05) 0%, transparent 50%);
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
             pointer-events: none;
-            z-index: 0;
         }
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 2rem;
+        .sidebar-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 4px;
             position: relative;
             z-index: 1;
         }
 
-        .form-card {
-            background: var(--surface);
-            border-radius: var(--radius-2xl);
-            box-shadow: var(--shadow-soft-lg);
-            padding: 3rem;
-            margin-top: 2rem;
+        .sidebar-subtitle {
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.8);
             position: relative;
-            overflow: hidden;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all var(--transition-slow);
+            z-index: 1;
         }
 
-        .form-card::before {
+        .nav-menu {
+            padding: 16px;
+        }
+
+        .nav-group {
+            margin-bottom: 24px;
+        }
+
+        .nav-group-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 0 16px 8px;
+            padding: 8px 0;
+        }
+
+        .nav-group-items {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .nav-item {
+            color: var(--text-primary);
+            padding: 12px 16px;
+            border-radius: var(--radius-lg);
+            transition: all var(--transition);
+            border: none;
+            font-weight: 500;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-item::before {
             content: '';
             position: absolute;
             top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--gradient-danger);
-            opacity: 0.8;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left var(--transition-slow);
         }
 
-        .form-card::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: conic-gradient(from 0deg, transparent, rgba(239, 68, 68, 0.05), transparent);
-            animation: rotate 20s linear infinite;
-            pointer-events: none;
+        .nav-item:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+            transform: translateX(4px);
         }
 
-        @keyframes rotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+        .nav-item:hover::before {
+            left: 100%;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-600) 100%);
+            color: white;
+            box-shadow: var(--shadow-md);
+            transform: translateX(4px);
+        }
+
+        .nav-item.active::before {
+            left: 100%;
+        }
+
+        /* Main Content */
+        .admin-main {
+            margin-left: 280px;
+            min-height: 100vh;
+            background: var(--background);
+        }
+
+        /* Modern Header */
+        .admin-header {
+            background: var(--surface);
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .admin-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        /* Page Header */
+        .page-header {
+            padding: 2rem 2rem 1rem;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0 0 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .page-header p {
+            color: var(--text-secondary);
+            margin: 0;
+            font-size: 1.125rem;
+        }
+
+        /* Form Container */
+        .form-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .form-card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .form-card:hover {
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.15);
         }
 
         .form-header {
-            text-align: center;
-            margin-bottom: 2.5rem;
-            position: relative;
+            padding: 2rem 2rem 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            background: #ffffff;
         }
 
-        .form-header h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
+        .form-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
             color: var(--text-primary);
-            margin-bottom: 0.75rem;
+            margin: 0;
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 16px;
-            position: relative;
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .form-header h1::after {
-            content: '';
-            position: absolute;
-            bottom: -12px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 80px;
-            height: 4px;
-            background: var(--gradient-danger);
-            border-radius: var(--radius-full);
-            box-shadow: 0 2px 20px rgba(239, 68, 68, 0.1);
+            gap: 0.75rem;
         }
 
         .form-header p {
             color: var(--text-secondary);
-            margin-bottom: 0;
-            font-size: 1.1rem;
-            margin-top: 1.5rem;
-            font-weight: 500;
+            margin: 0.5rem 0 0 0;
+        }
+
+        .form-body {
+            padding: 2rem;
+            background: #ffffff;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
         }
 
         .form-group {
-            margin-bottom: 2rem;
-            position: relative;
+            display: flex;
+            flex-direction: column;
         }
 
-        .form-group.has-icon .form-input {
-            padding-right: 3rem;
+        .form-group.full-width {
+            grid-column: 1 / -1;
         }
 
         .form-label {
             display: block;
             font-weight: 600;
             color: var(--text-primary);
-            margin-bottom: 0.75rem;
-            font-size: 0.95rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            position: relative;
-        }
-
-        .form-label::before {
-            content: '';
-            position: absolute;
-            left: -12px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 4px;
-            height: 4px;
-            background: var(--error);
-            border-radius: var(--radius-full);
+            margin-bottom: 8px;
+            font-size: 0.875rem;
         }
 
         .form-input {
             width: 100%;
-            padding: 1.25rem 1.5rem;
-            border: 2px solid var(--border);
-            border-radius: var(--radius-xl);
-            font-size: 1rem;
-            transition: all var(--transition);
-            background: var(--surface-elevated);
-            position: relative;
-            font-family: 'Inter', sans-serif;
-            font-weight: 500;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .form-input:hover {
-            border-color: var(--border-focus);
-            transform: translateY(-2px);
-            box-shadow: 0 2px 20px rgba(239, 68, 68, 0.1);
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #ffffff;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
         .form-input:focus {
             outline: none;
-            border-color: var(--border-focus);
-            box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15), 0 2px 20px rgba(239, 68, 68, 0.1);
-            transform: translateY(-3px);
-            background: var(--surface);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(30, 122, 184, 0.1), 0 2px 8px rgba(30, 122, 184, 0.15);
+            transform: translateY(-1px);
         }
 
-        .form-input::placeholder {
-            color: var(--text-tertiary);
-            font-style: italic;
+        .form-input:hover {
+            border-color: #d1d5db;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
         }
 
-        .form-input:required {
-            background-image: radial-gradient(circle at 98% 8%, transparent 8px, var(--error) 8px, var(--error) 10px, transparent 10px);
-        }
-
-        .input-icon {
-            position: absolute;
-            right: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-tertiary);
-            transition: all var(--transition);
-            pointer-events: none;
-        }
-
-        .form-input:focus + .input-icon {
+        .required {
             color: var(--error);
-            transform: translateY(-50%) scale(1.1);
         }
 
+        /* Buttons */
         .btn {
-            padding: 1rem 2rem;
+            padding: 0.75rem 1.5rem;
             border: none;
             border-radius: var(--radius-lg);
             font-weight: 600;
@@ -441,290 +441,332 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             text-decoration: none;
             display: inline-flex;
             align-items: center;
-            gap: 0.75rem;
-            font-size: 1rem;
-            position: relative;
-            overflow: hidden;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            gap: 0.5rem;
+            font-size: 0.875rem;
         }
 
-        .btn::before {
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(30, 122, 184, 0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-700);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(30, 122, 184, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--gray-200);
+            color: var(--text-primary);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-300);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn-cancel {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            color: var(--text-primary);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 600;
+            letter-spacing: 0.025em;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-cancel::before {
             content: '';
             position: absolute;
             top: 0;
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left var(--transition-slow);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.6s ease;
         }
 
-        .btn:hover::before {
+        .btn-cancel:hover {
+            background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        }
+
+        .btn-cancel:hover::before {
             left: 100%;
         }
 
-        .btn-primary {
-            background: var(--gradient-danger);
-            color: var(--text-inverse);
-            box-shadow: 0 2px 20px rgba(239, 68, 68, 0.1);
-            font-weight: 700;
-            letter-spacing: 0.5px;
+        .btn-cancel:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
         }
 
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #DC2626 0%, #991B1B 100%);
-            transform: translateY(-4px);
-            box-shadow: 0 4px 30px rgba(239, 68, 68, 0.15);
-        }
-
-        .btn-primary:active {
-            transform: translateY(-2px);
-            box-shadow: 0 2px 20px rgba(239, 68, 68, 0.1);
-        }
-
-        .btn-secondary {
-            background: var(--surface-elevated);
-            color: var(--text-primary);
-            border: 2px solid var(--border);
+        .btn-submit {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-600) 100%);
+            color: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(30, 122, 184, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             font-weight: 600;
+            letter-spacing: 0.025em;
+            position: relative;
+            overflow: hidden;
         }
 
-        .btn-secondary:hover {
-            background: var(--surface);
-            border-color: var(--border-focus);
-            transform: translateY(-3px);
-            box-shadow: 0 2px 20px rgba(239, 68, 68, 0.1);
+        .btn-submit::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.6s ease;
         }
 
-        .btn-secondary:active {
-            transform: translateY(-1px);
+        .btn-submit:hover {
+            background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(30, 122, 184, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-submit:hover::before {
+            left: 100%;
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(30, 122, 184, 0.25);
+        }
+
+        /* Messages */
+        .message {
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius-md);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
         }
 
         .success-message {
             background: var(--success-light);
             color: var(--success);
-            padding: 1rem;
-            border-radius: var(--radius);
-            margin-bottom: 1rem;
             border: 1px solid var(--success);
         }
 
         .error-message {
             background: var(--error-light);
             color: var(--error);
-            padding: 1rem;
-            border-radius: var(--radius);
-            margin-bottom: 1rem;
             border: 1px solid var(--error);
         }
 
-        .form-actions {
-            display: flex;
-            gap: 1rem;
-            justify-content: flex-end;
-            margin-top: 2rem;
-        }
-
-        .breadcrumb {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            font-size: 0.875rem;
-        }
-
-        .breadcrumb a {
-            color: var(--text-secondary);
-            text-decoration: none;
-        }
-
-        .breadcrumb a:hover {
-            color: var(--primary);
-        }
-
-        .admin-badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            background: var(--error-bg);
-            color: var(--error);
-            border-radius: var(--radius);
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            box-shadow: var(--shadow-xs);
-        }
-
-        .required-indicator {
-            color: var(--error);
-            font-weight: 700;
-            margin-left: 4px;
-        }
-
-        .form-group small {
-            display: block;
-            margin-top: 0.5rem;
-            color: var(--text-tertiary);
-            font-size: 0.875rem;
-            font-style: italic;
-            padding-left: 0.5rem;
-            border-left: 2px solid var(--border);
-        }
-
-        .success-message {
-            background: var(--success-bg);
-            color: var(--success);
-            padding: 1.25rem 1.5rem;
-            border-radius: var(--radius-xl);
-            margin-bottom: 1.5rem;
-            border: 1px solid var(--success);
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            animation: slideIn 0.3s ease-out;
-            box-shadow: var(--shadow-soft);
-            font-weight: 600;
-        }
-
-        .error-message {
-            background: var(--error-bg);
-            color: var(--error);
-            padding: 1.25rem 1.5rem;
-            border-radius: var(--radius-xl);
-            margin-bottom: 1.5rem;
-            border: 1px solid var(--error);
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            animation: slideIn 0.3s ease-out;
-            box-shadow: var(--shadow-soft);
-            font-weight: 600;
-        }
-
-        .form-actions {
-            display: flex;
-            gap: 1rem;
-            justify-content: space-between;
-            margin-top: 3rem;
-            padding-top: 2rem;
-            border-top: 1px solid var(--border);
-            position: relative;
-        }
-
-        .form-actions::before {
-            content: '';
-            position: absolute;
-            top: -1px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, var(--error), transparent);
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
+        /* Responsive */
+        @media (max-width: 768px) {
+            .admin-sidebar {
+                transform: translateX(-100%);
             }
-            to {
-                opacity: 1;
-                transform: translateY(0);
+            
+            .admin-main {
+                margin-left: 0;
             }
-        }
-
-        .form-card {
-            animation: fadeInUp 0.6s ease-out;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
+            
+            .form-container {
+                padding: 0 1rem;
             }
-            to {
-                opacity: 1;
-                transform: translateY(0);
+            
+            .form-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Breadcrumb -->
-        <div class="breadcrumb">
-            <a href="../dashboard.php"><i class="fa fa-gauge"></i> Dashboard</a>
-            <span>/</span>
-            <a href="../users.php"><i class="fa fa-users"></i> Staff Directory</a>
-            <span>/</span>
-            <a href="view_admins.php"><i class="fa fa-user-cog"></i> Admins</a>
-            <span>/</span>
-            <span><i class="fa fa-plus"></i> Create</span>
-        </div>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">VitalWear Admin</div>
+                <div class="sidebar-subtitle">System Management</div>
+            </div>
+            
+            <nav class="nav-menu">
+                <div class="nav-group">
+                    <a href="../dashboard.php" class="nav-item">
+                        <i class="fa fa-gauge"></i> Dashboard
+                    </a>
+                </div>
+                
+                <div class="nav-group">
+                    <div class="nav-group-title">User Management</div>
+                    <div class="nav-group-items">
+                        <a href="../users.php" class="nav-item">
+                            <i class="fa fa-users"></i> Staff Directory
+                        </a>
+                        <a href="view_management.php" class="nav-item">
+                            <i class="fa fa-user-tie"></i> Management
+                        </a>
+                        <a href="view_responders.php" class="nav-item">
+                            <i class="fa fa-user-md"></i> Responders
+                        </a>
+                        <a href="view_rescuers.php" class="nav-item">
+                            <i class="fa fa-user-shield"></i> Rescuers
+                        </a>
+                        <a href="view_admins.php" class="nav-item active">
+                            <i class="fa fa-user-cog"></i> Admins
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="nav-group">
+                    <div class="nav-group-title">Reports</div>
+                    <div class="nav-group-items">
+                        <a href="../system_reports.php" class="nav-item">
+                            <i class="fa fa-chart-line"></i> System Reports
+                        </a>
+                        <a href="../vitals_analytics.php" class="nav-item">
+                            <i class="fa fa-heartbeat"></i> Vital Analytics
+                        </a>
+                        <a href="../audit_log.php" class="nav-item">
+                            <i class="fa fa-clipboard-list"></i> Activity Log
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="nav-group">
+                    <div class="nav-group-title">Monitoring</div>
+                    <div class="nav-group-items">
+                        <a href="../device_incidents.php" class="nav-item">
+                            <i class="fa fa-box"></i> Device Overview
+                        </a>
+                        <a href="../vitals.php" class="nav-item">
+                            <i class="fa fa-user-clock"></i> User Activity
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </aside>
 
-        <div class="form-card">
-            <div class="form-header">
-                <h1><i class="fa fa-user-cog"></i> Create Admin Account</h1>
-                <p>Add a new administrator to the system <span class="admin-badge">High Privilege</span></p>
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Modern Header -->
+            <header class="admin-header">
+                <div>
+                    <h1><i class="fa fa-user-cog"></i> Create Admin Account</h1>
+                </div>
+                <div>
+                    <span style="color: var(--text-secondary); margin-right: 16px;">Welcome, <?php echo htmlspecialchars($_SESSION['user_name']); ?></span>
+                    <a href="/VitalWear-1/logout.php" class="btn btn-primary">
+                        <i class="fa fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </header>
+
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1><i class="fa fa-user-cog"></i> Create New Admin</h1>
+                <p>Add a new system administrator to the VitalWear system</p>
             </div>
 
-            <?php if ($success_message): ?>
-                <div class="success-message">
-                    <i class="fa fa-check-circle"></i> <?php echo htmlspecialchars($success_message); ?>
-                </div>
-            <?php endif; ?>
+            <!-- Form Container -->
+            <div class="form-container">
+                <?php if ($error_message): ?>
+                    <div class="message error-message">
+                        <i class="fa fa-exclamation-circle"></i>
+                        <?php echo htmlspecialchars($error_message); ?>
+                    </div>
+                <?php endif; ?>
 
-            <?php if ($error_message): ?>
-                <div class="error-message">
-                    <i class="fa fa-exclamation-circle"></i> <?php echo htmlspecialchars($error_message); ?>
-                </div>
-            <?php endif; ?>
+                <?php if ($success_message): ?>
+                    <div class="message success-message">
+                        <i class="fa fa-check-circle"></i>
+                        <?php echo htmlspecialchars($success_message); ?>
+                    </div>
+                <?php endif; ?>
 
-            <form method="POST" action="">
-                <div class="form-group has-icon">
-                    <label for="name" class="form-label">Full Name<span class="required-indicator">*</span></label>
-                    <input type="text" id="name" name="name" class="form-input" 
-                           value="<?php echo htmlspecialchars($name ?? ''); ?>" 
-                           placeholder="Enter full name" required>
-                    <i class="fa fa-user input-icon"></i>
+                <div class="form-card">
+                    <div class="form-header">
+                        <h2><i class="fa fa-user-plus"></i> Admin Information</h2>
+                        <p>Fill in the details below to create a new admin account</p>
+                    </div>
+                    
+                    <form method="POST" class="form-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Full Name <span class="required">*</span>
+                                </label>
+                                <input type="text" name="name" class="form-input" 
+                                       value="<?php echo htmlspecialchars($_POST['name'] ?? ''); ?>" 
+                                       placeholder="Enter admin's full name" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Email Address <span class="required">*</span>
+                                </label>
+                                <input type="email" name="email" class="form-input" 
+                                       value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>" 
+                                       placeholder="admin@vitalwear.com" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Contact Number
+                                </label>
+                                <input type="tel" name="contact" class="form-input" 
+                                       value="<?php echo htmlspecialchars($_POST['contact'] ?? ''); ?>" 
+                                       placeholder="+1 (555) 123-4567">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Password <span class="required">*</span>
+                                </label>
+                                <input type="password" name="password" class="form-input" 
+                                       placeholder="Enter password (min. 6 characters)" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Confirm Password <span class="required">*</span>
+                                </label>
+                                <input type="password" name="confirm_password" class="form-input" 
+                                       placeholder="Confirm password" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-cancel" onclick="window.location.href='view_admins.php'">
+                                Cancel
+                            </button>
+                            <button type="submit" class="btn btn-submit">
+                                Create Admin Account
+                            </button>
+                        </div>
+                    </form>
                 </div>
-
-                <div class="form-group has-icon">
-                    <label for="email" class="form-label">Email Address<span class="required-indicator">*</span></label>
-                    <input type="email" id="email" name="email" class="form-input" 
-                           value="<?php echo htmlspecialchars($email ?? ''); ?>" 
-                           placeholder="admin@example.com" required>
-                    <i class="fa fa-envelope input-icon"></i>
-                </div>
-
-                <div class="form-group has-icon">
-                    <label for="password" class="form-label">Password<span class="required-indicator">*</span></label>
-                    <input type="password" id="password" name="password" class="form-input" 
-                           placeholder="Create a strong password" required>
-                    <i class="fa fa-lock input-icon"></i>
-                    <small>Minimum 8 characters with mixed letters, numbers, and symbols</small>
-                </div>
-
-                <div class="form-group has-icon">
-                    <label for="contact" class="form-label">Contact Number</label>
-                    <input type="tel" id="contact" name="contact" class="form-input" 
-                           value="<?php echo htmlspecialchars($contact ?? ''); ?>"
-                           placeholder="+1 (555) 123-4567">
-                    <i class="fa fa-phone input-icon"></i>
-                    <small>Optional field - will be saved if your database supports it</small>
-                </div>
-
-                <div class="form-actions">
-                    <a href="view_admins.php" class="btn btn-secondary">
-                        <i class="fa fa-arrow-left"></i> Cancel
-                    </a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fa fa-save"></i> Create Admin Account
-                    </button>
-                </div>
-            </form>
-        </div>
+            </div>
+        </main>
     </div>
 </body>
 </html>

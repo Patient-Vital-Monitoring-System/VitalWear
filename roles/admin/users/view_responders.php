@@ -13,6 +13,15 @@ $conn = getDBConnection();
 // Get all responder accounts (read-only)
 $responder_accounts = [];
 $error_message = '';
+$success_message = '';
+
+// Check for URL parameters
+if (isset($_GET['error'])) {
+    $error_message = urldecode($_GET['error']);
+}
+if (isset($_GET['success'])) {
+    $success_message = urldecode($_GET['success']);
+}
 
 try {
     $result = $conn->query("
@@ -746,17 +755,25 @@ foreach ($responder_accounts as $responder) {
             <!-- Page Header -->
             <div class="page-header">
                 <div>
-                    <h1><i class="fa fa-user-md"></i> Responder Accounts</h1>
+                    <h1><i class="fa fa-user-shield"></i> Responder Accounts</h1>
                     <p>Manage all responder users in the system</p>
                 </div>
-                <a href="create_responder.php" class="btn btn-primary">
+                <button onclick="openAddModal()" class="btn btn-primary">
                     <i class="fa fa-plus"></i> Create Responder
-                </a>
+                </button>
             </div>
 
             <?php if ($error_message): ?>
                 <div class="error-message">
-                    <?php echo $error_message; ?>
+                    <i class="fa fa-exclamation-circle"></i>
+                    <?php echo htmlspecialchars($error_message); ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($success_message): ?>
+                <div class="success-message">
+                    <i class="fa fa-check-circle"></i>
+                    <?php echo htmlspecialchars($success_message); ?>
                 </div>
             <?php endif; ?>
 
@@ -782,14 +799,14 @@ foreach ($responder_accounts as $responder) {
             <div class="users-grid">
                 <?php if (!empty($responder_accounts)): ?>
                     <?php foreach ($responder_accounts as $account): ?>
-                        <div class="user-card">
+                        <div class="user-card" data-user-id="<?php echo htmlspecialchars($account['id']); ?>">
                             <div class="user-header">
                                 <div class="user-avatar">
                                     <?php echo strtoupper(substr(htmlspecialchars($account['name']), 0, 2)); ?>
                                 </div>
                                 <div class="user-info">
-                                    <h4><?php echo htmlspecialchars($account['name']); ?></h4>
-                                    <p><?php echo htmlspecialchars($account['email']); ?></p>
+                                    <h4 data-field="name"><?php echo htmlspecialchars($account['name']); ?></h4>
+                                    <p data-field="email"><?php echo htmlspecialchars($account['email']); ?></p>
                                 </div>
                             </div>
                             
@@ -802,7 +819,7 @@ foreach ($responder_accounts as $responder) {
                                 <?php if (!empty($account['contact'])): ?>
                                     <div class="user-detail">
                                         <span class="user-detail-label">Contact:</span>
-                                        <span class="user-detail-value"><?php echo htmlspecialchars($account['contact']); ?></span>
+                                        <span class="user-detail-value" data-field="contact"><?php echo htmlspecialchars($account['contact']); ?></span>
                                     </div>
                                 <?php endif; ?>
                                 
@@ -826,12 +843,12 @@ foreach ($responder_accounts as $responder) {
                             
                             <!-- Action Buttons -->
                             <div class="user-actions">
-                                <a href="update_responder.php?id=<?php echo htmlspecialchars($account['id']); ?>" class="btn btn-update">
+                                <button onclick="openUpdateModal(<?php echo htmlspecialchars(json_encode($account)); ?>)" class="btn btn-update">
                                     <i class="fa fa-edit"></i> Update
-                                </a>
-                                <a href="delete_responder.php?id=<?php echo htmlspecialchars($account['id']); ?>" class="btn btn-delete">
+                                </button>
+                                <button onclick="openDeleteModal(<?php echo htmlspecialchars($account['id']); ?>, '<?php echo htmlspecialchars($account['name']); ?>')" class="btn btn-delete">
                                     <i class="fa fa-trash"></i> Delete
-                                </a>
+                                </button>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -845,5 +862,522 @@ foreach ($responder_accounts as $responder) {
             </div>
         </main>
     </div>
+
+    <!-- Modal Styles -->
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.15);
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: var(--radius);
+            transition: all var(--transition);
+        }
+
+        .modal-close:hover {
+            background: var(--gray-100);
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 24px;
+            background: #ffffff;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            font-size: 0.875rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #ffffff;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(30, 122, 184, 0.1), 0 2px 8px rgba(30, 122, 184, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .form-input:hover {
+            border-color: #d1d5db;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            letter-spacing: 0.025em;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-cancel {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            color: var(--text-primary);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+
+        .btn-cancel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .btn-cancel:hover {
+            background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        }
+
+        .btn-cancel:hover::before {
+            left: 100%;
+        }
+
+        .btn-cancel:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-600) 100%);
+            color: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(30, 122, 184, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-submit::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .btn-submit:hover {
+            background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(30, 122, 184, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-submit:hover::before {
+            left: 100%;
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(30, 122, 184, 0.25);
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-delete::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .btn-delete:hover {
+            background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-delete:hover::before {
+            left: 100%;
+        }
+
+        .btn-delete:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);
+        }
+
+        .delete-modal .modal-content {
+            max-width: 400px;
+        }
+
+        .delete-warning {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .delete-warning i {
+            font-size: 3rem;
+            color: var(--error);
+            margin-bottom: 16px;
+        }
+
+        .delete-warning h3 {
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .delete-warning p {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .success-message {
+            background: var(--success-light);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .error-message {
+            background: var(--error-light);
+            color: var(--error);
+            border: 1px solid var(--error);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { 
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to { 
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+
+    <!-- Add Modal -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fa fa-plus"></i> Create Responder
+                </h3>
+                <button class="modal-close" onclick="closeModal('addModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="addMessage"></div>
+                <form action="create_responder.php" method="POST">
+                    <div class="form-group">
+                        <label class="form-label">Full Name *</label>
+                        <input type="text" name="name" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email Address *</label>
+                        <input type="email" name="email" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Contact Number</label>
+                        <input type="tel" name="contact" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password *</label>
+                        <input type="password" name="password" class="form-input" autocomplete="new-password" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Confirm Password *</label>
+                        <input type="password" name="confirm_password" class="form-input" autocomplete="new-password" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-cancel" onclick="closeModal('addModal')">Cancel</button>
+                        <button type="submit" class="btn btn-submit">Create Responder</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Modal -->
+    <div id="updateModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fa fa-edit"></i> Update Responder
+                </h3>
+                <button class="modal-close" onclick="closeModal('updateModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="updateMessage"></div>
+                <form id="updateForm" onsubmit="handleUpdateSubmit(event, 'responder')">
+                    <input type="hidden" name="id" id="updateId">
+                    <div class="form-group">
+                        <label class="form-label">Full Name *</label>
+                        <input type="text" name="name" id="updateName" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email Address *</label>
+                        <input type="email" name="email" id="updateEmail" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Contact Number</label>
+                        <input type="tel" name="contact" id="updateContact" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">New Password</label>
+                        <input type="password" name="password" id="updatePassword" class="form-input" placeholder="Leave blank to keep current password" autocomplete="new-password">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Confirm New Password</label>
+                        <input type="password" name="confirm_password" id="updateConfirmPassword" class="form-input" placeholder="Confirm new password" autocomplete="new-password">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-cancel" onclick="closeModal('updateModal')">Cancel</button>
+                        <button type="submit" class="btn btn-submit">Update Responder</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div id="deleteModal" class="modal delete-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fa fa-trash"></i> Delete Responder
+                </h3>
+                <button class="modal-close" onclick="closeModal('deleteModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="delete-warning">
+                    <i class="fa fa-exclamation-triangle"></i>
+                    <h3>Delete Responder Account</h3>
+                    <p>Are you sure you want to delete <strong id="deleteName"></strong>? This action cannot be undone.</p>
+                    <div id="deleteMessage"></div>
+                    <form action="delete_responder.php" method="POST">
+                        <input type="hidden" name="id" id="deleteId">
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-cancel" onclick="closeModal('deleteModal')">Cancel</button>
+                            <button type="submit" class="btn btn-delete">Delete</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openAddModal() {
+            document.getElementById('addModal').classList.add('show');
+            // Clear form fields manually since form doesn't have ID
+            const form = document.querySelector('#addModal form');
+            if (form) form.reset();
+            document.getElementById('addMessage').innerHTML = '';
+        }
+
+        function handleUpdateSubmit(event, userType) {
+            event.preventDefault();
+            
+            const form = document.getElementById('updateForm');
+            const formData = new FormData(form);
+            const updateMessage = document.getElementById('updateMessage');
+            
+            // Debug: Log form data
+            console.log('Submitting update for:', userType);
+            console.log('Form data:', Object.fromEntries(formData));
+            
+            // Show loading message
+            updateMessage.innerHTML = '<div style="color: #3B82F6;"><i class="fa fa-spinner fa-spin"></i> Updating...</div>';
+            
+            // Send AJAX request
+            fetch(`api/update_${userType}.php`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                return response.text();
+            })
+            .then(text => {
+                console.log('Raw response:', text);
+                try {
+                    const data = JSON.parse(text);
+                    console.log('Parsed data:', data);
+                    
+                    if (data.success) {
+                        updateMessage.innerHTML = '<div style="color: #10B981;"><i class="fa fa-check-circle"></i> ' + data.message + '</div>';
+                        
+                        // Close modal after 2 seconds
+                        setTimeout(() => {
+                            closeModal('updateModal');
+                            // Refresh the page to show updated data
+                            location.reload();
+                        }, 2000);
+                    } else {
+                        updateMessage.innerHTML = '<div style="color: #EF4444;"><i class="fa fa-exclamation-circle"></i> ' + data.message + '</div>';
+                    }
+                } catch (e) {
+                    console.error('JSON parse error:', e);
+                    console.error('Response text that failed:', text);
+                    updateMessage.innerHTML = '<div style="color: #EF4444;"><i class="fa fa-exclamation-circle"></i> Server error. Please try again.</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                console.error('Error details:', error.message);
+                updateMessage.innerHTML = '<div style="color: #EF4444;"><i class="fa fa-exclamation-circle"></i> Network error. Please check connection.</div>';
+            });
+        }
+
+        function openUpdateModal(account) {
+            console.log('openUpdateModal called with account:', account);
+            console.log('Account ID:', account.id);
+            console.log('Account Name:', account.name);
+            console.log('Account Email:', account.email);
+            
+            document.getElementById('updateModal').classList.add('show');
+            document.getElementById('updateId').value = account.id;
+            document.getElementById('updateName').value = account.name;
+            document.getElementById('updateEmail').value = account.email;
+            document.getElementById('updateContact').value = account.contact || '';
+            document.getElementById('updatePassword').value = '';
+            document.getElementById('updateConfirmPassword').value = '';
+            document.getElementById('updateMessage').innerHTML = '';
+            
+            console.log('Modal opened, ID set to:', document.getElementById('updateId').value);
+        }
+
+        
+        function openDeleteModal(id, name) {
+            console.log('Opening delete modal for ID:', id, 'Name:', name);
+            document.getElementById('deleteModal').classList.add('show');
+            document.getElementById('deleteId').value = id;
+            document.getElementById('deleteName').textContent = name;
+            document.getElementById('deleteMessage').innerHTML = '';
+            console.log('Delete modal should now be visible');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+        }
+
+        // Close modals when clicking outside
+        window.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.remove('show');
+            }
+        });
+
+        // Close modals with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal.show').forEach(modal => {
+                    modal.classList.remove('show');
+                });
+            }
+        });
+    </script>
 </body>
 </html>
