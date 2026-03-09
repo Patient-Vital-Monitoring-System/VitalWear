@@ -244,7 +244,6 @@ if (isset($_GET['edit'])) {
                 <p style="margin: 5px 0 0 0; opacity: 0.9;">Add, edit, and manage rescuer accounts</p>
             </div>
             <div>
-                <a href="dashboard.php" class="btn btn-secondary">← Back to Dashboard</a>
                 <button class="btn btn-primary" onclick="openAddModal()">+ Add Rescuer</button>
             </div>
         </header>

@@ -268,7 +268,6 @@ if ($result) {
                 <p style="margin: 5px 0 0 0; opacity: 0.9;">System reports and analytics</p>
             </div>
             <div>
-                <a href="../dashboard.php" class="btn btn-secondary">← Back to Dashboard</a>
             </div>
         </header>
 

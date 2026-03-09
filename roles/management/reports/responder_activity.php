@@ -309,7 +309,6 @@ $unique_responder_count = count($unique_responders);
                 <p style="margin: 5px 0 0 0; opacity: 0.9;">Monitor and analyze responder activities</p>
             </div>
             <div>
-                <a href="../dashboard.php" class="btn btn-secondary">← Back to Dashboard</a>
                 <a href="index.php" class="btn btn-primary">All Reports</a>
             </div>
         </header>

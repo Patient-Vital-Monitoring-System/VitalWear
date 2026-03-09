@@ -617,9 +617,6 @@ while ($row = $stats_result->fetch_assoc()) {
                 <p>View and manage all monitoring devices</p>
             </div>
             <div class="header-actions">
-                <a href="dashboard.php" class="btn btn-secondary">
-                    <i class="fa fa-arrow-left"></i> Back to Dashboard
-                </a>
                 <a href="register_device.php" class="btn btn-primary">
                     <i class="fa fa-plus-circle"></i> Register Device
                 </a>

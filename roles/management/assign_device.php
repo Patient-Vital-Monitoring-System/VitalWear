@@ -311,7 +311,6 @@ if ($result) {
                 <p style="margin: 5px 0 0 0; opacity: 0.9;">Assign available devices to responders</p>
             </div>
             <div>
-                <a href="dashboard.php" class="btn btn-secondary">← Back to Dashboard</a>
                 <a href="device_list.php" class="btn btn-primary">View All Devices</a>
             </div>
         </header>

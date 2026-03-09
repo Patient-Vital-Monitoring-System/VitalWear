@@ -272,7 +272,6 @@ if (!empty($durations)) {
                 <p style="margin: 5px 0 0 0; opacity: 0.9;">View and analyze device assignment records</p>
             </div>
             <div>
-                <a href="../dashboard.php" class="btn btn-secondary">← Back to Dashboard</a>
                 <a href="index.php" class="btn btn-primary">All Reports</a>
             </div>
         </header>
