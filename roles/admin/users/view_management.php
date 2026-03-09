@@ -538,6 +538,71 @@ $active_management = $total_management; // All management are considered active
             font-weight: 600;
         }
 
+        /* Action Buttons */
+        .create-btn {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: var(--radius-lg);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--shadow);
+        }
+
+        .create-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .update-btn, .delete-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.875rem;
+        }
+
+        .update-btn {
+            background: var(--info);
+            color: white;
+        }
+
+        .update-btn:hover {
+            background: #2563EB;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow);
+        }
+
+        .delete-btn {
+            background: var(--error);
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background: #DC2626;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow);
+        }
+
         /* Logout Button */
         .logout-btn {
             background: var(--error);
@@ -653,8 +718,15 @@ $active_management = $total_management; // All management are considered active
 
             <!-- Page Header -->
             <div class="page-header">
-                <h1><i class="fa fa-eye"></i> View Management Accounts</h1>
-                <p>Read-only overview of all management users in the system</p>
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <div>
+                        <h1><i class="fa fa-eye"></i> View Management Accounts</h1>
+                        <p>Manage all management users in the system</p>
+                    </div>
+                    <a href="create_management.php" class="create-btn">
+                        <i class="fa fa-plus"></i> Create Management
+                    </a>
+                </div>
             </div>
 
             <?php if ($error_message): ?>
@@ -716,6 +788,15 @@ $active_management = $total_management; // All management are considered active
                                     <span class="user-detail-label">Joined:</span>
                                     <span class="user-detail-value"><?php echo date('M j, Y', strtotime($account['created_at'])); ?></span>
                                 </div>
+                            </div>
+                            
+                            <div class="action-buttons">
+                                <a href="update_management.php?id=<?php echo htmlspecialchars($account['id']); ?>" class="update-btn">
+                                    <i class="fa fa-edit"></i> Update
+                                </a>
+                                <a href="delete_management.php?id=<?php echo htmlspecialchars($account['id']); ?>" class="delete-btn" onclick="return confirm('Are you sure you want to delete this management account?')">
+                                    <i class="fa fa-trash"></i> Delete
+                                </a>
                             </div>
                         </div>
                     <?php endforeach; ?>

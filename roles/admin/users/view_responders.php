@@ -572,6 +572,85 @@ foreach ($responder_accounts as $responder) {
             transform: translateY(-2px);
             box-shadow: var(--shadow-md);
         }
+
+        /* Page Header Button */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            margin: 0 0 0.5rem 0;
+            color: var(--text-primary);
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .page-header p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--radius-lg);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* User Action Buttons */
+        .user-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn-update {
+            background: var(--warning);
+            color: white;
+            font-size: 0.75rem;
+            padding: 0.5rem 1rem;
+        }
+
+        .btn-update:hover {
+            background: #e6a800;
+            transform: translateY(-1px);
+        }
+
+        .btn-delete {
+            background: var(--error);
+            color: white;
+            font-size: 0.75rem;
+            padding: 0.5rem 1rem;
+        }
+
+        .btn-delete:hover {
+            background: #DC2626;
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 <body>
@@ -666,8 +745,13 @@ foreach ($responder_accounts as $responder) {
 
             <!-- Page Header -->
             <div class="page-header">
-                <h1><i class="fa fa-eye"></i> View Responder Accounts</h1>
-                <p>Read-only overview of all responder users in the system</p>
+                <div>
+                    <h1><i class="fa fa-user-md"></i> Responder Accounts</h1>
+                    <p>Manage all responder users in the system</p>
+                </div>
+                <a href="create_responder.php" class="btn btn-primary">
+                    <i class="fa fa-plus"></i> Create Responder
+                </a>
             </div>
 
             <?php if ($error_message): ?>
@@ -738,6 +822,16 @@ foreach ($responder_accounts as $responder) {
                                     <span class="user-detail-label">Joined:</span>
                                     <span class="user-detail-value"><?php echo date('M j, Y', strtotime($account['created_at'])); ?></span>
                                 </div>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="user-actions">
+                                <a href="update_responder.php?id=<?php echo htmlspecialchars($account['id']); ?>" class="btn btn-update">
+                                    <i class="fa fa-edit"></i> Update
+                                </a>
+                                <a href="delete_responder.php?id=<?php echo htmlspecialchars($account['id']); ?>" class="btn btn-delete">
+                                    <i class="fa fa-trash"></i> Delete
+                                </a>
                             </div>
                         </div>
                     <?php endforeach; ?>
