@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $vital_stmt->bind_param("i", $incident_id);
                 $vital_stmt->execute();
                 
-                header("Location: patient_vitals.php?incident_id=" . $incident_id);
+                header("Location: active_incidents.php?incident_id=" . $incident_id);
                 exit;
             } else {
                 $message = "Failed to create incident";

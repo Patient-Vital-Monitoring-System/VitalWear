@@ -552,11 +552,27 @@ function createIncident(event) {
         // Log activity
         window.vitalwearDB.logActivity(user.name, 'responder', `Created incident #${newIncident.id} for ${patientName}`);
         
-        showMessage('Incident created successfully! Redirecting to vitals...', 'success');
+        showMessage('Incident created successfully! Redirecting to active incidents (PHP)...', 'success');
         
-        // Redirect to patient vitals page (exactly like PHP version)
+        // Debug: Log the redirect
+        console.log('Redirecting to: ../roles/responder/active_incidents.php');
+        console.log('New incident ID:', newIncident.id);
+        
+        // Redirect to PHP active incidents page
         setTimeout(() => {
-            window.location.href = `patient-vitals.html?incident_id=${newIncident.id}`;
+            console.log('Executing redirect to ../roles/responder/active_incidents.php');
+            console.log('Current window.location before redirect:', window.location.href);
+            console.log('Target URL:', window.location.origin + '/VitalWear-1/roles/responder/active_incidents.php');
+            
+            // Force redirect to ensure it works
+            try {
+                window.location.href = `../roles/responder/active_incidents.php`;
+                console.log('Redirect executed. New location should be:', window.location.href);
+            } catch (error) {
+                console.error('Redirect error:', error);
+                // Fallback: try with full URL
+                window.location.replace(window.location.origin + '/VitalWear-1/roles/responder/active_incidents.php');
+            }
         }, 2000);
     } else {
         showMessage('Failed to create incident', 'error');
