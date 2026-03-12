@@ -270,6 +270,13 @@
             margin-top: 80px;
         }
 
+        /* Vitals grid — 4 columns desktop */
+        .vitals-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -279,7 +286,7 @@
             border-top: 1px solid rgba(169, 183, 198, 0.3);
             box-shadow: 0 -4px 20px rgba(10, 42, 85, 0.08);
             padding: 12px 24px;
-            display: flex;
+            display: none; /* hidden on desktop */
             justify-content: space-around;
             align-items: center;
             z-index: 998;
@@ -319,104 +326,127 @@
             transform: scale(1.1);
         }
 
-        /* Mobile Responsiveness */
+        /* ── Mobile Responsiveness ── */
         @media (max-width: 768px) {
-            .container {
-                padding: 16px;
+
+            /* Show bottom nav only on mobile */
+            .bottom-nav {
+                display: flex;
             }
-            
+
+            /* Container: remove sidebar offset, add space for topbar + bottom nav */
+            .container {
+                margin-left: 0;
+                margin-top: 64px;
+                padding: 16px;
+                padding-bottom: 90px;
+            }
+
+            /* Sidebar: hidden off-screen, slides in on toggle */
             #sidebar {
                 transform: translateX(-100%);
                 transition: transform 0.3s ease;
                 width: 280px;
             }
-            
+
             #sidebar.mobile-open {
                 transform: translateX(0);
             }
-            
+
+            /* Topbar: full width, left padding so title clears the hamburger */
             .topbar {
                 left: 0;
-                padding: 12px 16px;
+                padding: 12px 16px 12px 60px;
                 height: auto;
                 min-height: 60px;
             }
-            
+
             .topbar div:first-child {
                 font-size: 16px;
             }
-            
+
             .topbar div:last-child {
                 font-size: 14px;
             }
-            
+
             .dashboard-card {
                 padding: 16px 12px;
                 margin-bottom: 16px;
             }
-            
+
             .incidents-grid {
                 grid-template-columns: 1fr;
                 gap: 12px;
             }
-            
+
             .incident-card {
                 padding: 16px;
             }
-            
+
             .incident-header {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 8px;
             }
-            
+
             .incident-status {
                 align-self: flex-start;
             }
-            
+
             .vital-card {
                 padding: 16px 12px;
             }
-            
+
             .vital-value {
                 font-size: 18px;
             }
-            
+
+            /* Vitals grid: 2 columns on mobile */
+            .vitals-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            /* Monitoring button: full width on mobile */
+            .btn-start, .btn-stop {
+                width: 100%;
+                text-align: center;
+            }
+
             .chart-container {
                 padding: 16px;
                 min-height: 300px;
             }
-            
+
             .chart-tabs {
                 gap: 8px;
             }
-            
+
             .chart-tab {
                 padding: 8px 12px;
                 font-size: 12px;
             }
-            
+
             .btn {
                 width: 100%;
                 padding: 12px;
                 font-size: 14px;
             }
-            
+
             .btn-group {
                 flex-direction: column;
                 gap: 8px;
             }
-            
+
             .bottom-nav {
                 padding: 8px 12px;
                 height: 70px;
             }
-            
+
             .bottom-nav .bottom-item {
                 padding: 8px 12px;
                 font-size: 11px;
             }
-            
+
             .bottom-nav .bottom-item i {
                 font-size: 18px;
             }
@@ -425,51 +455,61 @@
         @media (max-width: 480px) {
             .container {
                 padding: 12px;
+                padding-bottom: 90px;
             }
-            
+
             .dashboard-card {
                 padding: 12px 8px;
             }
-            
+
             .incident-card {
                 padding: 12px 8px;
             }
-            
+
             .vital-card {
                 padding: 12px 8px;
             }
-            
+
             .vital-value {
                 font-size: 16px;
             }
-            
+
+            .vitals-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+
             .chart-container {
                 min-height: 250px;
                 padding: 12px;
             }
-            
-            .topbar {
-                padding: 10px 12px;
+
+            .chart-container canvas {
+                height: 200px !important;
             }
-            
+
+            .topbar {
+                padding: 10px 12px 10px 56px;
+            }
+
             .topbar div:first-child span {
                 font-size: 14px;
             }
-            
+
             .topbar div:last-child span {
                 font-size: 12px;
             }
-            
+
             .bottom-nav {
                 padding: 6px 4px;
                 height: 65px;
             }
-            
+
             .bottom-nav .bottom-item {
                 font-size: 10px;
                 padding: 6px 4px;
             }
-            
+
             .bottom-nav .bottom-item i {
                 font-size: 16px;
             }
@@ -478,35 +518,41 @@
         @media (max-width: 360px) {
             .container {
                 padding: 8px;
+                padding-bottom: 90px;
             }
-            
+
             .dashboard-card {
                 padding: 10px 6px;
             }
-            
+
             .incident-card {
                 padding: 10px 6px;
             }
-            
+
             .vital-value {
                 font-size: 14px;
             }
-            
+
+            .vitals-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 6px;
+            }
+
             .topbar div:first-child i {
                 font-size: 20px;
             }
-            
+
             .topbar div:first-child span {
                 font-size: 12px;
             }
-            
+
             .mobile-menu-toggle {
                 padding: 8px;
                 font-size: 16px;
             }
         }
 
-        /* Mobile menu toggle */
+        /* Mobile menu toggle button */
         .mobile-menu-toggle {
             display: none;
             position: fixed;
@@ -978,7 +1024,7 @@
                     
                     <div id="vitals-${incident.id}">
                         <h4 style="color: var(--deep-hospital-blue); margin-bottom: 16px; font-size: 1.1rem;"><i class="fa fa-heartbeat" style="color: var(--medical-cyan);"></i> Vitals Monitor</h4>
-                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+                        <div class="vitals-grid">
                             <div class="vital-card">
                                 <div style="color: var(--system-gray); font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Heart Rate</div>
                                 <div class="vital-value" id="hr-${incident.id}" style="color: #0A85CC;">

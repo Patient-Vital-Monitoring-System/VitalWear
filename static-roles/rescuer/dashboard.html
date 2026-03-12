@@ -22,11 +22,7 @@
             --shadow-md: 0 8px 24px rgba(10, 42, 85, 0.12);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             background-color: var(--clinical-white);
@@ -34,12 +30,11 @@
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
+        /* ── Sidebar ── */
         #sidebar {
             position: fixed;
-            left: 0;
-            top: 0;
-            width: 280px;
-            height: 100vh;
+            left: 0; top: 0;
+            width: 280px; height: 100vh;
             background: var(--surface);
             border-right: 1px solid rgba(169, 183, 198, 0.3);
             box-shadow: var(--shadow);
@@ -48,60 +43,43 @@
         }
 
         .sidebar-logo {
-            padding: 24px 20px;
-            text-align: center;
+            padding: 24px 20px; text-align: center;
             background: linear-gradient(135deg, var(--deep-hospital-blue) 0%, var(--trust-blue) 100%);
-            margin: 12px;
-            border-radius: var(--radius);
+            margin: 12px; border-radius: var(--radius);
         }
 
-        .sidebar-logo i {
-            font-size: 48px;
-            color: white;
-        }
+        .sidebar-logo i { font-size: 48px; color: white; }
 
         #sidebar a {
             color: var(--deep-hospital-blue);
-            margin: 6px 12px;
-            padding: 12px 16px;
+            margin: 6px 12px; padding: 12px 16px;
             border-radius: var(--radius);
             transition: all 0.2s ease;
-            border: none;
-            font-weight: 500;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            font-weight: 500; text-decoration: none;
+            display: flex; align-items: center; gap: 12px;
         }
 
-        #sidebar a:hover {
-            background: rgba(0, 182, 204, 0.1);
-            color: var(--medical-cyan);
-            transform: translateX(4px);
-        }
+        #sidebar a:hover { background: rgba(0, 182, 204, 0.1); color: var(--medical-cyan); transform: translateX(4px); }
 
         #sidebar a.active {
-            background: var(--medical-cyan);
-            color: white;
+            background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%);
+            color: white; box-shadow: var(--shadow-sm);
         }
 
+        /* ── Topbar ── */
         .topbar {
             position: fixed;
-            top: 0;
-            left: 280px;
-            right: 0;
+            top: 0; left: 280px; right: 0;
             background: var(--surface);
             color: var(--deep-hospital-blue);
             border-bottom: 1px solid rgba(169, 183, 198, 0.2);
             box-shadow: var(--shadow-sm);
-            padding: 16px 24px;
-            font-weight: 600;
+            padding: 16px 24px; font-weight: 600;
             z-index: 999;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            display: flex; align-items: center; justify-content: space-between;
         }
 
+        /* ── Container ── */
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -110,6 +88,7 @@
             margin-top: 80px;
         }
 
+        /* ── Cards ── */
         .dashboard-card {
             background: var(--surface);
             padding: 24px;
@@ -120,109 +99,26 @@
             transition: all 0.3s ease;
         }
 
-        .dashboard-card:hover {
-            box-shadow: var(--shadow-md);
-            transform: translateY(-2px);
-        }
+        .dashboard-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
 
         .dashboard-card h3 {
             color: var(--deep-hospital-blue);
             margin-bottom: 16px;
             font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            display: flex; align-items: center; gap: 8px;
         }
 
-        .btn-quick-action {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            width: 100%;
-            padding: 16px 24px;
-            background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%);
-            color: white;
-            text-decoration: none;
-            border-radius: var(--radius-lg);
-            font-weight: 600;
-            font-size: 16px;
-            box-shadow: var(--shadow);
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-quick-action:hover {
-            transform: translateY(-3px);
+        /* ── Welcome banner ── */
+        .welcome-banner {
+            background: linear-gradient(135deg, var(--deep-hospital-blue) 0%, var(--trust-blue) 100%);
+            padding: 32px; border-radius: var(--radius-lg);
+            margin-bottom: 24px; color: white;
             box-shadow: var(--shadow-md);
         }
 
-        .btn-link {
-            color: var(--medical-cyan);
-            text-decoration: none;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s ease;
-        }
+        .welcome-content { display: flex; align-items: center; gap: 16px; }
 
-        .btn-link:hover {
-            color: var(--trust-blue);
-            transform: translateX(4px);
-        }
-
-        .vital-stat {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .vital-stat-label {
-            color: var(--system-gray);
-            font-size: 12px;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .vital-stat-value {
-            font-size: 28px;
-            font-weight: 800;
-            color: var(--deep-hospital-blue);
-        }
-
-        .vital-stat-unit {
-            font-size: 14px;
-            color: var(--system-gray);
-            font-weight: 500;
-        }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .status-available {
-            background: rgba(46, 219, 179, 0.15);
-            color: var(--health-green);
-        }
-
-        .status-ongoing {
-            background: rgba(245, 158, 11, 0.15);
-            color: #f59e0b;
-        }
-
-        .status-transferred {
-            background: rgba(0, 182, 204, 0.15);
-            color: var(--medical-cyan);
-        }
-
+        /* ── Stats grid ── */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -230,6 +126,12 @@
             margin-bottom: 24px;
         }
 
+        .vital-stat { display: flex; flex-direction: column; gap: 4px; }
+        .vital-stat-label { color: var(--system-gray); font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+        .vital-stat-value { font-size: 28px; font-weight: 800; color: var(--deep-hospital-blue); }
+        .vital-stat-unit { font-size: 14px; color: var(--system-gray); font-weight: 500; }
+
+        /* ── Actions grid ── */
         .actions-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -237,323 +139,176 @@
             margin-bottom: 24px;
         }
 
+        .btn-quick-action {
+            display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+            width: 100%; padding: 16px 24px;
+            background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%);
+            color: white; text-decoration: none;
+            border-radius: var(--radius-lg); font-weight: 600; font-size: 16px;
+            box-shadow: var(--shadow); border: none; cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-quick-action:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+
+        /* ── Status badges ── */
+        .status-badge {
+            display: inline-flex; align-items: center;
+            padding: 6px 14px; border-radius: 20px;
+            font-size: 14px; font-weight: 600;
+        }
+
+        .status-available { background: rgba(46, 219, 179, 0.15); color: var(--health-green); }
+        .status-ongoing   { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .status-transferred { background: rgba(0, 182, 204, 0.15); color: var(--medical-cyan); }
+
+        /* ── Incident items ── */
         .incident-item {
             background: var(--clinical-white);
-            padding: 16px;
-            border-radius: var(--radius);
+            padding: 16px; border-radius: var(--radius);
             border-left: 4px solid var(--medical-cyan);
             margin-bottom: 12px;
         }
 
-        .incident-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
+        .incident-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
+        .incident-title { font-size: 16px; font-weight: 700; color: var(--deep-hospital-blue); margin: 0; }
+        .incident-meta { color: var(--system-gray); font-size: 14px; margin: 4px 0; }
+
+        /* ── Misc ── */
+        .btn-link {
+            color: var(--medical-cyan); text-decoration: none; font-weight: 600;
+            display: inline-flex; align-items: center; gap: 6px;
+            transition: all 0.2s ease;
         }
 
-        .incident-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--deep-hospital-blue);
-            margin: 0;
+        .btn-link:hover { color: var(--trust-blue); transform: translateX(4px); }
+
+        .empty-state { text-align: center; padding: 32px 20px; color: var(--system-gray); }
+
+        /* ── Mobile menu toggle — hidden on desktop ── */
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed; top: 16px; left: 16px; z-index: 1001;
+            background: var(--medical-cyan); color: white;
+            border: none; border-radius: var(--radius);
+            padding: 10px; cursor: pointer; font-size: 18px;
         }
 
-        .incident-meta {
-            color: var(--system-gray);
-            font-size: 14px;
-            margin: 4px 0;
-        }
-
+        /* ── Bottom nav — hidden on desktop ── */
         .bottom-nav {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
+            bottom: 0; left: 0; right: 0;
             background: var(--surface);
             border-top: 1px solid rgba(169, 183, 198, 0.3);
             box-shadow: 0 -4px 20px rgba(10, 42, 85, 0.08);
             padding: 12px 24px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
+            display: none;
+            justify-content: space-around; align-items: center;
             z-index: 998;
         }
 
-        .bottom-nav .bottom-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            padding: 10px 20px;
-            border-radius: var(--radius);
-            color: var(--system-gray);
-            text-decoration: none;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            font-size: 12px;
+        .bottom-item {
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+            padding: 10px 20px; border-radius: var(--radius);
+            color: var(--system-gray); text-decoration: none;
+            transition: all 0.3s ease; font-weight: 500; font-size: 12px;
         }
 
-        .bottom-nav .bottom-item i {
-            font-size: 20px;
-            transition: all 0.3s ease;
-        }
+        .bottom-item i { font-size: 20px; transition: all 0.3s ease; }
+        .bottom-item:hover { color: var(--medical-cyan); background: rgba(0, 182, 204, 0.1); transform: translateY(-2px); }
+        .bottom-item.active { color: var(--medical-cyan); background: rgba(0, 182, 204, 0.15); }
+        .bottom-item.active i { transform: scale(1.1); }
 
-        .bottom-nav .bottom-item:hover {
-            color: var(--medical-cyan);
-            background: rgba(0, 182, 204, 0.1);
-            transform: translateY(-2px);
-        }
+        /* ══════════════════════════════
+           RESPONSIVE BREAKPOINTS
+        ══════════════════════════════ */
 
-        .bottom-nav .bottom-item.active {
-            color: var(--medical-cyan);
-            background: rgba(0, 182, 204, 0.15);
-        }
-
-        .bottom-nav .bottom-item.active i {
-            transform: scale(1.1);
-        }
-
-        .welcome-banner {
-            background: linear-gradient(135deg, var(--deep-hospital-blue) 0%, var(--trust-blue) 100%);
-            padding: 32px;
-            border-radius: var(--radius-lg);
-            margin-bottom: 24px;
-            color: white;
-            box-shadow: var(--shadow-md);
-        }
-
-        .welcome-content {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        /* Enhanced Mobile Responsiveness */
         @media (max-width: 1200px) {
-            .container {
-                padding: 16px;
-            }
-            
-            .dashboard-card {
-                padding: 24px;
-            }
+            .container { padding: 16px; }
+            .dashboard-card { padding: 24px; }
         }
 
         @media (max-width: 992px) {
-            .container {
-                padding: 12px;
-            }
-            
-            .dashboard-card {
-                padding: 20px;
-            }
-            
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
+            .container { padding: 12px; }
+            .dashboard-card { padding: 20px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
         }
 
         @media (max-width: 768px) {
-            .container {
-                margin-left: 0;
-                padding: 16px;
-                margin-bottom: 80px;
-                align-items: flex-start;
-            }
-            
-            #sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-                width: 280px;
-            }
-            
-            #sidebar.mobile-open {
-                transform: translateX(0);
-            }
-            
-            .topbar {
-                left: 0;
-                padding: 12px 16px;
-                height: auto;
-                min-height: 60px;
-            }
-            
-            .topbar div:first-child {
-                font-size: 16px;
-            }
-            
-            .topbar div:last-child {
-                font-size: 14px;
-            }
-            
-            .dashboard-card {
-                padding: 20px 16px;
-                margin-bottom: 16px;
-            }
-            
-            .stats-grid {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
-            
-            .stat-card {
-                padding: 16px;
-            }
-            
-            .stat-value {
-                font-size: 1.8rem;
-            }
-            
-            .stat-label {
-                font-size: 0.9rem;
-            }
-            
-            .recent-incidents {
-                margin-top: 16px;
-            }
-            
-            .incident-item {
-                padding: 12px;
-            }
-            
-            .btn {
-                width: 100%;
-                padding: 12px;
-                font-size: 14px;
-            }
-            
-            .quick-actions {
-                flex-direction: column;
-                gap: 12px;
-            }
-            
-            .device-info {
-                padding: 16px;
-            }
-            
-            .device-status {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 8px;
-            }
-            
-            .bottom-nav {
-                padding: 8px 12px;
-                height: 70px;
-            }
-            
-            .bottom-nav .bottom-item {
-                padding: 8px 12px;
-                font-size: 11px;
-            }
-            
-            .bottom-nav .bottom-item i {
-                font-size: 18px;
-            }
+            /* Show hamburger */
+            .mobile-menu-toggle { display: block; }
+
+            /* Show bottom nav */
+            .bottom-nav { display: flex; padding: 8px 12px; height: 70px; }
+            .bottom-item { padding: 8px 12px; font-size: 11px; }
+            .bottom-item i { font-size: 18px; }
+
+            /* Sidebar off-screen, slides in when toggled */
+            #sidebar { transform: translateX(-100%); transition: transform 0.3s ease; width: 280px; }
+            #sidebar.mobile-open { transform: translateX(0); }
+
+            /* Full-width topbar with hamburger offset */
+            .topbar { left: 0; padding: 12px 16px 12px 60px; height: auto; min-height: 60px; }
+            .topbar div:first-child { font-size: 16px; }
+            .topbar div:last-child  { font-size: 14px; }
+
+            /* Container: no sidebar offset, bottom nav clearance */
+            .container { margin-left: 0; margin-top: 64px; padding: 16px; padding-bottom: 90px; }
+
+            .welcome-banner { padding: 24px 20px; }
+            .welcome-content { flex-direction: column; text-align: center; gap: 12px; }
+
+            .stats-grid { grid-template-columns: 1fr; gap: 12px; }
+            .actions-grid { grid-template-columns: 1fr; gap: 12px; }
+
+            .dashboard-card { padding: 20px 16px; margin-bottom: 16px; }
+            .dashboard-card h3 { font-size: 1rem; }
+
+            .btn-quick-action { padding: 14px 20px; font-size: 15px; }
+
+            .incident-item { padding: 12px; }
+            .incident-title { font-size: 15px; }
+            .incident-meta { font-size: 13px; }
+
+            .vital-stat-value { font-size: 2rem; }
         }
 
         @media (max-width: 480px) {
-            .container {
-                padding: 12px;
-            }
-            
-            .dashboard-card {
-                padding: 16px 12px;
-            }
-            
-            .stat-card {
-                padding: 12px;
-            }
-            
-            .stat-value {
-                font-size: 1.5rem;
-            }
-            
-            .stat-label {
-                font-size: 0.8rem;
-            }
-            
-            .incident-item {
-                padding: 10px;
-            }
-            
-            .incident-info h4 {
-                font-size: 0.9rem;
-            }
-            
-            .incident-info p {
-                font-size: 0.8rem;
-            }
-            
-            .topbar {
-                padding: 10px 12px;
-            }
-            
-            .topbar div:first-child span {
-                font-size: 14px;
-            }
-            
-            .topbar div:last-child span {
-                font-size: 12px;
-            }
-            
-            .bottom-nav {
-                padding: 6px 4px;
-                height: 65px;
-            }
-            
-            .bottom-nav .bottom-item {
-                font-size: 10px;
-                padding: 6px 4px;
-            }
-            
-            .bottom-nav .bottom-item i {
-                font-size: 16px;
-            }
+            .container { padding: 12px; padding-bottom: 90px; }
+            .dashboard-card { padding: 16px 12px; }
+
+            .welcome-banner h1 { font-size: 1.3rem !important; }
+            .vital-stat-value { font-size: 1.75rem; }
+
+            .topbar { padding: 10px 12px 10px 56px; }
+            .topbar div:first-child span { font-size: 14px; }
+            .topbar div:last-child  span { font-size: 12px; }
+
+            .bottom-nav { padding: 6px 4px; height: 65px; }
+            .bottom-item { font-size: 10px; padding: 6px 4px; }
+            .bottom-item i { font-size: 16px; }
+
+            .incident-item { padding: 10px; }
+            .incident-title { font-size: 14px; }
+            .incident-meta { font-size: 12px; }
         }
 
         @media (max-width: 360px) {
-            .container {
-                padding: 8px;
-            }
-            
-            .dashboard-card {
-                padding: 12px 8px;
-            }
-            
-            .stat-card {
-                padding: 10px;
-            }
-            
-            .stat-value {
-                font-size: 1.3rem;
-            }
-            
-            .stat-label {
-                font-size: 0.7rem;
-            }
-            
-            .incident-item {
-                padding: 8px;
-            }
-            
-            .topbar div:first-child i {
-                font-size: 20px;
-            }
-            
-            .topbar div:first-child span {
-                font-size: 12px;
-            }
-            
-            .mobile-menu-toggle {
-                padding: 8px;
-                font-size: 16px;
-            }
+            .container { padding: 8px; padding-bottom: 90px; }
+            .dashboard-card { padding: 12px 8px; }
+
+            .welcome-banner h1 { font-size: 1.2rem !important; }
+            .vital-stat-value { font-size: 1.5rem; }
+
+            .topbar div:first-child i    { font-size: 20px; }
+            .topbar div:first-child span { font-size: 12px; }
+            .mobile-menu-toggle { padding: 8px; font-size: 16px; }
         }
     </style>
 </head>
 <body>
+
+    <!-- Mobile hamburger — desktop: hidden -->
     <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
         <i class="fa fa-bars"></i>
     </button>
@@ -569,6 +324,7 @@
         </div>
     </header>
 
+    <!-- Sidebar — desktop: always visible; mobile: slides in -->
     <nav id="sidebar">
         <div class="sidebar-logo">
             <i class="fa fa-heart-pulse"></i>
@@ -582,10 +338,11 @@
     </nav>
 
     <main class="container">
+
         <!-- Welcome Banner -->
         <div class="welcome-banner">
             <div class="welcome-content">
-                <div class="welcome-icon">🚑</div>
+                <div style="font-size: 48px;">🚑</div>
                 <div>
                     <h1 style="color: white; margin: 0; font-size: 1.75rem; font-weight: 700;">Welcome, <span id="welcome-user">Rescuer User</span>!</h1>
                     <p style="color: rgba(255,255,255,0.9); margin: 4px 0 0 0; font-size: 1rem;">Ready to provide critical medical transport and care</p>
@@ -643,39 +400,30 @@
                 <!-- Will be populated by JavaScript -->
             </div>
         </div>
+
     </main>
 
+    <!-- Bottom nav — mobile only (display:none on desktop via CSS) -->
     <nav class="bottom-nav">
-        <a href="dashboard.html" class="bottom-item active">
-            <i class="fa fa-gauge"></i>
-            <span>Home</span>
-        </a>
-        <a href="transferred-incidents.html" class="bottom-item">
-            <i class="fa fa-exclamation-circle"></i>
-            <span>Transfer</span>
-        </a>
-        <a href="ongoing-monitoring.html" class="bottom-item">
-            <i class="fa fa-heart-pulse"></i>
-            <span>Monitor</span>
-        </a>
-        <a href="completed-cases.html" class="bottom-item">
-            <i class="fa fa-check-circle"></i>
-            <span>Complete</span>
-        </a>
-        <a href="#" onclick="logout()" class="bottom-item">
-            <i class="fa fa-sign-out"></i>
-            <span>Logout</span>
-        </a>
+        <a href="dashboard.html" class="bottom-item active"><i class="fa fa-gauge"></i><span>Home</span></a>
+        <a href="transferred-incidents.html" class="bottom-item"><i class="fa fa-exclamation-circle"></i><span>Transfer</span></a>
+        <a href="ongoing-monitoring.html" class="bottom-item"><i class="fa fa-heart-pulse"></i><span>Monitor</span></a>
+        <a href="completed-cases.html" class="bottom-item"><i class="fa fa-check-circle"></i><span>Complete</span></a>
+        <a href="#" onclick="logout()" class="bottom-item"><i class="fa fa-sign-out"></i><span>Logout</span></a>
     </nav>
 
     <script src="../js/database.js"></script>
     <script>
-        // Initialize dashboard
+        function getCurrentUser() {
+            const role = sessionStorage.getItem('current_role');
+            return window.vitalwearDB.getUsers(role)[0] || { name: 'Rescuer User', role: 'rescuer', id: 3 };
+        }
+
         function initializeDashboard() {
             const user = getCurrentUser();
             document.getElementById('user-name').textContent = user.name;
             document.getElementById('welcome-user').textContent = user.name;
-            
+
             updateStats();
             updateRecentTransferred();
             updateAssignedDevice();
@@ -684,26 +432,18 @@
         function updateStats() {
             const user = getCurrentUser();
             const incidents = window.vitalwearDB.getIncidentsByUser(user.id, 'rescuer');
-            
-            const transferredIncidents = incidents.filter(i => i.status === 'transferred');
-            const ongoingIncidents = incidents.filter(i => i.status === 'ongoing');
-            const completedIncidents = incidents.filter(i => i.status === 'completed');
-            
-            document.getElementById('transferred-count').textContent = transferredIncidents.length;
-            document.getElementById('ongoing-count').textContent = ongoingIncidents.length;
-            document.getElementById('completed-count').textContent = completedIncidents.length;
+
+            document.getElementById('transferred-count').textContent = incidents.filter(i => i.status === 'transferred').length;
+            document.getElementById('ongoing-count').textContent    = incidents.filter(i => i.status === 'ongoing').length;
+            document.getElementById('completed-count').textContent  = incidents.filter(i => i.status === 'completed').length;
         }
 
         function updateRecentTransferred() {
             const user = getCurrentUser();
             const incidents = window.vitalwearDB.getIncidentsByUser(user.id, 'rescuer');
-            
-            const transferredIncidents = incidents
-                .filter(i => i.status === 'transferred')
-                .slice(0, 5);
-            
+            const transferredIncidents = incidents.filter(i => i.status === 'transferred').slice(0, 5);
             const container = document.getElementById('recent-transferred');
-            
+
             if (transferredIncidents.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
@@ -714,7 +454,7 @@
                 `;
                 return;
             }
-            
+
             container.innerHTML = transferredIncidents.map(incident => `
                 <div class="incident-item">
                     <div class="incident-header">
@@ -732,10 +472,9 @@
         function updateAssignedDevice() {
             const user = getCurrentUser();
             const devices = window.vitalwearDB.getDevices();
-            
             const assignedDevice = devices.find(d => d.assigned_to === user.id);
             const container = document.getElementById('assigned-device');
-            
+
             if (assignedDevice) {
                 container.innerHTML = `
                     <p style="font-size: 18px; font-weight: 700; color: var(--deep-hospital-blue);">${assignedDevice.serial}</p>
@@ -760,11 +499,25 @@
             const role = sessionStorage.getItem('current_role');
             if (role !== 'rescuer') {
                 window.location.href = '../index.html';
-                return;
             }
         }
 
-        // Initialize on page load
+        function toggleMobileMenu() {
+            document.getElementById('sidebar').classList.toggle('mobile-open');
+        }
+
+        // Close sidebar when tapping outside on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const menuToggle = document.querySelector('.mobile-menu-toggle');
+            if (window.innerWidth <= 768 &&
+                !sidebar.contains(event.target) &&
+                !menuToggle.contains(event.target) &&
+                sidebar.classList.contains('mobile-open')) {
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+
         document.addEventListener('DOMContentLoaded', function() {
             checkAuth();
             initializeDashboard();

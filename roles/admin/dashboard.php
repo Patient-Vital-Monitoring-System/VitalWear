@@ -307,6 +307,51 @@ if (empty($chart_data['activity_trends'])) {
             -webkit-backdrop-filter: blur(10px);
         }
 
+        /* Mobile Bottom Navigation */
+        .mobile-navbar {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+            padding: 12px;
+        }
+
+        .mobile-nav-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px;
+            border-radius: var(--radius);
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 12px;
+            transition: all var(--transition-fast);
+            min-height: 60px;
+            justify-content: center;
+        }
+
+        .mobile-nav-item:hover,
+        .mobile-nav-item.active {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .mobile-nav-item i {
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+
         .sidebar-header {
             padding: 32px 24px 24px;
             text-align: center;

@@ -22,11 +22,7 @@
             --shadow-md: 0 8px 24px rgba(10, 42, 85, 0.12);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             background-color: var(--clinical-white);
@@ -34,12 +30,11 @@
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
+        /* ── Sidebar ── */
         #sidebar {
             position: fixed;
-            left: 0;
-            top: 0;
-            width: 280px;
-            height: 100vh;
+            left: 0; top: 0;
+            width: 280px; height: 100vh;
             background: var(--surface);
             border-right: 1px solid rgba(169, 183, 198, 0.3);
             box-shadow: var(--shadow);
@@ -48,60 +43,42 @@
         }
 
         .sidebar-logo {
-            padding: 24px 20px;
-            text-align: center;
+            padding: 24px 20px; text-align: center;
             background: linear-gradient(135deg, var(--deep-hospital-blue) 0%, var(--trust-blue) 100%);
-            margin: 12px;
-            border-radius: var(--radius);
+            margin: 12px; border-radius: var(--radius);
         }
 
-        .sidebar-logo i {
-            font-size: 48px;
-            color: white;
-        }
+        .sidebar-logo i { font-size: 48px; color: white; }
 
         #sidebar a {
             color: var(--deep-hospital-blue);
-            margin: 6px 12px;
-            padding: 12px 16px;
+            margin: 6px 12px; padding: 12px 16px;
             border-radius: var(--radius);
             transition: all 0.2s ease;
-            border: none;
-            font-weight: 500;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            font-weight: 500; text-decoration: none;
+            display: flex; align-items: center; gap: 12px;
         }
 
-        #sidebar a:hover {
-            background: rgba(0, 182, 204, 0.1);
-            color: var(--medical-cyan);
-            transform: translateX(4px);
-        }
+        #sidebar a:hover { background: rgba(0, 182, 204, 0.1); color: var(--medical-cyan); transform: translateX(4px); }
 
         #sidebar a.active {
-            background: var(--medical-cyan);
-            color: white;
+            background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%);
+            color: white; box-shadow: var(--shadow-sm);
         }
 
+        /* ── Topbar ── */
         .topbar {
             position: fixed;
-            top: 0;
-            left: 280px;
-            right: 0;
+            top: 0; left: 280px; right: 0;
             background: var(--surface);
-            color: var(--deep-hospital-blue);
             border-bottom: 1px solid rgba(169, 183, 198, 0.2);
             box-shadow: var(--shadow-sm);
-            padding: 16px 24px;
-            font-weight: 600;
+            padding: 16px 24px; font-weight: 600;
             z-index: 999;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            display: flex; align-items: center; justify-content: space-between;
         }
 
+        /* ── Container ── */
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -110,25 +87,19 @@
             margin-top: 80px;
         }
 
+        /* ── Header banner ── */
         .header {
             background: linear-gradient(135deg, var(--deep-hospital-blue) 0%, var(--trust-blue) 100%);
-            color: white;
-            padding: 40px;
+            color: white; padding: 40px;
             border-radius: var(--radius-lg);
             margin-bottom: 30px;
             box-shadow: var(--shadow-md);
         }
 
-        .header h1 {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
+        .header h1 { font-size: 2rem; font-weight: 700; margin-bottom: 8px; }
+        .header p { opacity: 0.9; }
 
-        .header p {
-            opacity: 0.9;
-        }
-
+        /* ── Stats grid ── */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -138,31 +109,17 @@
 
         .stat-card {
             background: var(--surface);
-            padding: 24px;
-            border-radius: var(--radius-lg);
+            padding: 24px; border-radius: var(--radius-lg);
             box-shadow: var(--shadow);
             border: 1px solid rgba(169, 183, 198, 0.2);
             text-align: center;
         }
 
-        .stat-card h3 {
-            color: var(--health-green);
-            margin-bottom: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
+        .stat-card h3 { color: var(--health-green); margin-bottom: 8px; font-size: 0.9rem; font-weight: 600; text-transform: uppercase; }
+        .stat-number { font-size: 2rem; font-weight: 700; color: var(--health-green); }
 
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--health-green);
-        }
-
-        .cases-grid {
-            display: grid;
-            gap: 24px;
-        }
+        /* ── Case cards ── */
+        .cases-grid { display: grid; gap: 24px; }
 
         .case-card {
             background: var(--surface);
@@ -173,353 +130,166 @@
             transition: all 0.3s ease;
         }
 
-        .case-card:hover {
-            box-shadow: var(--shadow-md);
-            transform: translateY(-2px);
-        }
+        .case-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
 
         .case-header {
             padding: 20px;
             background: linear-gradient(135deg, rgba(46, 219, 179, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
             border-bottom: 1px solid rgba(169, 183, 198, 0.2);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: flex; justify-content: space-between; align-items: center;
         }
 
-        .case-info h3 {
-            color: var(--deep-hospital-blue);
-            margin: 0 0 4px 0;
-            font-size: 1.2rem;
-        }
+        .case-info h3 { color: var(--deep-hospital-blue); margin: 0 0 4px 0; font-size: 1.2rem; }
+        .case-info p { color: var(--system-gray); margin: 0; font-size: 14px; }
 
-        .case-info p {
-            color: var(--system-gray);
-            margin: 0;
-            font-size: 14px;
-        }
+        .status-badge { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 14px; font-weight: 600; }
+        .status-completed { background: rgba(46, 219, 179, 0.15); color: var(--health-green); }
 
-        .status-badge {
-            display: inline-block;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-        }
+        .case-body { padding: 24px; }
 
-        .status-completed {
-            background: rgba(46, 219, 179, 0.15);
-            color: var(--health-green);
-        }
+        .case-summary { margin-bottom: 20px; }
+        .case-summary h4 { color: var(--deep-hospital-blue); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
 
-        .case-body {
-            padding: 24px;
-        }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
 
-        .case-summary {
-            margin-bottom: 20px;
-        }
+        .summary-item { display: flex; flex-direction: column; gap: 4px; }
+        .summary-label { color: var(--system-gray); font-size: 12px; font-weight: 500; text-transform: uppercase; }
+        .summary-value { color: var(--deep-hospital-blue); font-weight: 600; }
 
-        .case-summary h4 {
-            color: var(--deep-hospital-blue);
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .vitals-summary { margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(169, 183, 198, 0.2); }
+        .vitals-summary h4 { color: var(--deep-hospital-blue); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
 
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-        }
+        .vitals-mini-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
 
-        .summary-item {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
+        .vital-mini { text-align: center; padding: 12px; background: rgba(240, 244, 248, 0.5); border-radius: var(--radius); }
+        .vital-mini-value { font-size: 1.2rem; font-weight: 700; color: var(--deep-hospital-blue); margin-bottom: 4px; }
+        .vital-mini-label { color: var(--system-gray); font-size: 11px; font-weight: 500; text-transform: uppercase; }
 
-        .summary-label {
-            color: var(--system-gray);
-            font-size: 12px;
-            font-weight: 500;
-            text-transform: uppercase;
-        }
-
-        .summary-value {
-            color: var(--deep-hospital-blue);
-            font-weight: 600;
-        }
-
-        .vitals-summary {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(169, 183, 198, 0.2);
-        }
-
-        .vitals-summary h4 {
-            color: var(--deep-hospital-blue);
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .vitals-mini-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 12px;
-        }
-
-        .vital-mini {
-            text-align: center;
-            padding: 12px;
-            background: rgba(240, 244, 248, 0.5);
-            border-radius: var(--radius);
-        }
-
-        .vital-mini-value {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--deep-hospital-blue);
-            margin-bottom: 4px;
-        }
-
-        .vital-mini-label {
-            color: var(--system-gray);
-            font-size: 11px;
-            font-weight: 500;
-            text-transform: uppercase;
-        }
-
-        .actions {
-            display: flex;
-            gap: 12px;
-            margin-top: 20px;
-        }
+        .actions { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
 
         .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: var(--radius);
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+            padding: 12px 24px; border: none; border-radius: var(--radius);
+            cursor: pointer; font-size: 14px; font-weight: 600;
+            transition: all 0.3s ease; text-decoration: none;
+            display: inline-flex; align-items: center; gap: 8px;
+            font-family: 'Inter', sans-serif;
         }
 
-        .btn-primary {
-            background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%);
-            color: white;
+        .btn-primary { background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        .btn-secondary { background: var(--system-gray); color: white; }
+
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--system-gray); }
+        .empty-state i { font-size: 48px; margin-bottom: 16px; display: block; }
+
+        /* ── Mobile menu toggle — hidden on desktop ── */
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed; top: 16px; left: 16px; z-index: 1001;
+            background: var(--medical-cyan); color: white;
+            border: none; border-radius: var(--radius);
+            padding: 10px; cursor: pointer; font-size: 18px;
         }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-        }
-
-        .btn-secondary {
-            background: var(--system-gray);
-            color: white;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--system-gray);
-        }
-
-        .empty-state i {
-            font-size: 48px;
-            margin-bottom: 16px;
-            display: block;
-        }
-
+        /* ── Bottom nav — hidden on desktop ── */
         .bottom-nav {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
+            bottom: 0; left: 0; right: 0;
             background: var(--surface);
             border-top: 1px solid rgba(169, 183, 198, 0.3);
             box-shadow: 0 -4px 20px rgba(10, 42, 85, 0.08);
             padding: 12px 24px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
+            display: none;
+            justify-content: space-around; align-items: center;
             z-index: 998;
         }
 
-        .bottom-nav .bottom-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            padding: 10px 20px;
-            border-radius: var(--radius);
-            color: var(--system-gray);
-            text-decoration: none;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            font-size: 12px;
+        .bottom-item {
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+            padding: 10px 20px; border-radius: var(--radius);
+            color: var(--system-gray); text-decoration: none;
+            transition: all 0.3s ease; font-weight: 500; font-size: 12px;
         }
 
-        .bottom-nav .bottom-item i {
-            font-size: 20px;
-            transition: all 0.3s ease;
+        .bottom-item i { font-size: 20px; transition: all 0.3s ease; }
+        .bottom-item:hover { color: var(--medical-cyan); background: rgba(0, 182, 204, 0.1); transform: translateY(-2px); }
+        .bottom-item.active { color: var(--medical-cyan); background: rgba(0, 182, 204, 0.15); }
+        .bottom-item.active i { transform: scale(1.1); }
+
+        /* ══════════════════════════════
+           RESPONSIVE BREAKPOINTS
+        ══════════════════════════════ */
+
+        @media (max-width: 1200px) {
+            .container { padding: 16px; }
+            .header { padding: 32px; }
         }
 
-        .bottom-nav .bottom-item:hover {
-            color: var(--medical-cyan);
-            background: rgba(0, 182, 204, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .bottom-nav .bottom-item.active {
-            color: var(--medical-cyan);
-            background: rgba(0, 182, 204, 0.15);
-        }
-
-        .bottom-nav .bottom-item.active i {
-            transform: scale(1.1);
+        @media (max-width: 992px) {
+            .container { padding: 12px; }
+            .header { padding: 28px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
         }
 
         @media (max-width: 768px) {
-            .container {
-                padding: 16px;
-            }
-            
-            #sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-            }
-            
-            #sidebar.mobile-open {
-                transform: translateX(0);
-            }
-            
-            .topbar {
-                left: 0;
-                padding: 12px 16px;
-            }
-            
-            .container {
-                margin-left: 0;
-                margin-top: 60px;
-                padding: 16px;
-            }
-            
-            .header {
-                padding: 24px 20px;
-            }
-            
-            .header h1 {
-                font-size: 1.5rem;
-            }
-            
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 16px;
-            }
-            
-            .stat-card {
-                padding: 20px;
-            }
-            
-            .stat-number {
-                font-size: 1.5rem;
-            }
-            
-            .case-header {
-                padding: 16px;
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 12px;
-            }
-            
-            .case-info h3 {
-                font-size: 1.1rem;
-            }
-            
-            .case-body {
-                padding: 20px 16px;
-            }
-            
-            .summary-grid {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
-            
-            .vitals-mini-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .actions {
-                flex-direction: column;
-            }
-            
-            .btn {
-                width: 100%;
-                justify-content: center;
-            }
-            
-            .bottom-nav {
-                padding: 8px 12px;
-            }
-            
-            .bottom-nav .bottom-item {
-                padding: 8px 12px;
-                font-size: 11px;
-            }
-            
-            .bottom-nav .bottom-item i {
-                font-size: 18px;
-            }
+            .mobile-menu-toggle { display: block; }
+
+            .bottom-nav { display: flex; padding: 8px 12px; height: 70px; }
+            .bottom-item { padding: 8px 12px; font-size: 11px; }
+            .bottom-item i { font-size: 18px; }
+
+            #sidebar { transform: translateX(-100%); transition: transform 0.3s ease; width: 280px; }
+            #sidebar.mobile-open { transform: translateX(0); }
+
+            .topbar { left: 0; padding: 12px 16px 12px 60px; height: auto; min-height: 60px; }
+            .topbar div:first-child { font-size: 16px; }
+            .topbar div:last-child  { font-size: 14px; }
+
+            .container { margin-left: 0; margin-top: 64px; padding: 16px; padding-bottom: 90px; }
+
+            .header { padding: 24px 20px; }
+            .header h1 { font-size: 1.5rem; }
+
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+            .stat-card { padding: 20px; }
+            .stat-number { font-size: 1.5rem; }
+
+            .case-header { padding: 16px; flex-direction: column; align-items: flex-start; gap: 12px; }
+            .case-info h3 { font-size: 1.1rem; }
+            .case-body { padding: 20px 16px; }
+
+            .summary-grid { grid-template-columns: 1fr; gap: 12px; }
+            .vitals-mini-grid { grid-template-columns: repeat(2, 1fr); }
+
+            .actions { flex-direction: column; }
+            .btn { width: 100%; justify-content: center; }
         }
 
         @media (max-width: 480px) {
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .vitals-mini-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .header h1 {
-                font-size: 1.3rem;
-            }
+            .container { padding: 12px; padding-bottom: 90px; }
+            .header { padding: 20px 16px; }
+            .header h1 { font-size: 1.3rem; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .vitals-mini-grid { grid-template-columns: 1fr; }
+            .topbar { padding: 10px 12px 10px 56px; }
+            .topbar div:first-child span { font-size: 14px; }
+            .topbar div:last-child  span { font-size: 12px; }
+            .bottom-nav { padding: 6px 4px; height: 65px; }
+            .bottom-item { font-size: 10px; padding: 6px 4px; }
+            .bottom-item i { font-size: 16px; }
         }
 
-        /* Mobile menu toggle */
-        .mobile-menu-toggle {
-            display: none;
-            position: fixed;
-            top: 16px;
-            left: 16px;
-            z-index: 1001;
-            background: var(--medical-cyan);
-            color: white;
-            border: none;
-            border-radius: var(--radius);
-            padding: 10px;
-            cursor: pointer;
-            font-size: 18px;
-        }
-
-        @media (max-width: 768px) {
-            .mobile-menu-toggle {
-                display: block;
-            }
+        @media (max-width: 360px) {
+            .container { padding: 8px; padding-bottom: 90px; }
+            .header h1 { font-size: 1.2rem; }
+            .topbar div:first-child i    { font-size: 20px; }
+            .topbar div:first-child span { font-size: 12px; }
+            .mobile-menu-toggle { padding: 8px; font-size: 16px; }
         }
     </style>
 </head>
 <body>
+
     <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
         <i class="fa fa-bars"></i>
     </button>
@@ -577,27 +347,13 @@
         </div>
     </main>
 
+    <!-- Bottom nav — mobile only -->
     <nav class="bottom-nav">
-        <a href="dashboard.html" class="bottom-item">
-            <i class="fa fa-gauge"></i>
-            <span>Home</span>
-        </a>
-        <a href="transferred-incidents.html" class="bottom-item">
-            <i class="fa fa-exclamation-circle"></i>
-            <span>Transfer</span>
-        </a>
-        <a href="ongoing-monitoring.html" class="bottom-item">
-            <i class="fa fa-heart-pulse"></i>
-            <span>Monitor</span>
-        </a>
-        <a href="completed-cases.html" class="bottom-item active">
-            <i class="fa fa-check-circle"></i>
-            <span>Complete</span>
-        </a>
-        <a href="#" onclick="logout()" class="bottom-item">
-            <i class="fa fa-sign-out"></i>
-            <span>Logout</span>
-        </a>
+        <a href="dashboard.html" class="bottom-item"><i class="fa fa-gauge"></i><span>Home</span></a>
+        <a href="transferred-incidents.html" class="bottom-item"><i class="fa fa-exclamation-circle"></i><span>Transfer</span></a>
+        <a href="ongoing-monitoring.html" class="bottom-item"><i class="fa fa-heart-pulse"></i><span>Monitor</span></a>
+        <a href="completed-cases.html" class="bottom-item active"><i class="fa fa-check-circle"></i><span>Complete</span></a>
+        <a href="#" onclick="logout()" class="bottom-item"><i class="fa fa-sign-out"></i><span>Logout</span></a>
     </nav>
 
     <script src="../js/database.js"></script>
@@ -627,7 +383,6 @@
             
             document.getElementById('total-completed').textContent = completedIncidents.length;
             
-            // Calculate monthly completed
             const currentMonth = new Date().getMonth();
             const currentYear = new Date().getFullYear();
             const monthlyCompleted = completedIncidents.filter(incident => {
@@ -635,8 +390,6 @@
                 return incidentDate.getMonth() === currentMonth && incidentDate.getFullYear() === currentYear;
             });
             document.getElementById('monthly-completed').textContent = monthlyCompleted.length;
-            
-            // Mock average transport time
             document.getElementById('avg-transport-time').textContent = '18m';
         }
 
@@ -657,9 +410,7 @@
                 return;
             }
             
-            // Sort by completion date (most recent first)
             completedIncidents.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
-            
             container.innerHTML = completedIncidents.map(incident => createCaseCard(incident)).join('');
         }
 
@@ -667,10 +418,9 @@
             const vitals = window.vitalwearDB.getVitalsByIncident(incident.id);
             const finalVitals = vitals[vitals.length - 1];
             
-            // Calculate duration (mock calculation)
             const createdDate = new Date(incident.created_at);
             const completedDate = new Date(incident.updated_at);
-            const duration = Math.round((completedDate - createdDate) / (1000 * 60)); // in minutes
+            const duration = Math.round((completedDate - createdDate) / (1000 * 60));
             
             return `
                 <div class="case-card">
@@ -729,7 +479,7 @@
                                     <div class="vital-mini-label">SpO2</div>
                                 </div>
                                 <div class="vital-mini">
-                                    <div class="vital-mini-value">${finalVital.temperature}°F</div>
+                                    <div class="vital-mini-value">${finalVitals.temperature}°F</div>
                                     <div class="vital-mini-label">Temp</div>
                                 </div>
                             </div>
@@ -758,30 +508,23 @@
         }
 
         function toggleMobileMenu() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('mobile-open');
+            document.getElementById('sidebar').classList.toggle('mobile-open');
         }
 
-        // Close mobile menu when clicking outside
         document.addEventListener('click', function(event) {
             const sidebar = document.getElementById('sidebar');
             const menuToggle = document.querySelector('.mobile-menu-toggle');
-            
-            if (window.innerWidth <= 768 && 
-                !sidebar.contains(event.target) && 
+            if (window.innerWidth <= 768 &&
+                !sidebar.contains(event.target) &&
                 !menuToggle.contains(event.target) &&
                 sidebar.classList.contains('mobile-open')) {
                 sidebar.classList.remove('mobile-open');
             }
         });
 
-        // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
             checkAuth();
-            
-            const user = getCurrentUser();
-            document.getElementById('user-name').textContent = user.name;
-            
+            document.getElementById('user-name').textContent = getCurrentUser().name;
             updateStats();
             renderCases();
         });

@@ -224,6 +224,7 @@
             gap: 20px;
         }
 
+        /* Bottom nav — hidden on desktop */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -233,7 +234,7 @@
             border-top: 1px solid rgba(169, 183, 198, 0.3);
             box-shadow: 0 -4px 20px rgba(10, 42, 85, 0.08);
             padding: 12px 24px;
-            display: flex;
+            display: none;
             justify-content: space-around;
             align-items: center;
             z-index: 998;
@@ -305,211 +306,6 @@
             color: var(--system-gray);
         }
 
-        /* Enhanced Mobile Responsiveness */
-        @media (max-width: 1200px) {
-            .container {
-                padding: 16px;
-            }
-            
-            .dashboard-card {
-                padding: 24px;
-            }
-        }
-
-        @media (max-width: 992px) {
-            .container {
-                padding: 12px;
-            }
-            
-            .dashboard-card {
-                padding: 20px;
-            }
-            
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                margin-left: 0;
-                padding: 16px;
-                margin-bottom: 80px;
-                align-items: flex-start;
-            }
-            
-            #sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-                width: 280px;
-            }
-            
-            #sidebar.mobile-open {
-                transform: translateX(0);
-            }
-            
-            .topbar {
-                left: 0;
-                padding: 12px 16px;
-                height: auto;
-                min-height: 60px;
-            }
-            
-            .topbar div:first-child {
-                font-size: 16px;
-            }
-            
-            .topbar div:last-child {
-                font-size: 14px;
-            }
-            
-            .welcome-banner {
-                padding: 24px 20px;
-            }
-            
-            .welcome-content {
-                flex-direction: column;
-                text-align: center;
-                gap: 12px;
-            }
-            
-            .welcome-icon {
-                width: 50px;
-                height: 50px;
-                font-size: 24px;
-            }
-            
-            .welcome-banner h1 {
-                font-size: 1.5rem;
-            }
-            
-            .dashboard-card {
-                padding: 20px 16px;
-                margin-bottom: 16px;
-            }
-            
-            .dashboard-card h3 {
-                font-size: 1rem;
-            }
-            
-            .vitals-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 12px;
-            }
-            
-            .vital-stat {
-                padding: 12px;
-            }
-            
-            .vital-stat-value {
-                font-size: 1.3rem;
-            }
-            
-            .btn-quick-action {
-                padding: 16px 20px;
-                font-size: 14px;
-                width: 100%;
-            }
-            
-            .quick-actions {
-                flex-direction: column;
-                gap: 12px;
-            }
-            
-            .bottom-nav {
-                padding: 8px 12px;
-                height: 70px;
-            }
-            
-            .bottom-nav .bottom-item {
-                padding: 8px 12px;
-                font-size: 11px;
-            }
-            
-            .bottom-nav .bottom-item i {
-                font-size: 18px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .container {
-                padding: 12px;
-            }
-            
-            .dashboard-card {
-                padding: 16px 12px;
-            }
-            
-            .welcome-banner h1 {
-                font-size: 1.3rem;
-            }
-            
-            .vitals-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .vital-stat-value {
-                font-size: 1.2rem;
-            }
-            
-            .topbar {
-                padding: 10px 12px;
-            }
-            
-            .topbar div:first-child span {
-                font-size: 14px;
-            }
-            
-            .topbar div:last-child span {
-                font-size: 12px;
-            }
-            
-            .bottom-nav {
-                padding: 6px 4px;
-                height: 65px;
-            }
-            
-            .bottom-nav .bottom-item {
-                font-size: 10px;
-                padding: 6px 4px;
-            }
-            
-            .bottom-nav .bottom-item i {
-                font-size: 16px;
-            }
-        }
-
-        @media (max-width: 360px) {
-            .container {
-                padding: 8px;
-            }
-            
-            .dashboard-card {
-                padding: 12px 8px;
-            }
-            
-            .welcome-banner h1 {
-                font-size: 1.2rem;
-            }
-            
-            .vital-stat-value {
-                font-size: 1.1rem;
-            }
-            
-            .topbar div:first-child i {
-                font-size: 20px;
-            }
-            
-            .topbar div:first-child span {
-                font-size: 12px;
-            }
-            
-            .mobile-menu-toggle {
-                padding: 8px;
-                font-size: 16px;
-            }
-        }
-
         /* Mobile menu toggle */
         .mobile-menu-toggle {
             display: none;
@@ -526,9 +322,218 @@
             font-size: 18px;
         }
 
+        /* ── Responsive ── */
+        @media (max-width: 1200px) {
+            .container {
+                padding: 16px;
+            }
+
+            .dashboard-card {
+                padding: 24px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .container {
+                padding: 12px;
+            }
+
+            .dashboard-card {
+                padding: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
         @media (max-width: 768px) {
+
             .mobile-menu-toggle {
                 display: block;
+            }
+
+            /* Show bottom nav on mobile */
+            .bottom-nav {
+                display: flex;
+                padding: 8px 12px;
+                height: 70px;
+            }
+
+            .bottom-nav .bottom-item {
+                padding: 8px 12px;
+                font-size: 11px;
+            }
+
+            .bottom-nav .bottom-item i {
+                font-size: 18px;
+            }
+
+            .container {
+                margin-left: 0;
+                margin-top: 64px;
+                padding: 16px;
+                padding-bottom: 90px;
+                align-items: flex-start;
+            }
+
+            #sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                width: 280px;
+            }
+
+            #sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .topbar {
+                left: 0;
+                padding: 12px 16px 12px 60px;
+                height: auto;
+                min-height: 60px;
+            }
+
+            .topbar div:first-child {
+                font-size: 16px;
+            }
+
+            .topbar div:last-child {
+                font-size: 14px;
+            }
+
+            .welcome-banner {
+                padding: 24px 20px;
+            }
+
+            .welcome-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 12px;
+            }
+
+            .welcome-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 24px;
+            }
+
+            .welcome-banner h1 {
+                font-size: 1.5rem;
+            }
+
+            .dashboard-card {
+                padding: 20px 16px;
+                margin-bottom: 16px;
+            }
+
+            .dashboard-card h3 {
+                font-size: 1rem;
+            }
+
+            .vitals-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+
+            .vital-stat {
+                padding: 12px;
+            }
+
+            .vital-stat-value {
+                font-size: 1.3rem;
+            }
+
+            .btn-quick-action {
+                padding: 16px 20px;
+                font-size: 14px;
+                width: 100%;
+            }
+
+            .quick-actions {
+                flex-direction: column;
+                gap: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 12px;
+                padding-bottom: 90px;
+            }
+
+            .dashboard-card {
+                padding: 16px 12px;
+            }
+
+            .welcome-banner h1 {
+                font-size: 1.3rem;
+            }
+
+            .vitals-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .vital-stat-value {
+                font-size: 1.2rem;
+            }
+
+            .topbar {
+                padding: 10px 12px 10px 56px;
+            }
+
+            .topbar div:first-child span {
+                font-size: 14px;
+            }
+
+            .topbar div:last-child span {
+                font-size: 12px;
+            }
+
+            .bottom-nav {
+                padding: 6px 4px;
+                height: 65px;
+            }
+
+            .bottom-nav .bottom-item {
+                font-size: 10px;
+                padding: 6px 4px;
+            }
+
+            .bottom-nav .bottom-item i {
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .container {
+                padding: 8px;
+                padding-bottom: 90px;
+            }
+
+            .dashboard-card {
+                padding: 12px 8px;
+            }
+
+            .welcome-banner h1 {
+                font-size: 1.2rem;
+            }
+
+            .vital-stat-value {
+                font-size: 1.1rem;
+            }
+
+            .topbar div:first-child i {
+                font-size: 20px;
+            }
+
+            .topbar div:first-child span {
+                font-size: 12px;
+            }
+
+            .mobile-menu-toggle {
+                padding: 8px;
+                font-size: 16px;
             }
         }
     </style>

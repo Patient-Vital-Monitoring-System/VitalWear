@@ -89,12 +89,19 @@
 
     /* Soft UI Header */
     .topbar {
+        position: fixed;
+        top: 0;
+        left: 280px;
+        right: 0;
         background: var(--surface);
         color: var(--deep-hospital-blue);
         border-bottom: 1px solid rgba(169, 183, 198, 0.2);
         box-shadow: var(--shadow-sm);
         padding: 16px 24px;
         font-weight: 600;
+        z-index: 999;
+        display: flex;
+        align-items: center;
     }
 
     h2, h3, h4 {
@@ -139,6 +146,7 @@
     /* Main Container */
     .container {
         margin-left: 280px;
+        margin-top: 72px;
         padding: 20px;
         display: flex;
         flex-direction: column;
@@ -147,7 +155,7 @@
         width: 100%;
     }
 
-    /* Bottom Navigation */
+    /* Bottom Navigation — hidden on desktop */
     .bottom-nav {
         position: fixed;
         bottom: 0;
@@ -155,7 +163,7 @@
         right: 0;
         background: var(--surface);
         border-top: 1px solid rgba(169, 183, 198, 0.2);
-        display: flex;
+        display: none;
         justify-content: space-around;
         padding: 12px 0;
         z-index: 1000;
@@ -172,39 +180,9 @@
         transition: color 0.2s ease;
     }
 
-    .bottom-item:hover {
-        color: var(--medical-cyan);
-    }
-
-    .bottom-item.active {
-        color: var(--medical-cyan);
-    }
-
-    .bottom-item i {
-        font-size: 20px;
-    }
-
-    /* Mobile Responsiveness */
-    @media (max-width: 768px) {
-        .container {
-            margin-left: 0;
-            padding: 16px;
-            margin-bottom: 60px;
-        }
-        
-        #sidebar {
-            transform: translateX(-100%);
-            transition: transform 0.3s ease;
-        }
-        
-        #sidebar.mobile-open {
-            transform: translateX(0);
-        }
-        
-        .topbar {
-            left: 0;
-        }
-    }
+    .bottom-item:hover { color: var(--medical-cyan); }
+    .bottom-item.active { color: var(--medical-cyan); }
+    .bottom-item i { font-size: 20px; }
 
     /* Mobile menu toggle */
     .mobile-menu-toggle {
@@ -222,14 +200,72 @@
         font-size: 18px;
     }
 
+    /* ── Responsive ── */
     @media (max-width: 768px) {
-        .mobile-menu-toggle {
-            display: block;
+
+        .mobile-menu-toggle { display: block; }
+
+        /* Show bottom nav on mobile */
+        .bottom-nav {
+            display: flex;
+            padding: 8px 12px;
+            height: 70px;
         }
+
+        .bottom-item { font-size: 11px; padding: 8px 12px; }
+        .bottom-item i { font-size: 18px; }
+
+        .container {
+            margin-left: 0;
+            margin-top: 64px;
+            padding: 16px;
+            padding-bottom: 90px;
+            margin-bottom: 0;
+        }
+
+        #sidebar {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        #sidebar.mobile-open { transform: translateX(0); }
+
+        .topbar {
+            left: 0;
+            padding: 12px 16px 12px 60px;
+        }
+
+        .dashboard-card { padding: 20px 16px; margin-bottom: 16px; }
+
+        h2 { font-size: 1.5rem; }
+    }
+
+    @media (max-width: 480px) {
+        .container { padding: 12px; padding-bottom: 90px; }
+        .dashboard-card { padding: 16px 12px; }
+
+        h2 { font-size: 1.3rem; }
+
+        .topbar { padding: 10px 12px 10px 56px; }
+
+        .bottom-nav { padding: 6px 4px; height: 65px; }
+        .bottom-item { font-size: 10px; padding: 6px 4px; }
+        .bottom-item i { font-size: 16px; }
+    }
+
+    @media (max-width: 360px) {
+        .container { padding: 8px; padding-bottom: 90px; }
+        .dashboard-card { padding: 12px 8px; }
+        h2 { font-size: 1.2rem; }
+        .mobile-menu-toggle { padding: 8px; font-size: 16px; }
     }
     </style>
 </head>
 <body>
+
+<button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
+    <i class="fa fa-bars"></i>
+</button>
 
 <header class="topbar">
     <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
@@ -245,59 +281,59 @@
 </header>
 
 <nav id="sidebar">
-<div class="sidebar-logo">
-    <img src="../../assets/logo.png" alt="VitalWear Logo">
-</div>
-<a href="dashboard.html"><i class="fa fa-gauge"></i> Dashboard</a>
-<a href="device.html"><i class="fa fa-tablet"></i> My Device</a>
-<a href="active-incidents.html"><i class="fa fa-exclamation-circle"></i> Active Incidents</a>
-<a href="create-incident-simple.html" class="active"><i class="fa fa-plus-circle"></i> Create Incident</a>
-<a href="transfer-incident.html"><i class="fa fa-exchange"></i> Transfer to Rescuer</a>
-<a href="incident-history.html"><i class="fa fa-history"></i> Incident History</a>
-<a href="#" onclick="logout()"><i class="fa fa-sign-out"></i> Logout</a>
+    <div class="sidebar-logo">
+        <img src="../../assets/logo.png" alt="VitalWear Logo">
+    </div>
+    <a href="dashboard.html"><i class="fa fa-gauge"></i> Dashboard</a>
+    <a href="device.html"><i class="fa fa-tablet"></i> My Device</a>
+    <a href="active-incidents.html"><i class="fa fa-exclamation-circle"></i> Active Incidents</a>
+    <a href="create-incident-simple.html" class="active"><i class="fa fa-plus-circle"></i> Create Incident</a>
+    <a href="transfer-incident.html"><i class="fa fa-exchange"></i> Transfer to Rescuer</a>
+    <a href="incident-history.html"><i class="fa fa-history"></i> Incident History</a>
+    <a href="#" onclick="logout()"><i class="fa fa-sign-out"></i> Logout</a>
 </nav>
 
 <main class="container">
-<div style="width: 100%; max-width: 500px;">
+    <div style="width: 100%; max-width: 500px;">
 
-<h2 style="color: var(--deep-hospital-blue); margin-bottom: 24px; font-weight: 700; font-size: 1.75rem; text-align: center;">➕ Create Incident</h2>
+        <h2 style="color: var(--deep-hospital-blue); margin-bottom: 24px; font-weight: 700; font-size: 1.75rem; text-align: center;">➕ Create Incident</h2>
 
-<div id="message" style="background: rgba(46, 219, 179, 0.15); color: var(--health-green); padding: 16px 24px; border-radius: var(--radius); margin-bottom: 24px; text-align: center; font-weight: 600; border: 1px solid rgba(46, 219, 179, 0.3); display: none; align-items: center; justify-content: center; gap: 10px;">
-    <i class="fa fa-check-circle"></i>
-    <span id="message-text"></span>
-</div>
-
-<div class="dashboard-card" style="width: 100%;">
-    <form id="incident-form">
-        <div style="margin-bottom: 24px;">
-            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--deep-hospital-blue); font-size: 14px;">
-                <i class="fa fa-user" style="color: var(--medical-cyan); margin-right: 8px;"></i>Patient Name *
-            </label>
-            <input type="text" name="pat_name" required style="width: 100%; padding: 14px; border: 2px solid rgba(169, 183, 198, 0.3); border-radius: var(--radius); font-size: 15px; transition: all 0.2s ease;" onfocus="this.style.borderColor='var(--medical-cyan)'; this.style.boxShadow='0 0 0 3px rgba(0, 182, 204, 0.1)';" onblur="this.style.borderColor='rgba(169, 183, 198, 0.3)'; this.style.boxShadow='none';">
+        <div id="message" style="background: rgba(46, 219, 179, 0.15); color: var(--health-green); padding: 16px 24px; border-radius: var(--radius); margin-bottom: 24px; text-align: center; font-weight: 600; border: 1px solid rgba(46, 219, 179, 0.3); display: none; align-items: center; justify-content: center; gap: 10px;">
+            <i class="fa fa-check-circle"></i>
+            <span id="message-text"></span>
         </div>
-        
-        <div style="margin-bottom: 24px;">
-            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--deep-hospital-blue); font-size: 14px;">
-                <i class="fa fa-phone" style="color: var(--medical-cyan); margin-right: 8px;"></i>Contact Number
-            </label>
-            <input type="text" name="pat_contact" style="width: 100%; padding: 14px; border: 2px solid rgba(169, 183, 198, 0.3); border-radius: var(--radius); font-size: 15px; transition: all 0.2s ease;" onfocus="this.style.borderColor='var(--medical-cyan)'; this.style.boxShadow='0 0 0 3px rgba(0, 182, 204, 0.1)';" onblur="this.style.borderColor='rgba(169, 183, 198, 0.3)'; this.style.boxShadow='none';">
-        </div>
-        
-        <button type="submit" style="width: 100%; padding: 16px 24px; background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%); color: white; border: none; border-radius: var(--radius-lg); font-weight: 700; font-size: 16px; cursor: pointer; box-shadow: var(--shadow); transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px; text-transform: uppercase; letter-spacing: 0.5px;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow)'">
-            <i class="fa fa-plus-circle" style="font-size: 20px;"></i> Create Incident & Record Vitals
-        </button>
-    </form>
-</div>
 
-</div>
+        <div class="dashboard-card" style="width: 100%;">
+            <form id="incident-form">
+                <div style="margin-bottom: 24px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--deep-hospital-blue); font-size: 14px;">
+                        <i class="fa fa-user" style="color: var(--medical-cyan); margin-right: 8px;"></i>Patient Name *
+                    </label>
+                    <input type="text" name="pat_name" required style="width: 100%; padding: 14px; border: 2px solid rgba(169, 183, 198, 0.3); border-radius: var(--radius); font-size: 15px; transition: all 0.2s ease;" onfocus="this.style.borderColor='var(--medical-cyan)'; this.style.boxShadow='0 0 0 3px rgba(0, 182, 204, 0.1)';" onblur="this.style.borderColor='rgba(169, 183, 198, 0.3)'; this.style.boxShadow='none';">
+                </div>
+                
+                <div style="margin-bottom: 24px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--deep-hospital-blue); font-size: 14px;">
+                        <i class="fa fa-phone" style="color: var(--medical-cyan); margin-right: 8px;"></i>Contact Number
+                    </label>
+                    <input type="text" name="pat_contact" style="width: 100%; padding: 14px; border: 2px solid rgba(169, 183, 198, 0.3); border-radius: var(--radius); font-size: 15px; transition: all 0.2s ease;" onfocus="this.style.borderColor='var(--medical-cyan)'; this.style.boxShadow='0 0 0 3px rgba(0, 182, 204, 0.1)';" onblur="this.style.borderColor='rgba(169, 183, 198, 0.3)'; this.style.boxShadow='none';">
+                </div>
+                
+                <button type="submit" style="width: 100%; padding: 16px 24px; background: linear-gradient(135deg, var(--medical-cyan) 0%, var(--trust-blue) 100%); color: white; border: none; border-radius: var(--radius-lg); font-weight: 700; font-size: 16px; cursor: pointer; box-shadow: var(--shadow); transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px; text-transform: uppercase; letter-spacing: 0.5px;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow)'">
+                    <i class="fa fa-plus-circle" style="font-size: 20px;"></i> Create Incident & Record Vitals
+                </button>
+            </form>
+        </div>
+
+    </div>
 </main>
 
 <nav class="bottom-nav">
-<a href="dashboard.html" class="bottom-item"><i class="fa fa-gauge"></i><span>Home</span></a>
-<a href="device.html" class="bottom-item"><i class="fa fa-tablet"></i><span>Device</span></a>
-<a href="create-incident-simple.html" class="bottom-item active"><i class="fa fa-plus-circle"></i><span>Incident</span></a>
-<a href="incident-history.html" class="bottom-item"><i class="fa fa-history"></i><span>History</span></a>
-<a href="#" onclick="logout()" class="bottom-item"><i class="fa fa-sign-out"></i></a>
+    <a href="dashboard.html" class="bottom-item"><i class="fa fa-gauge"></i><span>Home</span></a>
+    <a href="device.html" class="bottom-item"><i class="fa fa-tablet"></i><span>Device</span></a>
+    <a href="create-incident-simple.html" class="bottom-item active"><i class="fa fa-plus-circle"></i><span>Incident</span></a>
+    <a href="incident-history.html" class="bottom-item"><i class="fa fa-history"></i><span>History</span></a>
+    <a href="#" onclick="logout()" class="bottom-item"><i class="fa fa-sign-out"></i></a>
 </nav>
 
 <script src="../js/database.js"></script>
@@ -361,15 +397,14 @@ function createIncident(event) {
     
     const user = getCurrentUser();
     
-    // Create incident data (simplified to match PHP version)
     const incidentData = {
         patient_name: patientName.trim(),
         patient_contact: patientContact ? patientContact.trim() : '',
-        patient_age: 0, // Not used in PHP version
-        patient_condition: 'Emergency incident', // Default
-        incident_location: 'Unknown', // Default
-        incident_type: 'emergency', // Default
-        incident_severity: 'unknown', // Default
+        patient_age: 0,
+        patient_condition: 'Emergency incident',
+        incident_location: 'Unknown',
+        incident_type: 'emergency',
+        incident_severity: 'unknown',
         responder_id: user.id,
         created_at: new Date().toISOString(),
         status: 'ongoing'
@@ -380,10 +415,9 @@ function createIncident(event) {
     const newIncident = window.vitalwearDB.createIncident(incidentData);
     
     if (newIncident && newIncident.id) {
-        // Add default vitals (like PHP version)
         const vitalData = {
             incident_id: newIncident.id,
-            heart_rate: 0, // Default values like PHP
+            heart_rate: 0,
             bp_systolic: 0,
             bp_diastolic: 0,
             oxygen_level: 0,
@@ -392,12 +426,10 @@ function createIncident(event) {
         
         const newVital = window.vitalwearDB.addVital(vitalData);
         
-        // Log activity
         window.vitalwearDB.logActivity(user.name, 'responder', `Created incident #${newIncident.id} for ${patientName}`);
         
         showMessage('Incident created successfully! Redirecting to vitals...', 'success');
         
-        // Redirect to patient vitals page (like PHP version)
         setTimeout(() => {
             window.location.href = `patient-vitals.html?incident_id=${newIncident.id}`;
         }, 2000);
@@ -406,15 +438,25 @@ function createIncident(event) {
     }
 }
 
-// Initialize page
 document.addEventListener('DOMContentLoaded', function() {
     checkAuth();
     
     const user = getCurrentUser();
     document.getElementById('responder-name').textContent = user.name;
     
-    // Setup form submission
     document.getElementById('incident-form').addEventListener('submit', createIncident);
+});
+
+// Close sidebar when clicking outside on mobile
+document.addEventListener('click', function(event) {
+    const sidebar = document.getElementById('sidebar');
+    const menuToggle = document.querySelector('.mobile-menu-toggle');
+    if (window.innerWidth <= 768 &&
+        !sidebar.contains(event.target) &&
+        !menuToggle.contains(event.target) &&
+        sidebar.classList.contains('mobile-open')) {
+        sidebar.classList.remove('mobile-open');
+    }
 });
 </script>
 
